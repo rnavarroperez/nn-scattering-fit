@@ -14,7 +14,10 @@ $(EXEC): $(OBJ)
 precisions.o: precisions.f90
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o
+constants.o: constants.f90 precisions.o
+	$(COMPILER) $(FLAGS) -c $<
+
+av18.o: av18.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 precisions.o av18.o
