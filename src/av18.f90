@@ -14,7 +14,6 @@ use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, f2=> f_pi_n_2
 
 implicit none
-! use physical_constants, only : 
 
 private 
 

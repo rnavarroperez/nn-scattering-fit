@@ -10,12 +10,7 @@ program nn_fit
 
 use precisions, only : dp
 
-use av18
-
 implicit none
 
-! call read_input_parameters
-! call levenberg_marquardt(potential, parameters, )
-! call write_parameters
 
 end program nn_fit
