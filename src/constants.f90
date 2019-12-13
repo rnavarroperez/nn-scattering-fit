@@ -17,8 +17,9 @@ implicit none
 
 public
 
-real(dp), parameter :: pi    = 3.1415926535897932384626433832795_dp !<  \f$\pi\f$
-real(dp), parameter :: e_    = 2.7182818284590452353602874713527_dp !< \f$ e \f$
+real(dp), parameter :: pi = 3.1415926535897932384626433832795_dp !<  \f$\pi\f$
+real(dp), parameter :: e_ = 2.7182818284590452353602874713527_dp !< base of the natural log, \f$ e \f$
+real(dp), parameter :: euler_mascheroni = 0.5772156649015328606065120900824_dp !< Euler Mascheroni constant, typically denoted by \f$ \gamma \f$
 complex(dp), parameter :: i_ = (0, 1) !< \f$ i = \sqrt{-1} \f$
 
 ! Values from National Institute of Standards and Technology (NIST)
@@ -26,7 +27,12 @@ complex(dp), parameter :: i_ = (0, 1) !< \f$ i = \sqrt{-1} \f$
 ! Retrieved on June 6th 2019
 real(dp), parameter :: hbar_c    = 197.3269804_dp  !< \f$\hbar c\f$ in units of MeV fm
 real(dp), parameter :: proton_mass  = 938.27208816_dp !< proton mass in units of MeV
-real(dp), parameter :: neutron_mass = 939.56542052_dp   !< neutron mass in units of MeV
+real(dp), parameter :: neutron_mass = 939.56542052_dp !< neutron mass in units of MeV
+real(dp), parameter :: electron_mass = 0.51099895000_dp !< electron mass in units of MeV
+real(dp), parameter :: mu_proton = 2.79284734463_dp !< proton magnetic moment in units of the nuclear magneton \f$ \mu_n \f$
+real(dp), parameter :: mu_neutron = -1.91304273_dp !< neutron magnetic moment in units of the nuclear magneton \f$ \mu_n \f$
+real(dp), parameter :: alpha = 1/137.035999084_dp !< fine structure constant, dimensionless.
+
 
 ! Values from Particle Data Group (PDG)
 ! http://pdg.lbl.gov/
