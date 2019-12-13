@@ -1,5 +1,5 @@
 !!
-!> @brief      fudamental constants
+!> @brief      fundamental constants
 !!
 !! List of fundamental physical and mathematical constants. Unlike most other modules, all 
 !! parameters are public.

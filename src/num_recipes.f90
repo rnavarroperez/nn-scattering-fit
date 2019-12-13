@@ -13,7 +13,7 @@ implicit none
 
 private
 
-public :: dfridr, context
+public :: dfridr, context, func
 
 !!
 !> @brief      generic type for data in function callbacks
@@ -41,7 +41,7 @@ interface
         implicit none
         real(dp), intent(in) :: x !< point at which a function will be evaluated
         type(context), intent(in) :: data !< contains data for function evaluation
-        end function
+    end function
 end interface
 
 

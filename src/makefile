@@ -17,13 +17,16 @@ precisions.o: precisions.f90
 num_recipes.o: num_recipes.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
+test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o av18.o
+	$(COMPILER) $(FLAGS) -c $<
+
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 av18.o: av18.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-main.o: main.f90 precisions.o
+main.o: main.f90 precisions.o test_derivatives.o
 	$(COMPILER) $(FLAGS) -c $<
 
 clean:

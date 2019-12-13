@@ -22,7 +22,7 @@ public :: av18_operator, n_parameters, n_operators, default_params
 integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
 
-real(dp), parameter, dimension(1:44) :: default_params = &
+real(dp), parameter, dimension(1:n_parameters) :: default_params = &
     [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp, 1811.57100_dp,    1.07985_dp, &
      -190.09490_dp, -811.20400_dp,   -0.62697_dp,  -570.55710_dp,  819.12220_dp,    0.06709_dp, &
       342.06690_dp, -615.23390_dp,    0.74129_dp,     9.34180_dp, -376.43840_dp,   -8.62770_dp, &
