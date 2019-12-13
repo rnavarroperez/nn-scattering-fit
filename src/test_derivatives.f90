@@ -12,7 +12,7 @@ implicit none
 
 private
 
-public :: test_all_derivatives, f_av18, df_av18, context
+public :: test_all_derivatives, context
 
 !!
 !> @brief      interface for calling back functions that return arrays
@@ -88,76 +88,4 @@ subroutine test_all_derivatives(f, df, data, n_targets, n_parameters)
 
 end subroutine test_all_derivatives
 
-!!
-!> @brief      wrapper function for the av18 potential
-!!
-!! This wrapper function is used to test the derivatives of the av18_operator subroutine.
-!! The generic data of type context is used to receive all the arguments necessary to call the 
-!! av18_operator subroutine. The same data of type context is used to receive which parameter will
-!! be varied by the dfridr subroutine and which operator will be returned.
-!!
-!! @returns    one of the operators of the av18 potential at an specific radius
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-real(dp) function f_av18(x, data) result(r)
-    use av18, only : av18_operator, n_parameters, n_operators
-    implicit none
-    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
-
-    real(dp) :: ap(1:n_parameters)
-    real(dp) :: radius
-    real(dp) :: v_nn(1:n_operators)
-    real(dp) :: dv_nn(1:n_parameters, 1:n_operators)
-    integer :: i_target, i_parameter
-
-    ap = data%x
-    radius = data%a
-    i_parameter = data%i
-    i_target = data%j
-
-    ap(i_parameter) = x
-    call av18_operator(ap, radius, v_nn, dv_nn)
-
-    r = v_nn(i_target)
-       
-end function f_av18
-
-!!
-!> @brief      wrapper function for the derivatives of the av18 potential
-!!
-!! This wrapper function is used to test the derivatives of the av18_operator subroutine.
-!! The generic data of type context is used to receive all the arguments necessary to call the 
-!! av18_operator subroutine. The same data of type context is used to receive which operator
-!! will be returned
-!!
-!! @returns    the derivatives of one of the operators of the av18 potential at an specific radius
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-function df_av18(data) result(r)
-    use av18, only : av18_operator, n_parameters, n_operators
-    implicit none
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
-    real(dp), allocatable :: r(:)
-
-    real(dp) :: ap(1:n_parameters)
-    real(dp) :: radius
-    real(dp) :: v_nn(1:n_operators)
-    real(dp) :: dv_nn(1:n_parameters, 1:n_operators)
-    integer :: i_target
-
-    allocate(r(1:n_parameters))
-
-    ap = data%x
-    radius = data%a
-    i_target = data%j
-
-    call av18_operator(ap, radius, v_nn, dv_nn)
-
-    r = dv_nn(:, i_target)
-    
-end function df_av18
-    
 end module test_derivatives
