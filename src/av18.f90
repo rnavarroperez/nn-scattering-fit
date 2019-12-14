@@ -352,7 +352,7 @@ function d_operator_2_st_basis(tz1, tz2, s, t, dv_op) result(dv_st)
     integer :: n_p, n_o, i
     n_p = size(dv_op,1)
     n_o = size(dv_op,2)
-    if (n_o /= n_operators) stop 'incorrect number of operators in doperator_2_st_basis'
+    if (n_o /= n_operators) stop 'incorrect number of operators in d_operator_2_st_basis'
     allocate(dv_st(1:n_p, 1:n_st_terms))
     do i = 1, n_p
         dv_st(i, :) = operator_2_st_basis(tz1, tz2, s, t, dv_op(i, :))
