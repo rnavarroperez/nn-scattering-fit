@@ -23,7 +23,7 @@ test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o av18.o
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o
+av18.o: av18.f90 precisions.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 precisions.o

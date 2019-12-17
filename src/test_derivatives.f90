@@ -77,7 +77,7 @@ subroutine test_all_derivatives(f, df, data, n_targets, n_parameters)
             call dfridr(f, data, x, h, df_dx, err)
             diff = abs(d_analytic(i) - df_dx)
             if (diff > small .or. err > small) then
-                print*, j, i, d_analytic(i) - df_dx, err
+                print*, j, i, d_analytic(i), df_dx, err
                 counter = counter + 1
             endif
         enddo

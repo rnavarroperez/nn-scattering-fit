@@ -20,7 +20,8 @@ implicit none
 
 private 
 
-public :: n_parameters, n_operators, default_params, av18_all_partial_waves, f_av18, df_av18
+public :: n_parameters, n_operators, default_params, av18_all_partial_waves, f_av18, df_av18, &
+    f_av18_pw, df_av18_pw
 
 integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
@@ -106,13 +107,17 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     s = 0
     j = 0
     v_pw(1, 1) = uncoupled_pot(l, s, j, v_01)
-
+    do ip = 1, n_parameters
+        dv_pw(ip, 1, 1) = uncoupled_pot(l, s, j, dv_01(ip,:))
+    enddo
     ! 3p0
     l = 1
     s = 1
     j = 0
     v_pw(5, 1) = uncoupled_pot(l, s, j, v_11)
-
+    do ip = 1, n_parameters
+        dv_pw(ip, 5, 1) = uncoupled_pot(l, s, j, dv_11(ip,:))
+    enddo
     ! everything with j >= 1
     do ij = 2, n_jwaves
         j = ij - 1
@@ -717,5 +722,92 @@ function df_av18(data) result(r)
     
 end function df_av18
 
+!!
+!> @brief      wrapper function for av18_all_partial_waves
+!!
+!! This wrapper function is used to test the derivatives of the av18_all_partial_waves subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call 
+!! av18_all_partial_waves. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    av18 potential at an specific radius and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function f_av18_pw(x, data) result(r)
+    use num_recipes, only : context
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+
+    real(dp) :: ap(1:n_parameters)
+    real(dp) :: radius
+    real(dp), allocatable :: v_pw(:, :)
+    real(dp), allocatable :: dv_pw(:, :, :)
+    integer :: i_target, i_parameter, n_waves, ic, ij
+    character(len=2) :: reaction
+
+    ap = data%x
+    radius = data%a
+    i_parameter = data%i
+    i_target = data%j
+    n_waves = data%k
+    reaction = trim(data%string)
+
+    allocate(v_pw(5,n_waves))
+
+    ap(i_parameter) = x
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+    
+    call av18_all_partial_waves(ap, radius, reaction, v_pw, dv_pw)
+
+    r = v_pw(ic, ij)
+       
+end function f_av18_pw
+
+
+!!
+!> @brief      wrapper function for the derivatives of av18_all_partial_waves
+!!
+!! This wrapper function is used to test the derivatives of the av18_all_partial_waves subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call 
+!! av18_all_partial_wavese. The same data of type context is used to receive which operator
+!! will be returned
+!!
+!! @returns    the derivatives of the av18 potential at an specific radius and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+function df_av18_pw(data) result(r)
+    use num_recipes, only : context
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    real(dp), allocatable :: r(:)
+
+    real(dp) :: ap(1:n_parameters)
+    real(dp) :: radius
+    real(dp), allocatable :: v_pw(:, :)
+    real(dp), allocatable :: dv_pw(:, :, :)
+    integer :: i_target, n_waves, ic, ij
+    character(len=2) :: reaction
+
+    ap = data%x
+    radius = data%a
+    i_target = data%j
+    n_waves = data%k
+    reaction = trim(data%string)
+
+    allocate(v_pw(5,n_waves))
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+    
+    call av18_all_partial_waves(ap, radius, reaction, v_pw, dv_pw)
+
+    r = dv_pw(:, ic, ij)
+       
+end function df_av18_pw
 
 end module av18

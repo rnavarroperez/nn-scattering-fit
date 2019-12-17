@@ -25,6 +25,8 @@ type context
     integer :: i, j, k, l
     real(dp), allocatable :: x(:)
     integer, allocatable :: i_x(:)
+    character(len=1024) :: string
+    logical :: log
 end type
 
 !!
