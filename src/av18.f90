@@ -20,8 +20,8 @@ implicit none
 
 private 
 
-public :: n_parameters, n_operators, default_params, av18_all_partial_waves, f_av18, df_av18, &
-    f_av18_pw, df_av18_pw
+public :: n_parameters, default_params, av18_all_partial_waves, f_av18, df_av18, f_av18_pw, &
+    df_av18_pw
 
 integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
@@ -54,7 +54,7 @@ contains
 !!
 subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     implicit none
-    real(dp), intent(in) :: ap(1:n_parameters) !< Phenomenological parameters
+    real(dp), intent(in) :: ap(:) !< Phenomenological parameters
     real(dp), intent(in) :: r !< radius in units of fm
     character(len=2), intent(in) :: reaction !< reaction channel: np, pp, or nn
     real(dp), intent(out) :: v_pw(:, :) !< AV18 potential in all partial waves, units of MeV
@@ -68,6 +68,8 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     integer :: n_jwaves, n_waves
     integer :: tz1, tz2, ij, l, s, j, t, ip
 
+    if (size(ap) /= n_parameters) stop 'incorrect number of parameters for v_pw in av18_all_partial_waves'
+
     call av18_operator(ap, r, v_nn, dv_nn)
     v_em = em_potential(r)
 
@@ -77,6 +79,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     if (n_waves /= 5) stop 'incorrect number of waves for v_pw in av18_all_partial_waves'
 
     allocate(dv_pw(1:n_parameters, 1:n_waves, 1:n_jwaves))
+    v_pw = 0
     dv_pw = 0
 
     select case (trim(reaction))
