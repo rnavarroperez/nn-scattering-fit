@@ -180,12 +180,20 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
    
 end subroutine av18_all_partial_waves
 
+!!
+!> @brief      Adds EM potential to strong potential in basis
+!!
+!! Given an already calculated EM potential, reaction channel and spin quantum number, adds the 
+!! EM potential to the strong potential in the spin-isospin channel
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine add_em_potential(reaction, s, v_em, v_st)
     implicit none
-    character(len=2), intent(in) :: reaction
-    integer, intent(in) :: s
-    real(dp), intent(in) :: v_em(1:n_em_terms)
-    real(dp), intent(inout) :: v_st(1:n_st_terms)
+    character(len=2), intent(in) :: reaction !< reaction channel, 'pp', 'np' or 'nn'
+    integer, intent(in) :: s !< spin quantum number
+    real(dp), intent(in) :: v_em(1:n_em_terms) !< EM potential as defined in AV18 paper
+    real(dp), intent(inout) :: v_st(1:n_st_terms) !< Strong potential in spin-isospin basis
 
     integer :: s1ds2
 
