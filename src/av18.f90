@@ -26,6 +26,7 @@ public :: n_parameters, n_operators, default_params, av18_all_partial_waves, f_a
 integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
 integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
+integer, parameter :: n_em_terms = 14 !; Number of terms in the EM potentialb
 
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
     [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp, 1811.57100_dp,    1.07985_dp, &
@@ -63,10 +64,12 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     real(dp) :: v_00(1:n_st_terms), v_01(1:n_st_terms), v_10(1:n_st_terms), v_11(1:n_st_terms)
     real(dp) :: dv_00(1:n_parameters, 1:n_st_terms), dv_01(1:n_parameters, 1:n_st_terms), &
                 dv_10(1:n_parameters, 1:n_st_terms), dv_11(1:n_parameters, 1:n_st_terms)
+    real(dp) :: v_em(1:n_em_terms)
     integer :: n_jwaves, n_waves
     integer :: tz1, tz2, ij, l, s, j, t, ip
 
     call av18_operator(ap, r, v_nn, dv_nn)
+    v_em = em_potential(r)
 
     n_waves  = size(v_pw, 1)
     n_jwaves = size(v_pw, 2)
@@ -76,7 +79,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     allocate(dv_pw(1:n_parameters, 1:n_waves, 1:n_jwaves))
     dv_pw = 0
 
-    select case (reaction)
+    select case (trim(reaction))
     case ('pp')
         tz1 = 1
         tz2 = 1
@@ -91,13 +94,17 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     end select
 
     v_01 = operator_2_st_basis(tz1, tz2, 0, 1, v_nn)
+    call add_em_potential(reaction, 0, v_em, v_01)
     v_11 = operator_2_st_basis(tz1, tz2, 1, 1, v_nn)
+    call add_em_potential(reaction, 1, v_em, v_11)
     dv_01 = d_operator_2_st_basis(tz1, tz2, 0, 1, dv_nn)
     dv_11 = d_operator_2_st_basis(tz1, tz2, 1, 1, dv_nn)
 
     if (tz1*tz2 == -1) then
         v_00 = operator_2_st_basis(tz1, tz2, 0, 0, v_nn)
+        call add_em_potential(reaction, 0, v_em, v_00)
         v_10 = operator_2_st_basis(tz1, tz2, 1, 0, v_nn)
+        call add_em_potential(reaction, 1, v_em, v_10)
         dv_00 = d_operator_2_st_basis(tz1, tz2, 0, 0, dv_nn)
         dv_10 = d_operator_2_st_basis(tz1, tz2, 1, 0, dv_nn)
     endif
@@ -173,6 +180,34 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
    
 end subroutine av18_all_partial_waves
 
+subroutine add_em_potential(reaction, s, v_em, v_st)
+    implicit none
+    character(len=2), intent(in) :: reaction
+    integer, intent(in) :: s
+    real(dp), intent(in) :: v_em(1:n_em_terms)
+    real(dp), intent(inout) :: v_st(1:n_st_terms)
+
+    integer :: s1ds2
+
+    s1ds2 = 4*s - 3
+    select case (trim(reaction))
+    case ('pp')
+        v_st(1) = v_st(1) + v_em(1) + v_em(2) + v_em(3) + v_em(4) + s1ds2*v_em(6)
+        v_st(2) = v_st(2) + v_em(9)
+        v_st(3) = v_st(3) + v_em(12)
+    case ('np')
+        v_st(1) = v_st(1) + v_em(5) + s1ds2*v_em(8)
+        v_st(2) = v_st(2) + v_em(11)
+        v_st(3) = v_st(3) + v_em(14)
+    case ('nn')
+        v_st(1) = v_st(1) + s1ds2*v_em(7)
+        v_st(2) = v_st(2) + v_em(10)
+    case default
+        stop 'incorrect reaction channel in add_em_potential'
+    end select
+
+end subroutine add_em_potential
+
 !!
 !> @brief      electromagnetic potential in NN scattering
 !!
@@ -188,7 +223,6 @@ end subroutine av18_all_partial_waves
 function em_potential(r) result(v_em)
     implicit none
     real(dp), intent(in) :: r !< radius at which the potential is evaluated
-    integer, parameter :: n_em_terms = 14
     real(dp) :: v_em(1:n_em_terms) !< electromagnetic potential
 
     real(dp), parameter :: b=4.27_dp, beta=0.0189_dp, small=0.e-5_dp
@@ -320,16 +354,16 @@ function operator_2_st_basis(tz1, tz2, s, t, v_op) result(v_st)
     s1ds2 = 4*s - 3
     t1dt2 = 4*t - 3
     t12 = 3*tz1*tz2 - t1dt2
-    ! central term
+    ! central term, c
     v_st(1) = v_op(1) + t1dt2*v_op(2) + s1ds2*v_op(3) + s1ds2*t1dt2*v_op(4) + t12*v_op(15) & 
         + s1ds2*t12*v_op(16) + (tz1+tz2)*v_op(18)
-    ! tensor term
+    ! tensor term, t
     v_st(2) = v_op(5) + t1dt2*v_op(6) + t12*v_op(17)
-    ! spin-orbit term
+    ! spin-orbit term, ls
     v_st(3) = v_op(7) + t1dt2*v_op(8)
-    ! l squared term
+    ! l squared term, l2
     v_st(4) = v_op(9) + t1dt2*v_op(10) + s1ds2*v_op(11) + s1ds2*t1dt2*v_op(12)
-    ! spin-orbit squared term
+    ! spin-orbit squared term, ls2
     v_st(5) = v_op(13) + t1dt2*v_op(14)
 end function operator_2_st_basis
 
