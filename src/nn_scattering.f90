@@ -1,6 +1,7 @@
 module nn_scattering
 
 use precisions, only : dp
+use num_recipes, only : sphbes
 
 implicit none
 
@@ -54,6 +55,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     do
         if( r > r_max) exit
         call model(params, r, reaction, v_pw, dv_pw)
+        call uncoupled_variable_phase(0, 1.0_dp, r, v_pw(1, 1), phases(1, 1))
         do ij = 2, j_max
             j = ij - 1
         enddo
@@ -61,5 +63,27 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     enddo
     
 end subroutine all_phaseshifts
+
+subroutine uncoupled_variable_phase(l, k, r, lambda, tan_delta)
+    implicit none
+    integer, intent(in) :: l !< orbital angular momentum quantum number
+    real(dp), intent(in) ::  k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< radius at which the matching is being done
+    real(dp), intent(in) :: lambda !< lambda from the potential
+    real(dp), intent(inout) :: tan_delta !< tangent of the wave function
+
+    real(dp) :: j_hat, y_hat, phi, denominator, sj, sy, sjp, syp
+
+
+    !call RedSphBes(l,r*k,F,G)
+    call sphbes(l, r*k, sj, sy, sjp, syp)
+    j_hat = sj*r*k
+    y_hat = sy*r*k
+    phi = j_hat - tan_delta*y_hat
+    denominator = 1 - lambda*y_hat*phi/k
+    tan_delta = (tan_delta - lambda*j_hat*phi/k)/denominator
+
+
+end subroutine uncoupled_variable_phase
     
 end module nn_scattering
