@@ -105,6 +105,8 @@ end subroutine dfridr
 !!
 !> @brief      spherical Bessel functions
 !!
+!! Modified from Numerical Recipes
+!!
 !! Calculates the spherical Bessel functions \f$ j_n(x) \f$, \f$ y_n(x) \f$, and their derivatives 
 !! \f$ j_n'(x) \f$, \f$ y_n'(x) \f$ for an integer \$f n \f$.
 !!
@@ -132,14 +134,24 @@ subroutine sphbes(n, x, sj, sy, sjp, syp)
 end subroutine sphbes
 
 
-subroutine bessjy(x, xnu, rj, ry, rjp, ryp)
+!!
+!> @brief      Bessel functions of fractional order
+!!
+!! Modified from Numerical Recipes
+!!
+!! Returns the Bessel functions \f$ J_\nu \f$ , \f$ Y_\nu \f$ and their derivatives \f$ J_\nu' \f$,
+!! \f$ Y_\nu' \f$ for positive x and for \f$ \nu \geq 0 \f$.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine bessjy(x, nu, rj, ry, rjp, ryp)
     implicit none
-    real(dp), intent(in) :: x
-    real(dp), intent(in) :: xnu
-    real(dp), intent(out) :: rj
-    real(dp), intent(out) :: ry
-    real(dp), intent(out) :: rjp
-    real(dp), intent(out) :: ryp
+    real(dp), intent(in) :: x !< point at which the Bessel functions are evaluated
+    real(dp), intent(in) :: nu !< Order of the Bessel functions
+    real(dp), intent(out) :: rj !< regular spherical Bessel function \f$ J_\nu(x) \f$.
+    real(dp), intent(out) :: ry !< irregular spherical Bessel function \f$ Y_\nu(x) \f$.
+    real(dp), intent(out) :: rjp !< derivative of regular spherical Bessel function \f$ J_\nu'(x) \f$.
+    real(dp), intent(out) :: ryp !< derivative of irregular spherical Bessel function \f$ Y_\nu'(x) \f$.
 
     integer, parameter :: maxit = 10000
     real(dp), parameter :: eps = 1.e-16_dp, fpmin = 10*tiny(1._dp), xmin = 2._dp
@@ -149,21 +161,21 @@ subroutine bessjy(x, xnu, rj, ry, rjp, ryp)
         fact3, ff, gam, gam1, gam2, gammi, gampl, h, p, pimu, pimu2, q, r, rjl, rjl1, rjmu, rjp1, &
         rjpl, rjtemp, ry1, rymu, rymup, rytemp, sum, sum1, temp, w, x2, xi, xi2, xmu, xmu2
     
-    if (x <=0 .or. xnu <= 0) stop 'bad arguments in bessjy'
+    if (x <=0 .or. nu <= 0) stop 'bad arguments in bessjy'
     if (x <= xmin ) then
-        nl = int(xnu + 0.5_dp)
+        nl = int(nu + 0.5_dp)
     else
-        nl = max(0, int(xnu - x + 1.5_dp))
+        nl = max(0, int(nu - x + 1.5_dp))
     endif
-    xmu = xnu - nl
+    xmu = nu - nl
     xmu2 = xmu*xmu
     xi = 1/x
     xi2 = 2*xi
     w = xi2/pi
     isign = 1
-    h = xnu*xi
+    h = nu*xi
     if (h < fpmin) h = fpmin
-    b = xi2*xnu
+    b = xi2*nu
     d = 0
     c = h
     do i = 1, maxit
@@ -183,7 +195,7 @@ subroutine bessjy(x, xnu, rj, ry, rjp, ryp)
     rjpl = h*rjl
     rjl1 = rjl
     rjp1 = rjpl
-    fact = xnu*xi
+    fact = nu*xi
     do l = nl, 1, -1
         rjtemp = fact*rjl + rjpl
         fact = fact - xi
@@ -293,16 +305,31 @@ subroutine bessjy(x, xnu, rj, ry, rjp, ryp)
         ry1 = rytemp
     enddo
     ry = rymu
-    ryp = xnu*xi*rymu - ry1
+    ryp = nu*xi*rymu - ry1
 end subroutine bessjy
 
+!!
+!> @brief      Chebyshev expansion for gamma terms in bessjy
+!!
+!! Modified from Numerical Recipes
+!!
+!! Evaluates the \f$ \Gamma_1(x) \f$ and \f$ \Gamma_2(x) \f$ terms for the bessjy calculation by
+!! Chebyshev expansion for \f$ |x| \leq 1/2 \f$. Also returns \f$ 1/\Gamma(1 + x ) \f$ and 
+!! \f$ 1/\Gamma(1 − x ) \f$.
+!!
+!! \f$ \Gamma_1(x) = \frac{1}{2x} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
+!!
+!! \f$ \Gamma_2(x) = \frac{1}{2} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine beschb(x, gam1, gam2, gampl, gammi)
     implicit none
-    real(dp), intent(in) :: x
-    real(dp), intent(out) :: gam1
-    real(dp), intent(out) :: gam2
-    real(dp), intent(out) :: gampl
-    real(dp), intent(out) :: gammi
+    real(dp), intent(in) :: x !< Point at which the \f$ \Gamma \f$ terms will be evaluated
+    real(dp), intent(out) :: gam1 !< \f$ \Gamma_1(x) \f$
+    real(dp), intent(out) :: gam2 !< \f$ \Gamma_2(x) \f$
+    real(dp), intent(out) :: gampl !< \f$ 1/\Gamma_(1+x) \f$
+    real(dp), intent(out) :: gammi !< \f$ 1/\Gamma_(1-x) \f$
     real(dp) :: xx
     real(dp), parameter, dimension(1:7) :: c1 = [-1.142022680371172_dp, 6.516511267076e-3_dp, &
         3.08709017308e-4_dp, -3.470626964e-6_dp, 6.943764e-9_dp, 3.6780e-11_dp, -1.36e-13_dp]
@@ -317,12 +344,26 @@ subroutine beschb(x, gam1, gam2, gampl, gammi)
     gammi = gam2 + x*gam1
 end subroutine beschb
 
+!!
+!> @brief      Chebyshev evaluation
+!!
+!! Modified from Numerical Recipes
+!!
+!! c(:) is an array of Chebyshev coefficients, usually the output from chebft (which must have been
+!! called with the same a and b ). The Chebyshev polynomial 
+!!
+!! \f$  \sum_{k=1}^m = c_k T_{k-1}(y) - c_1/2 \f$
+!!
+!! is evaluated at a point \f$ y = [ x − ( b + a )/2]/[( b − a )/2] \f$.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function chebev(a, b, c, x) result(r)
     implicit none
-    real(dp), intent(in) :: a
-    real(dp), intent(in) :: b
-    real(dp), intent(in) :: c(:)
-    real(dp), intent(in) :: x
+    real(dp), intent(in) :: a !< interval lower limit
+    real(dp), intent(in) :: b !< interval upper limit
+    real(dp), intent(in) :: c(:) !< Chebyshev coefficients
+    real(dp), intent(in) :: x !< point where the polynomial es evaluated
     integer :: m, j
     real(dp) :: d, dd, sv, y, y2
     
