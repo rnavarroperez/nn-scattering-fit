@@ -14,6 +14,9 @@ $(EXEC): $(OBJ)
 precisions.o: precisions.f90
 	$(COMPILER) $(FLAGS) -c $<
 
+coul90.o: coul90.f90
+	$(COMPILER) $(FLAGS) -c $<
+
 num_recipes.o: num_recipes.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
@@ -26,7 +29,7 @@ constants.o: constants.f90 precisions.o
 av18.o: av18.f90 precisions.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-nn_scattering.o: nn_scattering.f90 precisions.o num_recipes.o constants.o
+nn_scattering.o: nn_scattering.f90 precisions.o num_recipes.o constants.o coul90.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 precisions.o
