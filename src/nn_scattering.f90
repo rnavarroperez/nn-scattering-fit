@@ -195,9 +195,9 @@ real(dp) function momentum_cm(t_lab, reaction) result(k)
     end select
 end function momentum_cm
 
-subroutine solve_alfas(a1, b1, c1, d1, a2, c2, b2, d2, alfa_1, alfa_2)
+subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2)
     implicit none
-    real(dp), intent(in) :: a1, b1, c1, d1, a2, c2, b2, d2
+    real(dp), intent(in) :: a1, b1, c1, d1, a2, b2, c2, d2
     real(dp), intent(out) :: alfa_1, alfa_2
     real(dp) :: ar, br, cr, radical 
     ar = a2*d2 - c2*b2
@@ -217,9 +217,9 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, c2, b2, d2, alfa_1, alfa_2)
     endif
 end subroutine solve_alfas
 
-function eigen_phases(a1, b1, c1, d1, a2, c2, b2, d2, alfa_1, alfa_2) result(ps_eigen)
+function eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2) result(ps_eigen)
     implicit none
-    real(dp), intent(in) :: a1, b1, c1, d1, a2, c2, b2, d2, alfa_1, alfa_2
+    real(dp), intent(in) :: a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2
     real(dp) :: ps_eigen(1:3)
     ps_eigen(1) = -atan((b1 + alfa_1*b2)/(a1 + alfa_1*a2))
     ps_eigen(2) =  atan((d1 + alfa_1*d2)/(b1 + alfa_1*b2))
