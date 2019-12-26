@@ -24,16 +24,25 @@ end interface
 
 contains
 
+!!
+!> @brief      phaseshifts for all partial waves
+!!
+!! given a model for a local NN potential with its corresponding phenomenological parameters,
+!! uses the variable phase equation to integrate the reduced Schrödinger equation and calculates
+!! the phaseshifts (i.e. S-matrix) at all partial waves up to a maximum total angular momentum
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_phases)
     implicit none
-    procedure(nn_potential) :: model
-    real(dp), intent(in) :: params(:)
-    real(dp), intent(in) :: t_lab
-    character(len=2), intent(in) :: reaction
-    real(dp), intent(in) :: r_max
-    real(dp), intent(in) :: dr
-    real(dp), intent(out) :: phases(:, :)
-    real(dp), allocatable, intent(out) :: d_phases(:, :, :)
+    procedure(nn_potential) :: model !< local NN potential (subroutine)
+    real(dp), intent(in) :: params(:) !< phenomenological parameters for the local potential
+    real(dp), intent(in) :: t_lab !< laboratory energy of the scattering in MeV
+    character(len=2), intent(in) :: reaction !< reaction channel (pp, np or nn)
+    real(dp), intent(in) :: r_max !< maximum radius of integration
+    real(dp), intent(in) :: dr !< integration step
+    real(dp), intent(out) :: phases(:, :) !< phaseshifts in all partial waves
+    real(dp), allocatable, intent(out) :: d_phases(:, :, :) !< derivatives of the partial waves with respect to the potential parameters
 
     integer :: n_params, n_waves, j_max
     integer :: ij, j
@@ -132,16 +141,26 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
 end subroutine all_phaseshifts
 
 
+!!
+!> @brief      variable phase equation integration in coupled channels
+!!
+!! Performs a single step in the integration of the variable phase equation for coupled channels
+!! with a total angular momentum j
+!!
+!! See equation B27 in Phys. Rev. C 88 (2013) 064002
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine coupled_variable_phase(j, k, r, lambdas, a, b, c, d)
     implicit none
-    integer, intent(in) :: j
-    real(dp), intent(in) :: k
-    real(dp), intent(in) :: r
-    real(dp), intent(in) :: lambdas(1:3)
-    real(dp), intent(inout) :: a
-    real(dp), intent(inout) :: b
-    real(dp), intent(inout) :: c
-    real(dp), intent(inout) :: d
+    integer, intent(in) :: j !< total angular momentum quantum number
+    real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(1:3) !< lambda strength coefficients in fm\f$^{-2}\f$
+    real(dp), intent(inout) :: a !< \f$A\f$ parameter
+    real(dp), intent(inout) :: b !< \f$B\f$ parameter
+    real(dp), intent(inout) :: c !< \f$C\f$ parameter
+    real(dp), intent(inout) :: d !< \f$D\f$ parameter
 
     real(dp) :: j_hat_m1, j_hat_p1, y_hat_m1, y_hat_p1, lambda_jm1, lambda_j, lambda_jp1, &
         lin_comb_ab, lin_comb_cd, diff_b, diff_d, sj, sy, sjp, syp
@@ -172,7 +191,10 @@ end subroutine coupled_variable_phase
 !!
 !> @brief      variable phase equation for uncoupled waves
 !!
-!! Applies the variable phase equation to continue the integration of the uncoupled partial waves
+!! Performs a single step in the integration of the variable phase equation for uncoupled channels
+!! with a linear angular momentum l
+!!
+!! See equation B14 in Phys. Rev. C 88 (2013) 064002
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -180,9 +202,9 @@ subroutine uncoupled_variable_phase(l, k, r, lambda, tan_delta)
     implicit none
     integer, intent(in) :: l !< orbital angular momentum quantum number
     real(dp), intent(in) ::  k !< center of mass momentum (in units of fm\f$^{-1}\f$)
-    real(dp), intent(in) :: r !< radius at which the matching is being done
-    real(dp), intent(in) :: lambda !< lambda from the potential
-    real(dp), intent(inout) :: tan_delta !< tangent of the wave function
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambda !< lambda strength coefficient in fm\f$^{-2}\f$
+    real(dp), intent(inout) :: tan_delta !< tangent of the phase shift
 
     real(dp) :: j_hat, y_hat, phi, denominator, sj, sy, sjp, syp
 
@@ -207,7 +229,7 @@ end subroutine uncoupled_variable_phase
 real(dp) function momentum_cm(t_lab, reaction) result(k)
     implicit none
     real(dp), intent(in) :: t_lab !< Energy in LAB frame in MeV
-    character(len=2), intent(in) :: reaction !< Type of reaction. pp, np or nn
+    character(len=2), intent(in) :: reaction !< Type of reaction. (pp, np or nn)
     real(dp) :: mu
     select case (reaction)
     case ('pp')
@@ -223,10 +245,28 @@ real(dp) function momentum_cm(t_lab, reaction) result(k)
     end select
 end function momentum_cm
 
+!!
+!> @brief      find alfa parameters in coupled channels
+!!
+!! After integrating the variable phase equation for coupled channels, solves a quadratic equation
+!! for the alpha parameters that determine the eigen phaseshifts.
+!!
+!! See equation B25 in Phys. Rev. C 88 (2013) 064002
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2)
     implicit none
-    real(dp), intent(in) :: a1, b1, c1, d1, a2, b2, c2, d2
-    real(dp), intent(out) :: alfa_1, alfa_2
+    real(dp), intent(in) :: a1 !< the \f$A_1\f$ parameter
+    real(dp), intent(in) :: b1 !< the \f$B_1\f$ parameter
+    real(dp), intent(in) :: c1 !< the \f$C_1\f$ parameter
+    real(dp), intent(in) :: d1 !< the \f$D_1\f$ parameter
+    real(dp), intent(in) :: a2 !< the \f$A_2\f$ parameter
+    real(dp), intent(in) :: b2 !< the \f$B_2\f$ parameter
+    real(dp), intent(in) :: c2 !< the \f$C_2\f$ parameter
+    real(dp), intent(in) :: d2 !< the \f$D_2\f$ parameter
+    real(dp), intent(out) :: alfa_1 !< the \f$\alpha_1\f$ solution
+    real(dp), intent(out) :: alfa_2 !< the \f$\alpha_2\f$ solution
     real(dp) :: ar, br, cr, radical 
     ar = a2*d2 - c2*b2
     br = a1*d2 + a2*d1 - c1*b2 - c2*b1
@@ -245,18 +285,49 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2)
     endif
 end subroutine solve_alfas
 
+!!
+!> @brief      Eigen phaseshifts for coupled channel
+!!
+!! Calculates the Eigen phaseshifts of a coupled partial waves channel after the variable phases
+!! equation has been integrated.
+!!
+!! See equation B25 in Phys. Rev. C 88 (2013) 064002
+!!
+!! @return     eigen phaseshifts in a coupled channel
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 function eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2) result(ps_eigen)
     implicit none
-    real(dp), intent(in) :: a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2
+    real(dp), intent(in) :: a1 !< the \f$A_1\f$ parameter
+    real(dp), intent(in) :: b1 !< the \f$B_1\f$ parameter
+    real(dp), intent(in) :: c1 !< the \f$C_1\f$ parameter
+    real(dp), intent(in) :: d1 !< the \f$D_1\f$ parameter
+    real(dp), intent(in) :: a2 !< the \f$A_2\f$ parameter
+    real(dp), intent(in) :: b2 !< the \f$B_2\f$ parameter
+    real(dp), intent(in) :: c2 !< the \f$C_2\f$ parameter
+    real(dp), intent(in) :: d2 !< the \f$D_2\f$ parameter
+    real(dp), intent(in) :: alfa_1 !< the \f$\alpha_1\f$ solution
+    real(dp), intent(in) :: alfa_2 !< the \f$\alpha_2\f$ solution
     real(dp) :: ps_eigen(1:3)
     ps_eigen(1) = -atan((b1 + alfa_1*b2)/(a1 + alfa_1*a2))
     ps_eigen(2) =  atan((d1 + alfa_1*d2)/(b1 + alfa_1*b2))
     ps_eigen(3) = -atan((d1 + alfa_2*d2)/(c1 + alfa_2*c2))
 end function eigen_phases
 
+!!
+!> @brief      eigen to nuclear bar conversion
+!!
+!! Converts the set of phaseshifts in a coupled channel from the eigen to the nuclear bar
+!! parametrization
+!!
+!! @return     nuclear bar phaseshifts in a coupled channel
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 function eigen_2_bar(ps_eigen) result(ps_bar)
     implicit none
-    real(dp), intent(in) :: ps_eigen(1:3)
+    real(dp), intent(in) :: ps_eigen(1:3) !< eigen phaseshifts in a coupled channel
     real(dp) :: ps_bar(1:3)
 
     real(dp) :: sin_2eps, sin_diff, arg_arcsin, numerator, denominator, fraction
@@ -280,11 +351,22 @@ function eigen_2_bar(ps_eigen) result(ps_bar)
 
 end function eigen_2_bar
 
+!!
+!> @brief      Matches the uncoupled asymptotic solution the Coulomb wave function 
+!!
+!! When integrating the uncoupled variable phase equation in the pp channel, the wave function
+!! in the last integration step is matched form the free particle wave functions (reduced spherical
+!! Bessel functions) to the Coulomb wave functions.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine match_uncoupled_waves(s, k, r, lambdas, tan_deltas)
     implicit none
-    integer, intent(in) :: s
-    real(dp), intent(in) :: k, r, lambdas(:)
-    real(dp), intent(inout) :: tan_deltas(:)
+    integer, intent(in) :: s !< spin quantum number
+    real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(:) !< lambda strength coefficients for all uncoupled waves in fm\f$^{-2}\f$
+    real(dp), intent(inout) :: tan_deltas(:) !< tangent of the phase shift for all uncoupled waves
     real(dp) :: etap, lambda, eta0
     integer :: l_max, l, ifail, i, lqm
     real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP, jc, yc, jcp, ycp
@@ -338,10 +420,24 @@ real(dp) function eta_prime(k) result(etap)
     etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)    
 end function eta_prime
 
+!!
+!> @brief      Matches the coupled asymptotic solution the Coulomb wave function 
+!!
+!! When integrating the coupled variable phase equation in the pp channel, the wave function
+!! in the last integration step is matched form the free particle wave functions (reduced spherical
+!! Bessel functions) to the Coulomb wave functions.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine match_coupled_waves(k, r, lambdas, a, b, c, d)
     implicit none
-    real(dp), intent(in) :: k, r, lambdas(:,:)
-    real(dp), intent(inout) :: a(:), b(:), c(:), d(:)
+    real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(:, :) !< lambda strength coefficients for all coupled waves in fm\f$^{-2}\f$
+    real(dp), intent(inout) :: a(:) !< the \f$A\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: b(:) !< the \f$B\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: c(:) !< the \f$C\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d(:) !< the \f$D\f$ parameter for all coupled waves
     integer :: j_max, ifail, j, ij
     real(dp) :: eta0, etap, ljm1, lj, ljp1, jhjm1, yhjm1, jhpjm1, yhpjm1, jhjp1, yhjp1, jhpjp1, &
         yhpjp1, Fjm1, Gjm1, Fpjm1, Gpjm1, Fjp1, Gjp1, Fpjp1, Gpjp1, Bf, Df
@@ -403,10 +499,18 @@ subroutine match_coupled_waves(k, r, lambdas, a, b, c, d)
 
 end subroutine match_coupled_waves
 
+!!
+!> @brief      Adds energy dependent Coulomb term to pp potential
+!!
+!! Adds an energy dependent Coulomb term to the pp potential in all partial waves
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine add_coulomb(r, k, v_pw)
     implicit none
-    real(dp), intent(in) :: r, k
-    real(dp), intent(out) :: v_pw(:, :)
+    real(dp), intent(in) :: r !< potential radius in fm
+    real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$ 
+    real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
     integer :: i
     real(dp) :: v_coul, fcoulr, br, kmev, alphap
     real(dp), parameter :: b=4.27_dp, small=0.e-5_dp
@@ -425,7 +529,6 @@ subroutine add_coulomb(r, k, v_pw)
         v_pw(1:3, i) = v_pw(1:3, i) + v_coul
         v_pw(5, i) = v_pw(5, i) + v_coul
     enddo
-    
 end subroutine add_coulomb
 
 end module nn_scattering
