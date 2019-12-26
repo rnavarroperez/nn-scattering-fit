@@ -48,7 +48,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     integer :: ij, j
     real(dp) :: r, k, mu, alfa_1, alfa_2, ps_eigen(1:3), ps_bar(1:3)
     real(dp), allocatable :: v_pw(:, :), dv_pw(:, :, :)
-    real(dp), allocatable :: singlets(:), triplets(:)
+    real(dp), allocatable :: singlets(:), triplets(:), d_singlets(:, :), d_triplets(:, :)
     real(dp), allocatable :: a1(:), a2(:), b1(:), b2(:), c1(:), c2(:), d1(:), d2(:)
 
     n_params = size(params)
@@ -65,6 +65,9 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     allocate(singlets(1:j_max))
     singlets = 0
     allocate(triplets, source = singlets)
+    allocate(d_singlets(1:n_params, 1:j_max))
+    d_singlets = 0
+    allocate(d_triplets, source = d_singlets)
     allocate(a1(1:j_max - 1))
     a1 = 0
     allocate(a2, b1, b2, c1, c2, d1, d2, source = a1)
@@ -92,19 +95,19 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         endif
         v_pw = v_pw*mu*dr/(hbar_c**2)
         dv_pw = dv_pw*mu*dr/(hbar_c**2)
-        call uncoupled_variable_phase(0, k, r, v_pw(1, 1), singlets(1))
-        call uncoupled_variable_phase(1, k, r, v_pw(5, 1), triplets(1))
+        call uncoupled_variable_phase(0, k, r, v_pw(1, 1), dv_pw(:, 1, 1), singlets(1), d_singlets(:,1))
+        call uncoupled_variable_phase(1, k, r, v_pw(5, 1), dv_pw(:, 5, 1), triplets(1), d_triplets(:,1))
         do ij = 2, j_max
             j = ij - 1
             if (reaction == 'np') then
-                call uncoupled_variable_phase(j, k, r, v_pw(1, ij), singlets(ij))
-                call uncoupled_variable_phase(j, k, r, v_pw(2, ij), triplets(ij))
+                call uncoupled_variable_phase(j, k, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
+                call uncoupled_variable_phase(j, k, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
                 call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a1(j), b1(j), c1(j), d1(j))
                 call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a2(j), b2(j), c2(j), d2(j))
             elseif (mod(j, 2) == 1) then
-                call uncoupled_variable_phase(j, k, r, v_pw(2, ij), triplets(ij))
+                call uncoupled_variable_phase(j, k, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
             else
-                call uncoupled_variable_phase(j, k, r, v_pw(1, ij), singlets(ij))
+                call uncoupled_variable_phase(j, k, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
                 call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a1(j), b1(j), c1(j), d1(j))
                 call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a2(j), b2(j), c2(j), d2(j))
             endif
@@ -123,12 +126,16 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         call match_coupled_waves(k, r, v_pw(3:5, :), a1, b1, c1, d1)
         call match_coupled_waves(k, r, v_pw(3:5, :), a2, b2, c2, d2)
     endif
-    phases(1, :) = atan(singlets(1))
+    phases(1, 1) = atan(singlets(1))
     phases(5, 1) = atan(triplets(1))
+    d_phases(:, 1, 1) = 1/(1 + singlets(1)**2)*d_singlets(:, 1)
+    d_phases(:, 5, 1) = 1/(1 + triplets(1)**2)*d_triplets(:, 1)
     do ij = 2, j_max
         j = ij - 1
         phases(1, ij) = atan(singlets(ij))
         phases(2, ij) = atan(triplets(ij))
+        d_phases(:, 1, ij) = 1/(1 + singlets(ij)**2)*d_singlets(:, ij)
+        d_phases(:, 2, ij) = 1/(1 + triplets(ij)**2)*d_triplets(:, ij)
         if (reaction == 'np' .or. mod(j,2) == 0) then
             call solve_alfas(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
             ps_eigen = eigen_phases(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
@@ -198,22 +205,32 @@ end subroutine coupled_variable_phase
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine uncoupled_variable_phase(l, k, r, lambda, tan_delta)
+subroutine uncoupled_variable_phase(l, k, r, lambda, d_lambda, tan_delta, d_tan_delta)
     implicit none
     integer, intent(in) :: l !< orbital angular momentum quantum number
     real(dp), intent(in) ::  k !< center of mass momentum (in units of fm\f$^{-1}\f$)
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambda !< lambda strength coefficient in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambda(:) !< derivatives of lambda with respect of model parameters
     real(dp), intent(inout) :: tan_delta !< tangent of the phase shift
+    real(dp), intent(inout) :: d_tan_delta(:) !< derivatives of tan_delta with respect of model parameters
 
-    real(dp) :: j_hat, y_hat, phi, denominator, sj, sy, sjp, syp
+    real(dp) :: j_hat, y_hat, phi, numerator, denominator, sj, sy, sjp, syp
+    real(dp), allocatable :: d_phi(:), d_numerator(:), d_denominator(:)
+
+    allocate(d_phi, d_numerator, d_denominator, mold = d_lambda)
 
     call sphbes(l, r*k, sj, sy, sjp, syp)
     j_hat = sj*r*k
     y_hat = sy*r*k
     phi = j_hat - tan_delta*y_hat
+    d_phi = d_tan_delta*y_hat
+    numerator = tan_delta - lambda*j_hat*phi/k
+    d_numerator = d_tan_delta - (d_lambda*j_hat*phi + lambda*j_hat*d_phi)/k
     denominator = 1 - lambda*y_hat*phi/k
-    tan_delta = (tan_delta - lambda*j_hat*phi/k)/denominator
+    d_denominator = -(d_lambda*y_hat*phi + lambda*y_hat*d_phi)/k
+    tan_delta = numerator/denominator
+    d_tan_delta = (d_numerator*denominator - numerator*d_denominator)/denominator**2
 end subroutine uncoupled_variable_phase
 
 !!
