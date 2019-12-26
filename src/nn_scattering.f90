@@ -78,6 +78,9 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     do
         if( r > r_max) exit
         call model(params, r, reaction, v_pw, dv_pw)
+        if (reaction == 'pp') then
+            call add_coulomb(r, k, v_pw)
+        endif
         v_pw = v_pw*mu*dr/(hbar_c**2)
         dv_pw = dv_pw*mu*dr/(hbar_c**2)
         call uncoupled_variable_phase(0, k, r, v_pw(1, 1), singlets(1))
@@ -101,6 +104,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     enddo
     if (reaction == 'pp') then
         call model(params, r, reaction, v_pw, dv_pw)
+        call add_coulomb(r, k, v_pw)
         v_pw = v_pw*mu*dr/(hbar_c**2)
         dv_pw = dv_pw*mu*dr/(hbar_c**2)
         v_pw(2, 1) = v_pw(5, 1)
@@ -117,11 +121,11 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         phases(1, ij) = atan(singlets(ij))
         phases(2, ij) = atan(triplets(ij))
         if (reaction == 'np' .or. mod(j,2) == 0) then
-        call solve_alfas(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
-        ps_eigen = eigen_phases(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
-        if (ps_eigen(1) < 0 .and. t_lab < 30 .and. j == 1) ps_eigen(1) = ps_eigen(1) + pi
-        ps_bar = eigen_2_bar(ps_eigen)
-        phases(3:5, ij) = ps_bar            
+            call solve_alfas(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
+            ps_eigen = eigen_phases(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
+            if (ps_eigen(1) < 0 .and. t_lab < 30 .and. j == 1) ps_eigen(1) = ps_eigen(1) + pi
+            ps_bar = eigen_2_bar(ps_eigen)
+            phases(3:5, ij) = ps_bar            
         endif
     enddo
 
@@ -282,7 +286,7 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, tan_deltas)
     real(dp), intent(in) :: k, r, lambdas(:)
     real(dp), intent(inout) :: tan_deltas(:)
     real(dp) :: etap, lambda, eta0
-    integer :: l_max, l, ifail, i
+    integer :: l_max, l, ifail, i, lqm
     real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP, jc, yc, jcp, ycp
     real(dp) :: F, G, jh, yh, jhp, yhp, Fp, Gp
     ifail = 0
@@ -304,16 +308,21 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, tan_deltas)
 
     do l = 0, l_max - 1
         if (mod(s+l,2) == 0 .or. (s == 1 .and. l == 0)) then
+            if (s == 1 .and. l==0) then
+                lqm = 1
+            else
+                lqm = l
+            endif
             i = l + 1
             lambda = lambdas(i)
-            jh = jc(l)*r*k
-            yh = yc(l)*r*k
-            jhp = jcp(l)*r*k + jc(l)
-            yhp = ycp(l)*r*k + yc(l)
-            F = fc(l)
-            G = gc(l)
-            Fp = fcp(l)
-            Gp = gcp(l)
+            jh = jc(lqm)*r*k
+            yh = yc(lqm)*r*k
+            jhp = jcp(lqm)*r*k + jc(lqm)
+            yhp = ycp(lqm)*r*k + yc(lqm)
+            F = fc(lqm)
+            G = gc(lqm)
+            Fp = fcp(lqm)
+            Gp = gcp(lqm)
             tan_deltas(i) = (lambda*(jh - tan_deltas(i)*yh)*F + &
                              k*(F*jhp - jh*Fp + tan_deltas(i)*(yh*Fp - F*yhp)))/&
                             (-lambda*(jh - tan_deltas(i)*yh)*G + &
@@ -393,5 +402,30 @@ subroutine match_coupled_waves(k, r, lambdas, a, b, c, d)
     enddo
 
 end subroutine match_coupled_waves
+
+subroutine add_coulomb(r, k, v_pw)
+    implicit none
+    real(dp), intent(in) :: r, k
+    real(dp), intent(out) :: v_pw(:, :)
+    integer :: i
+    real(dp) :: v_coul, fcoulr, br, kmev, alphap
+    real(dp), parameter :: b=4.27_dp, small=0.e-5_dp
+    kmev = k*hbar_c
+    alphap = alpha*(1+2*kmev**2/m_p**2)/sqrt(1+kmev**2/m_p**2)
+    br = b*r
+    if (r < small) then
+       fcoulr = 5*b/16
+    else
+        fcoulr = (1 - (1 +   11*br/16   + 3*br**2/16 + br**3/48)*exp(-br))/r
+    end if
+
+    v_coul = alphap*hbar_c*fcoulr
+
+    do i = 1, size(v_pw, 2)
+        v_pw(1:3, i) = v_pw(1:3, i) + v_coul
+        v_pw(5, i) = v_pw(5, i) + v_coul
+    enddo
+    
+end subroutine add_coulomb
 
 end module nn_scattering
