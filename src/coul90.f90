@@ -157,7 +157,7 @@ module coulombwf
           IF( DABS(DCF1-ONE).LT.ACCUR )     GO TO  20 ! proper exit
    10 CONTINUE
                                             GO TO 110 ! error exit
-   20       NFP = PK - XLL - 1                        ! number of steps
+   20       NFP = INT(PK - XLL - 1)                   ! number of steps
               F = CF1                                 ! need DEN later
 ! C----DOWNWARD RECURRENCE TO LAMBDA = XLM; ARRAYS GC, GCP STORE RL, SL
       IF( LRANGE.GT.0 )       THEN
@@ -228,7 +228,7 @@ module coulombwf
       IF( DABS(DP)+DABS(DQ).LT.(DABS(P)+DABS(Q)) * ACCUR ) GO TO 50
    40     CONTINUE
                                               GO TO 120 ! error exit
-   50     NPQ   = PK / TWO                              ! proper exit
+   50     NPQ   = INT(PK / TWO)                         ! proper exit
           PACCQ = HALF * ACCUR / DMIN1( DABS(Q),ONE )
           IF( DABS(P).GT.DABS(Q) ) PACCQ = PACCQ * DABS(P)
 ! C---------------------------------------------------------------------
@@ -323,8 +323,8 @@ module coulombwf
 ! C-----CALLS DMAX1, SQRT, ALOG, EXP, ATAN2, FLOAT, INT
 ! C     AUTHOR:    A.R.BARNETT   FEB 1981    LAST UPDATE MARCH 1991
 ! C----------------------------------------------------------------------
-      REAL    ZERO,HALF,ONE,SIX,TEN,RL35,ALOGE
-      REAL    GH2,XLL1,HLL,HL,SL,RL2,GH,PHI,PHI10
+      DOUBLE PRECISION    ZERO,HALF,ONE,SIX,TEN,RL35,ALOGE
+      DOUBLE PRECISION    GH2,XLL1,HLL,HL,SL,RL2,GH,PHI,PHI10
       INTEGER IEXP, MAXEXP
       PARAMETER  ( MAXEXP = 300 )
       DATA  ZERO,HALF,ONE,SIX,TEN  /0.0E0, 0.5E0, 1.0E0, 6.0E0, 1.0E1/
@@ -340,7 +340,7 @@ module coulombwf
       SL   = ETA / HL + HL / X
       RL2  = ONE + ETA * ETA / HLL
       GH   = SQRT(GH2 + HLL) / X
-      PHI  = X*GH - HALF*( HL*ALOG((GH + SL)**2 / RL2) - ALOG(GH) )
+      PHI  = X*GH - HALF*( HL*LOG((GH + SL)**2 / RL2) - LOG(GH) )
       IF ( ETA.NE.ZERO ) PHI = PHI - ETA * ATAN2(X*GH,X - ETA)
       PHI10 = -PHI * ALOGE
       IEXP  =  INT(PHI10)
