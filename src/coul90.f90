@@ -266,7 +266,7 @@ module coulombwf
       IF( KFN.NE.0 )    GCMINL = -GCMINL         ! Bessel sign differs
       FC (MINL) = FCMINL
       GC (MINL) = GCMINL
-      GCP(MINL) = GCMINL * (P - Q * GAMMAI - ALPHA)
+      GCP(MINL) = GCMINL * (P - Q / GAMMA - ALPHA)
       FCP(MINL) = FCMINL * (F - ALPHA)
       IF( LRANGE.EQ.0 )                          RETURN
 ! C---------------------------------------------------------------------
