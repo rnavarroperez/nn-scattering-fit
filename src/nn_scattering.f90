@@ -8,7 +8,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, f_unc_variable_phase, df_unc_variable_phase
+public :: all_phaseshifts, f_all_phaseshifts, df_all_phaseshifts
 
 interface
     subroutine nn_potential(ap, r, reaction, v_pw, dv_pw)
@@ -76,7 +76,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     allocate(d_a1(1:n_params, 1:j_max - 1))
     d_a1 = 0
     allocate(d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, source = d_a1)
-    d_a1 = 0
+
     a1 = 1
     c2 = 1
 
@@ -140,8 +140,8 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         dv_pw(:, 2 , 1) = dv_pw(:, 5, 1)
         call match_uncoupled_waves(0, k, r, v_pw(1, :), dv_pw(:, 1, :), singlets, d_singlets)
         call match_uncoupled_waves(1, k, r, v_pw(2, :), dv_pw(:, 2, :), triplets, d_triplets)
-        call match_coupled_waves(k, r, v_pw(3:5, :), a1, b1, c1, d1)
-        call match_coupled_waves(k, r, v_pw(3:5, :), a2, b2, c2, d2)
+        call match_coupled_waves(k, r, v_pw(3:5, :), dv_pw(:, 3:5, :), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
+        call match_coupled_waves(k, r, v_pw(3:5, :), dv_pw(:, 3:5, :), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
     endif
     phases(1, 1) = atan(singlets(1))
     phases(5, 1) = atan(triplets(1))
@@ -184,15 +184,15 @@ subroutine coupled_variable_phase(j, k, r, lambdas, d_lambdas, a, b, c, d, d_a, 
     real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambdas(1:3) !< lambda strength coefficients in fm\f$^{-2}\f$
-    real(dp), intent(in) :: d_lambdas(:, :)
+    real(dp), intent(in) :: d_lambdas(:, :) !< derivatives of the lambda strength coefficients
     real(dp), intent(inout) :: a !< \f$A\f$ parameter
     real(dp), intent(inout) :: b !< \f$B\f$ parameter
     real(dp), intent(inout) :: c !< \f$C\f$ parameter
     real(dp), intent(inout) :: d !< \f$D\f$ parameter
-    real(dp), intent(inout) :: d_a(:)
-    real(dp), intent(inout) :: d_b(:)
-    real(dp), intent(inout) :: d_c(:)
-    real(dp), intent(inout) :: d_d(:)
+    real(dp), intent(inout) :: d_a(:) !< derivatives of the \f$A\f$ parameter
+    real(dp), intent(inout) :: d_b(:) !< derivatives of the \f$B\f$ parameter
+    real(dp), intent(inout) :: d_c(:) !< derivatives of the \f$C\f$ parameter
+    real(dp), intent(inout) :: d_d(:) !< derivatives of the \f$D\f$ parameter
 
     real(dp) :: j_hat_m1, j_hat_p1, y_hat_m1, y_hat_p1, lambda_jm1, lambda_j, lambda_jp1, &
         lin_comb_ab, lin_comb_cd, diff_b, diff_d, sj, sy, sjp, syp
@@ -343,8 +343,8 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d
     real(dp), intent(in) :: d_d2(:) !< derivatives of the \f$D_2\f$ parameter
     real(dp), intent(out) :: alfa_1 !< the \f$\alpha_1\f$ solution
     real(dp), intent(out) :: alfa_2 !< the \f$\alpha_2\f$ solution
-    real(dp), intent(out) :: d_alfa_1(:) !< derivative of the \f$\alpha_1\f$ solution
-    real(dp), intent(out) :: d_alfa_2(:) !< derivative of the \f$\alpha_2\f$ solution
+    real(dp), intent(out) :: d_alfa_1(:) !< derivatives of the \f$\alpha_1\f$ solution
+    real(dp), intent(out) :: d_alfa_2(:) !< derivatives of the \f$\alpha_2\f$ solution
     real(dp) :: ar, br, cr, radical, numerator, denominator
     real(dp), allocatable, dimension(:) :: d_ar, d_br, d_cr, d_radical, d_numerator, d_denominator
     allocate(d_ar, mold = d_a1)
@@ -398,8 +398,6 @@ end subroutine solve_alfas
 !!
 !! See equation B25 in Phys. Rev. C 88 (2013) 064002
 !!
-!! @return     eigen phaseshifts in a coupled channel
-!!
 !! @author     Rodrigo Navarro Perez
 !!
 subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d_a2, d_b2, d_c2, &
@@ -423,10 +421,10 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     real(dp), intent(in) :: d_d2(:) !< derivatives of the \f$D_2\f$ parameter
     real(dp), intent(in) :: alfa_1 !< the \f$\alpha_1\f$ solution
     real(dp), intent(in) :: alfa_2 !< the \f$\alpha_2\f$ solution
-    real(dp), intent(out) :: d_alfa_1(:) !< derivative of the \f$\alpha_1\f$ solution
-    real(dp), intent(out) :: d_alfa_2(:) !< derivative of the \f$\alpha_2\f$ solution
-    real(dp), intent(out) :: ps_eigen(1:3)
-    real(dp), intent(out) :: d_ps_eigen(:, :)
+    real(dp), intent(out) :: d_alfa_1(:) !< derivatives of the \f$\alpha_1\f$ solution
+    real(dp), intent(out) :: d_alfa_2(:) !< derivatives of the \f$\alpha_2\f$ solution
+    real(dp), intent(out) :: ps_eigen(1:3) !< eigen phaseshifts in a coupled channel
+    real(dp), intent(out) :: d_ps_eigen(:, :) !< derivatives of the eigen phaseshifts in a coupled channel
     real(dp) :: numerator, denominator, argument
     real(dp), allocatable, dimension(:) :: d_numerator, d_denominator, d_argument
     allocate(d_numerator, mold = d_a1)
@@ -466,16 +464,14 @@ end subroutine eigen_phases
 !! Converts the set of phaseshifts in a coupled channel from the eigen to the nuclear bar
 !! parametrization
 !!
-!! @return     nuclear bar phaseshifts in a coupled channel
-!!
 !! @author     Rodrigo Navarro Perez
 !!
 subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
     implicit none
     real(dp), intent(in) :: ps_eigen(1:3) !< eigen phaseshifts in a coupled channel
-    real(dp), intent(in) :: d_ps_eigen(:, :)
-    real(dp), intent(out) :: ps_bar(1:3)
-    real(dp), intent(out) :: d_ps_bar(:, :)
+    real(dp), intent(in) :: d_ps_eigen(:, :) !< derivatives of the eigen phaseshifts in a coupled channel
+    real(dp), intent(out) :: ps_bar(1:3) !< nuclear bar phaseshifts in a coupled channel
+    real(dp), intent(out) :: d_ps_bar(:, :) !< derivatives of the nuclear bar phaseshifts in a coupled channel
 
     real(dp) :: sin_2eps, sin_diff, arg_arcsin, numerator, denominator, fraction
     real(dp), allocatable, dimension(:) :: d_sin_2eps, d_sin_diff, d_arg_arcsin, d_numerator, &
@@ -511,8 +507,8 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
         ps_bar(3) = (ps_eigen(1) + ps_eigen(3) - asin(fraction))/2
         sign = +1
     endif
-    d_ps_bar(: ,1) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) + sign/cos(fraction)**2*d_fraction)/2
-    d_ps_bar(: ,3) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) - sign/cos(fraction)**2*d_fraction)/2
+    d_ps_bar(: ,1) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) + sign/sqrt(1 - fraction**2)*d_fraction)/2
+    d_ps_bar(: ,3) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) - sign/sqrt(1 - fraction**2)*d_fraction)/2
 
 end subroutine eigen_2_bar
 
@@ -531,9 +527,9 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
     real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambdas(:) !< lambda strength coefficients for all uncoupled waves in fm\f$^{-2}\f$
-    real(dp), intent(in) :: d_lambdas(:, :)
+    real(dp), intent(in) :: d_lambdas(:, :)  !< derivatives of lambda strength coefficients for all uncoupled waves
     real(dp), intent(inout) :: tan_deltas(:) !< tangent of the phase shift for all uncoupled waves
-    real(dp), intent(inout) :: d_tan_deltas(:, :)
+    real(dp), intent(inout) :: d_tan_deltas(:, :) !< derivatives of the tangent of the phase shift for all uncoupled waves
     real(dp) :: etap, lambda, eta0, numerator, denominator, diff
     real(dp), allocatable :: d_lambda(:), d_numerator(:), d_denominator(:), d_diff(:)
     integer :: l_max, l, ifail, i, lqm
@@ -598,7 +594,7 @@ real(dp) function eta_prime(k) result(etap)
 end function eta_prime
 
 !!
-!> @brief      Matches the coupled asymptotic solution the Coulomb wave function 
+!> @brief      Matches the coupled asymptotic solution to the Coulomb wave function 
 !!
 !! When integrating the coupled variable phase equation in the pp channel, the wave function
 !! in the last integration step is matched form the free particle wave functions (reduced spherical
@@ -606,19 +602,25 @@ end function eta_prime
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine match_coupled_waves(k, r, lambdas, a, b, c, d)
+subroutine match_coupled_waves(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d_c, d_d)
     implicit none
     real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambdas(:, :) !< lambda strength coefficients for all coupled waves in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :, :) !< derivatives lambda strength coefficients for all coupled waves
     real(dp), intent(inout) :: a(:) !< the \f$A\f$ parameter for all coupled waves
     real(dp), intent(inout) :: b(:) !< the \f$B\f$ parameter for all coupled waves
     real(dp), intent(inout) :: c(:) !< the \f$C\f$ parameter for all coupled waves
     real(dp), intent(inout) :: d(:) !< the \f$D\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_a(:, :) !< derivatives of the \f$A\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_b(:, :) !< derivatives of the \f$B\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_c(:, :) !< derivatives of the \f$C\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_d(:, :) !< derivatives of the \f$D\f$ parameter for all coupled waves    
     integer :: j_max, ifail, j, ij
     real(dp) :: eta0, etap, ljm1, lj, ljp1, jhjm1, yhjm1, jhpjm1, yhpjm1, jhjp1, yhjp1, jhpjp1, &
         yhpjp1, Fjm1, Gjm1, Fpjm1, Gpjm1, Fjp1, Gjp1, Fpjp1, Gpjp1, Bf, Df
     real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP, jc, yc, jcp, ycp
+    real(dp), dimension(:), allocatable :: d_ljm1, d_lj, d_ljp1, d_bf, d_df
 
     j_max = size(lambdas, 2)
 
@@ -640,11 +642,20 @@ subroutine match_coupled_waves(k, r, lambdas, a, b, c, d)
     call COUL90(r*k, etap, 0._dp, j_max, fc, gc, fcp, gcp, 0, ifail)
     if (ifail /= 0) stop 'coul90 fail'
 
+    allocate(d_ljm1, mold = d_a(:, 1))
+    d_ljm1 = 0
+    allocate(d_lj, d_ljp1, d_bf, d_df, source = d_ljm1)
+
     do ij = 2, j_max
         j = ij - 1
         ljm1 = lambdas(1, ij)
         lj   = lambdas(2, ij)
         ljp1 = lambdas(3, ij)
+
+        d_ljm1 = d_lambdas(:, 1, ij)
+        d_lj   = d_lambdas(:, 2, ij)
+        d_ljp1 = d_lambdas(:, 3, ij)
+
 
         jhjm1 = jc(j-1)*r*k
         yhjm1 = yc(j-1)*r*k
@@ -668,10 +679,23 @@ subroutine match_coupled_waves(k, r, lambdas, a, b, c, d)
             -B(j)*(yhjm1*Fpjm1 - yhpjm1*Fjm1) - A(j)*(jhjm1*Fpjm1 - jhpjm1*Fjm1)
         Df = Fjp1*(ljp1*(C(j)*jhjp1 + D(j)*yhjp1) + lj*(A(j)*jhjm1 + B(j)*yhjm1))/k &
             -D(j)*(yhjp1*Fpjp1 - yhpjp1*Fjp1) - C(j)*(jhjp1*Fpjp1 - jhpjp1*Fjp1)
+
+        d_Bf = Fjm1*(d_ljm1*(A(j)*jhjm1 + B(j)*yhjm1) + ljm1*(d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1) &
+                     + d_lj*(C(j)*jhjp1 + D(j)*yhjp1) +   lj*(d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1))/k &
+              -d_B(:, j)*(yhjm1*Fpjm1 - yhpjm1*Fjm1) - d_A(:, j)*(jhjm1*Fpjm1 - jhpjm1*Fjm1)
+        d_Df = Fjp1*(d_ljp1*(C(j)*jhjp1 + D(j)*yhjp1) + ljp1*(d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1) &
+                     + d_lj*(A(j)*jhjm1 + B(j)*yhjm1) +   lj*(d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1))/k &
+              -d_D(:, j)*(yhjp1*Fpjp1 - yhpjp1*Fjp1) - d_C(:, j)*(jhjp1*Fpjp1 - jhpjp1*Fjp1)
+
         A(j) = (A(j)*jhjm1 + B(j)*yhjm1 + Bf*Gjm1)/Fjm1
         C(j) = (C(j)*jhjp1 + D(j)*yhjp1 + Df*Gjp1)/Fjp1
         B(j) = Bf
         D(j) = Df
+
+        d_A(:, j) = (d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1 + d_Bf*Gjm1)/Fjm1
+        d_C(:, j) = (d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1 + d_Df*Gjp1)/Fjp1
+        d_B(:, j) = d_Bf
+        d_D(:, j) = d_Df
     enddo
 
 end subroutine match_coupled_waves
@@ -708,7 +732,19 @@ subroutine add_coulomb(r, k, v_pw)
     enddo
 end subroutine add_coulomb
 
-real(dp) function f_unc_variable_phase(x, data) result(r)
+!!
+!> @brief      wrapper function for all_phaseshifts
+!!
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call 
+!! all_phaseshifts. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    NN phase-shift at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function f_all_phaseshifts(x, data) result(r)
     use num_recipes, only : context
     use av18, only : av18_all_partial_waves
     implicit none
@@ -718,7 +754,7 @@ real(dp) function f_unc_variable_phase(x, data) result(r)
     real(dp), allocatable :: ap(:)
     real(dp) :: t_lab, r_max, dr
     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
-    integer :: i_target, i_parameter
+    integer :: i_target, i_parameter, ic, ij
     character(len=2) :: reaction 
 
     allocate(ap, source = data%x)
@@ -731,19 +767,29 @@ real(dp) function f_unc_variable_phase(x, data) result(r)
 
     ap(i_parameter) = x
 
-    allocate(phases(1:5, i_target))
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
 
     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
 
-    if (i_target == 1) then
-        r = phases(3, i_target)
-    else
-        r = phases(3, i_target)
-    endif
-       
-end function f_unc_variable_phase
+    r = phases(ic, ij)
+end function f_all_phaseshifts
 
-function df_unc_variable_phase(data) result(r)
+!!
+!> @brief      wrapper function for the derivatives of all_phaseshifts
+!!
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call 
+!! all_phaseshifts. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    derivatives of a NN phase-shift at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+function df_all_phaseshifts(data) result(r)
     use num_recipes, only : context
     use av18, only : av18_all_partial_waves
     implicit none
@@ -753,7 +799,7 @@ function df_unc_variable_phase(data) result(r)
     real(dp), allocatable :: ap(:)
     real(dp) :: t_lab, r_max, dr
     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
-    integer :: i_target, i_parameter
+    integer :: i_target, i_parameter, ic, ij
     character(len=2) :: reaction 
 
     allocate(ap, source = data%x)
@@ -764,16 +810,14 @@ function df_unc_variable_phase(data) result(r)
     i_parameter = data%i
     i_target = data%j
 
-    allocate(phases(1:5, i_target))
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
 
     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
 
-    if (i_target == 1) then
-        r = d_phases(:, 3, i_target)
-    else
-        r = d_phases(:, 3, i_target)
-    endif
-       
-end function df_unc_variable_phase
+    r = d_phases(:, ic, ij)
+end function df_all_phaseshifts
 
 end module nn_scattering

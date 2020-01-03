@@ -824,7 +824,7 @@ end function f_av18_pw
 !!
 !! This wrapper function is used to test the derivatives of the av18_all_partial_waves subroutine.
 !! The generic data of type context is used to receive all the arguments necessary to call 
-!! av18_all_partial_wavese. The same data of type context is used to receive which operator
+!! av18_all_partial_waves. The same data of type context is used to receive which operator
 !! will be returned
 !!
 !! @returns    the derivatives of the av18 potential at an specific radius and partial wave

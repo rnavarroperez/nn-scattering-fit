@@ -77,15 +77,15 @@ subroutine test_all_derivatives(f, df, data, n_targets, n_parameters)
             call dfridr(f, data, x, h, df_dx, err)
             diff = abs(d_analytic(i) - df_dx)
             if (diff > small .or. err > small) then
-                print*, j, i, d_analytic(i), df_dx, err
+                print'(2i5, 4f18.11)', j, i, d_analytic(i), df_dx, diff, err
                 counter = counter + 1
             endif
         enddo
+        if (counter == 0) then
+            print*, 'all analytic derivatives match numerical calculation in target', j
+        endif
+        counter = 0
     enddo
-    if (counter == 0) then
-        print*, 'all analytic derivatives match numerical calculation'
-    endif
-
 end subroutine test_all_derivatives
 
 end module test_derivatives
