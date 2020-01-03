@@ -8,7 +8,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts
+public :: all_phaseshifts, f_unc_variable_phase, df_unc_variable_phase
 
 interface
     subroutine nn_potential(ap, r, reaction, v_pw, dv_pw)
@@ -46,10 +46,12 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
 
     integer :: n_params, n_waves, j_max
     integer :: ij, j
-    real(dp) :: r, k, mu, alfa_1, alfa_2, ps_eigen(1:3), ps_bar(1:3)
+    real(dp) :: r, k, mu, alfa_1, alfa_2, ps_eigen(1:3)
     real(dp), allocatable :: v_pw(:, :), dv_pw(:, :, :)
     real(dp), allocatable :: singlets(:), triplets(:), d_singlets(:, :), d_triplets(:, :)
     real(dp), allocatable :: a1(:), a2(:), b1(:), b2(:), c1(:), c2(:), d1(:), d2(:)
+    real(dp), allocatable, dimension(:, :) :: d_a1, d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, d_ps_eigen
+    real(dp), allocatable, dimension(:) :: d_alfa_1, d_alfa_2
 
     n_params = size(params)
     n_waves = size(phases, 1)
@@ -71,8 +73,19 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     allocate(a1(1:j_max - 1))
     a1 = 0
     allocate(a2, b1, b2, c1, c2, d1, d2, source = a1)
+    allocate(d_a1(1:n_params, 1:j_max - 1))
+    d_a1 = 0
+    allocate(d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, source = d_a1)
+    d_a1 = 0
     a1 = 1
     c2 = 1
+
+    allocate(d_alfa_1(1:n_params))
+    d_alfa_1 = 0
+    allocate(d_alfa_2, source = d_alfa_1)
+
+    allocate(d_ps_eigen(1:n_params, 1:3))
+    d_ps_eigen = 0
 
     select case (reaction)
     case ('pp')
@@ -102,14 +115,18 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
             if (reaction == 'np') then
                 call uncoupled_variable_phase(j, k, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
                 call uncoupled_variable_phase(j, k, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
-                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a1(j), b1(j), c1(j), d1(j))
-                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a2(j), b2(j), c2(j), d2(j))
+                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a1(j), b1(j), &
+                    c1(j), d1(j), d_a1(:, j), d_b1(:, j), d_c1(:, j), d_d1(:, j))
+                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a2(j), b2(j), &
+                    c2(j), d2(j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j))
             elseif (mod(j, 2) == 1) then
                 call uncoupled_variable_phase(j, k, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
             else
                 call uncoupled_variable_phase(j, k, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
-                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a1(j), b1(j), c1(j), d1(j))
-                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), a2(j), b2(j), c2(j), d2(j))
+                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a1(j), b1(j), &
+                    c1(j), d1(j), d_a1(:, j), d_b1(:, j), d_c1(:, j), d_d1(:, j))
+                call coupled_variable_phase(j, k, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a2(j), b2(j), &
+                    c2(j), d2(j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j))
             endif
         enddo
         r = r + dr
@@ -121,8 +138,8 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         dv_pw = dv_pw*mu*dr/(hbar_c**2)
         v_pw(2, 1) = v_pw(5, 1)
         dv_pw(:, 2 , 1) = dv_pw(:, 5, 1)
-        call match_uncoupled_waves(0, k, r, v_pw(1, :), singlets)
-        call match_uncoupled_waves(1, k, r, v_pw(2, :), triplets)
+        call match_uncoupled_waves(0, k, r, v_pw(1, :), dv_pw(:, 1, :), singlets, d_singlets)
+        call match_uncoupled_waves(1, k, r, v_pw(2, :), dv_pw(:, 2, :), triplets, d_triplets)
         call match_coupled_waves(k, r, v_pw(3:5, :), a1, b1, c1, d1)
         call match_coupled_waves(k, r, v_pw(3:5, :), a2, b2, c2, d2)
     endif
@@ -137,11 +154,14 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         d_phases(:, 1, ij) = 1/(1 + singlets(ij)**2)*d_singlets(:, ij)
         d_phases(:, 2, ij) = 1/(1 + triplets(ij)**2)*d_triplets(:, ij)
         if (reaction == 'np' .or. mod(j,2) == 0) then
-            call solve_alfas(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
-            ps_eigen = eigen_phases(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), alfa_1, alfa_2)
+            call solve_alfas(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), d_a1(:, j), &
+                d_b1(:, j), d_c1(:, j), d_d1(:, j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j), &
+                alfa_1, alfa_2, d_alfa_1, d_alfa_2)
+            call eigen_phases(a1(j), b1(j), c1(j), d1(j), a2(j), b2(j), c2(j), d2(j), d_a1(:, j), &
+                d_b1(:, j), d_c1(:, j), d_d1(:, j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j), &
+                alfa_1, alfa_2, d_alfa_1, d_alfa_2, ps_eigen, d_ps_eigen)
             if (ps_eigen(1) < 0 .and. t_lab < 30 .and. j == 1) ps_eigen(1) = ps_eigen(1) + pi
-            ps_bar = eigen_2_bar(ps_eigen)
-            phases(3:5, ij) = ps_bar            
+            call eigen_2_bar(ps_eigen, d_ps_eigen, phases(3:5, ij), d_phases(:, 3:5, ij))
         endif
     enddo
 
@@ -158,23 +178,41 @@ end subroutine all_phaseshifts
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine coupled_variable_phase(j, k, r, lambdas, a, b, c, d)
+subroutine coupled_variable_phase(j, k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d_c, d_d)
     implicit none
     integer, intent(in) :: j !< total angular momentum quantum number
     real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambdas(1:3) !< lambda strength coefficients in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :)
     real(dp), intent(inout) :: a !< \f$A\f$ parameter
     real(dp), intent(inout) :: b !< \f$B\f$ parameter
     real(dp), intent(inout) :: c !< \f$C\f$ parameter
     real(dp), intent(inout) :: d !< \f$D\f$ parameter
+    real(dp), intent(inout) :: d_a(:)
+    real(dp), intent(inout) :: d_b(:)
+    real(dp), intent(inout) :: d_c(:)
+    real(dp), intent(inout) :: d_d(:)
 
     real(dp) :: j_hat_m1, j_hat_p1, y_hat_m1, y_hat_p1, lambda_jm1, lambda_j, lambda_jp1, &
         lin_comb_ab, lin_comb_cd, diff_b, diff_d, sj, sy, sjp, syp
+    real(dp), allocatable, dimension(:) :: d_lambda_jm1, d_lambda_j, d_lambda_jp1, &
+        d_lin_comb_ab, d_lin_comb_cd, d_diff_b, d_diff_d
+    integer n_params
+
+    n_params = size(d_lambdas, 1)
+    allocate(d_lambda_jm1(1:n_params))
+    d_lambda_jm1 = 0
+    allocate(d_lambda_j, d_lambda_jp1, d_lin_comb_ab, d_lin_comb_cd, d_diff_b, d_diff_d, &
+        source = d_lambda_jm1)
 
     lambda_jm1 = lambdas(1)
     lambda_j   = lambdas(2)
     lambda_jp1 = lambdas(3)
+
+    d_lambda_jm1 = d_lambdas(:, 1)
+    d_lambda_j   = d_lambdas(:, 2)
+    d_lambda_jp1 = d_lambdas(:, 3)    
 
     call sphbes(j - 1, r*k, sj, sy, sjp, syp)
     j_hat_m1 = sj*r*k
@@ -188,10 +226,22 @@ subroutine coupled_variable_phase(j, k, r, lambdas, a, b, c, d)
     diff_b = (lambda_jm1*lin_comb_ab + lambda_j*lin_comb_cd)/k
     diff_d = (lambda_jp1*lin_comb_cd + lambda_j*lin_comb_ab)/k
 
+    d_lin_comb_ab = d_a*j_hat_m1 + d_b*y_hat_m1
+    d_lin_comb_cd = d_c*j_hat_p1 + d_d*y_hat_p1
+    d_diff_b = (d_lambda_jm1*lin_comb_ab + lambda_jm1*d_lin_comb_ab + &
+        d_lambda_j*lin_comb_cd + lambda_j*d_lin_comb_cd)/k
+    d_diff_d = (d_lambda_jp1*lin_comb_cd + lambda_jp1*d_lin_comb_cd + &
+        d_lambda_j*lin_comb_ab + lambda_j*d_lin_comb_ab)/k
+
     a = a - diff_b*y_hat_m1
     b = b + diff_b*j_hat_m1
     c = c - diff_d*y_hat_p1
     d = d + diff_d*j_hat_p1
+
+    d_a = d_a - d_diff_b*y_hat_m1
+    d_b = d_b + d_diff_b*j_hat_m1
+    d_c = d_c - d_diff_d*y_hat_p1
+    d_d = d_d + d_diff_d*j_hat_p1
 
 end subroutine coupled_variable_phase
 
@@ -224,11 +274,11 @@ subroutine uncoupled_variable_phase(l, k, r, lambda, d_lambda, tan_delta, d_tan_
     j_hat = sj*r*k
     y_hat = sy*r*k
     phi = j_hat - tan_delta*y_hat
-    d_phi = d_tan_delta*y_hat
+    d_phi = -d_tan_delta*y_hat
     numerator = tan_delta - lambda*j_hat*phi/k
-    d_numerator = d_tan_delta - (d_lambda*j_hat*phi + lambda*j_hat*d_phi)/k
+    d_numerator = d_tan_delta - (d_lambda*phi + lambda*d_phi)*j_hat/k
     denominator = 1 - lambda*y_hat*phi/k
-    d_denominator = -(d_lambda*y_hat*phi + lambda*y_hat*d_phi)/k
+    d_denominator = -(d_lambda*phi + lambda*d_phi)*y_hat/k
     tan_delta = numerator/denominator
     d_tan_delta = (d_numerator*denominator - numerator*d_denominator)/denominator**2
 end subroutine uncoupled_variable_phase
@@ -272,7 +322,8 @@ end function momentum_cm
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2)
+subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d_a2, d_b2, d_c2, &
+    d_d2, alfa_1, alfa_2, d_alfa_1, d_alfa_2)
     implicit none
     real(dp), intent(in) :: a1 !< the \f$A_1\f$ parameter
     real(dp), intent(in) :: b1 !< the \f$B_1\f$ parameter
@@ -282,23 +333,60 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2)
     real(dp), intent(in) :: b2 !< the \f$B_2\f$ parameter
     real(dp), intent(in) :: c2 !< the \f$C_2\f$ parameter
     real(dp), intent(in) :: d2 !< the \f$D_2\f$ parameter
+    real(dp), intent(in) :: d_a1(:) !< derivatives of the \f$A_1\f$ parameter
+    real(dp), intent(in) :: d_b1(:) !< derivatives of the \f$B_1\f$ parameter
+    real(dp), intent(in) :: d_c1(:) !< derivatives of the \f$C_1\f$ parameter
+    real(dp), intent(in) :: d_d1(:) !< derivatives of the \f$D_1\f$ parameter
+    real(dp), intent(in) :: d_a2(:) !< derivatives of the \f$A_2\f$ parameter
+    real(dp), intent(in) :: d_b2(:) !< derivatives of the \f$B_2\f$ parameter
+    real(dp), intent(in) :: d_c2(:) !< derivatives of the \f$C_2\f$ parameter
+    real(dp), intent(in) :: d_d2(:) !< derivatives of the \f$D_2\f$ parameter
     real(dp), intent(out) :: alfa_1 !< the \f$\alpha_1\f$ solution
     real(dp), intent(out) :: alfa_2 !< the \f$\alpha_2\f$ solution
-    real(dp) :: ar, br, cr, radical 
+    real(dp), intent(out) :: d_alfa_1(:) !< derivative of the \f$\alpha_1\f$ solution
+    real(dp), intent(out) :: d_alfa_2(:) !< derivative of the \f$\alpha_2\f$ solution
+    real(dp) :: ar, br, cr, radical, numerator, denominator
+    real(dp), allocatable, dimension(:) :: d_ar, d_br, d_cr, d_radical, d_numerator, d_denominator
+    allocate(d_ar, mold = d_a1)
+    ar = 0._dp
+    allocate(d_br, d_cr, d_radical, d_numerator, d_denominator, source = d_a1) 
     ar = a2*d2 - c2*b2
     br = a1*d2 + a2*d1 - c1*b2 - c2*b1
     cr = a1*d1 - c1*b1
+
+    d_ar = d_a2*d2 + a2*d_d2 - d_c2*b2 - c2*d_b2
+    d_br = d_a1*d2 + a1*d_d2 + d_a2*d1 + a2*d_d1 - d_c1*b2 - c1*d_b2 - d_c2*b1 - c2*d_b1
+    d_cr = d_a1*d1 + a1*d_d1 - d_c1*b1 - c1*d_b1
+
     radical = br**2 - 4*ar*cr
+    d_radical = 2*br*d_br - 4*(d_ar*cr + ar*d_cr)
     if (ar == 0._dp) then
-        alfa_1 = -cr/br
+        numerator = -cr
+        denominator = br
+        d_numerator = -d_cr
+        d_denominator = d_br
+        alfa_1 = numerator/denominator
         alfa_2 = alfa_1
+        d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        d_alfa_2 = d_alfa_1
     elseif (radical > 0) then
-        alfa_1 = (-br + sqrt(radical))/(2*ar)
-        alfa_2 = (-br - sqrt(radical))/(2*ar)
+        numerator = -br + sqrt(radical)
+        d_numerator = -d_br + d_radical/(2*sqrt(radical))
+        denominator = 2*ar
+        d_denominator = 2*d_ar
+        alfa_1 = numerator/denominator
+        d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        
+        numerator = -br - sqrt(radical)
+        d_numerator = -d_br - d_radical/(2*sqrt(radical))
+        alfa_2 = numerator/denominator
+        d_alfa_2 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
     else
         print*, 'WARNING: No real solutions in solve_alfas'
         alfa_1 = 0
         alfa_2 = 0
+        d_alfa_1 = 0
+        d_alfa_2 = 0
     endif
 end subroutine solve_alfas
 
@@ -314,7 +402,8 @@ end subroutine solve_alfas
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-function eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2) result(ps_eigen)
+subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d_a2, d_b2, d_c2, &
+    d_d2, alfa_1, alfa_2, d_alfa_1, d_alfa_2, ps_eigen, d_ps_eigen)
     implicit none
     real(dp), intent(in) :: a1 !< the \f$A_1\f$ parameter
     real(dp), intent(in) :: b1 !< the \f$B_1\f$ parameter
@@ -324,13 +413,52 @@ function eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, alfa_1, alfa_2) result(ps_
     real(dp), intent(in) :: b2 !< the \f$B_2\f$ parameter
     real(dp), intent(in) :: c2 !< the \f$C_2\f$ parameter
     real(dp), intent(in) :: d2 !< the \f$D_2\f$ parameter
+    real(dp), intent(in) :: d_a1(:) !< derivatives of the \f$A_1\f$ parameter
+    real(dp), intent(in) :: d_b1(:) !< derivatives of the \f$B_1\f$ parameter
+    real(dp), intent(in) :: d_c1(:) !< derivatives of the \f$C_1\f$ parameter
+    real(dp), intent(in) :: d_d1(:) !< derivatives of the \f$D_1\f$ parameter
+    real(dp), intent(in) :: d_a2(:) !< derivatives of the \f$A_2\f$ parameter
+    real(dp), intent(in) :: d_b2(:) !< derivatives of the \f$B_2\f$ parameter
+    real(dp), intent(in) :: d_c2(:) !< derivatives of the \f$C_2\f$ parameter
+    real(dp), intent(in) :: d_d2(:) !< derivatives of the \f$D_2\f$ parameter
     real(dp), intent(in) :: alfa_1 !< the \f$\alpha_1\f$ solution
     real(dp), intent(in) :: alfa_2 !< the \f$\alpha_2\f$ solution
-    real(dp) :: ps_eigen(1:3)
-    ps_eigen(1) = -atan((b1 + alfa_1*b2)/(a1 + alfa_1*a2))
-    ps_eigen(2) =  atan((d1 + alfa_1*d2)/(b1 + alfa_1*b2))
-    ps_eigen(3) = -atan((d1 + alfa_2*d2)/(c1 + alfa_2*c2))
-end function eigen_phases
+    real(dp), intent(out) :: d_alfa_1(:) !< derivative of the \f$\alpha_1\f$ solution
+    real(dp), intent(out) :: d_alfa_2(:) !< derivative of the \f$\alpha_2\f$ solution
+    real(dp), intent(out) :: ps_eigen(1:3)
+    real(dp), intent(out) :: d_ps_eigen(:, :)
+    real(dp) :: numerator, denominator, argument
+    real(dp), allocatable, dimension(:) :: d_numerator, d_denominator, d_argument
+    allocate(d_numerator, mold = d_a1)
+    d_numerator = 0
+    allocate(d_denominator, d_argument, source = d_numerator)
+    numerator = b1 + alfa_1*b2
+    denominator = a1 + alfa_1*a2
+    argument = numerator/denominator
+    d_numerator = d_b1 + d_alfa_1*b2 + alfa_1*d_b2
+    d_denominator = d_a1 + d_alfa_1*a2 + alfa_1*d_a2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    ps_eigen(1) = -atan(argument)
+    d_ps_eigen(:, 1) = -1/(1 + argument**2)*d_argument
+    
+    numerator = d1 + alfa_1*d2
+    denominator = b1 + alfa_1*b2
+    argument = numerator/denominator
+    d_numerator = d_d1 + d_alfa_1*d2 + alfa_1*d_d2
+    d_denominator = d_b1 + d_alfa_1*b2 + alfa_1*d_b2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    ps_eigen(2) =  atan(argument)
+    d_ps_eigen(:, 2) = 1/(1 + argument**2)*d_argument
+
+    numerator = d1 + alfa_2*d2
+    denominator = c1 + alfa_2*c2
+    argument = numerator/denominator
+    d_numerator = d_d1 + d_alfa_2*d2 + alfa_2*d_d2
+    d_denominator = d_c1 + d_alfa_2*c2 + alfa_2*d_c2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2    
+    ps_eigen(3) = -atan(argument)
+    d_ps_eigen(:, 3) = -1/(1 + argument**2)*d_argument
+end subroutine eigen_phases
 
 !!
 !> @brief      eigen to nuclear bar conversion
@@ -342,31 +470,51 @@ end function eigen_phases
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-function eigen_2_bar(ps_eigen) result(ps_bar)
+subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
     implicit none
     real(dp), intent(in) :: ps_eigen(1:3) !< eigen phaseshifts in a coupled channel
-    real(dp) :: ps_bar(1:3)
+    real(dp), intent(in) :: d_ps_eigen(:, :)
+    real(dp), intent(out) :: ps_bar(1:3)
+    real(dp), intent(out) :: d_ps_bar(:, :)
 
     real(dp) :: sin_2eps, sin_diff, arg_arcsin, numerator, denominator, fraction
+    real(dp), allocatable, dimension(:) :: d_sin_2eps, d_sin_diff, d_arg_arcsin, d_numerator, &
+        d_denominator, d_fraction
+    integer :: sign
+
+    allocate(d_sin_2eps, mold = d_ps_eigen(:, 1))
+    d_sin_2eps = 0
+    allocate(d_sin_diff, d_arg_arcsin, d_numerator, d_denominator, d_fraction, source = d_sin_2eps)
 
     sin_2eps = sin(2*ps_eigen(2))
+    d_sin_2eps = cos(2*ps_eigen(2))*2*d_ps_eigen(:, 2)
     sin_diff = sin(ps_eigen(1) - ps_eigen(3))
+    d_sin_diff = cos(ps_eigen(1) - ps_eigen(3))*(d_ps_eigen(:, 1) - d_ps_eigen(:, 3))
     arg_arcsin = sin_2eps*sin_diff
+    d_arg_arcsin = d_sin_2eps*sin_diff + sin_2eps*d_sin_diff
     ps_bar(2) = asin(arg_arcsin)/2
+    d_ps_bar(:, 2) = 1/(2*sqrt(1 - arg_arcsin**2))*d_arg_arcsin
 
     numerator = tan(2*ps_bar(2))
+    d_numerator = (1/cos(2*ps_bar(2))**2)*2*d_ps_bar(:, 2)
     denominator = tan(2*ps_eigen(2))
+    d_denominator = (1/cos(2*ps_eigen(2))**2)*2*d_ps_eigen(:, 2)
     fraction = numerator/denominator
+    d_fraction = (d_numerator*denominator - numerator*d_denominator)/denominator**2
 
     if (ps_eigen(1) - ps_eigen(3) > pi/2) then
         ps_bar(1) = (ps_eigen(1) + ps_eigen(3) + pi - asin(fraction))/2
         ps_bar(3) = (ps_eigen(1) + ps_eigen(3) - pi + asin(fraction))/2
+        sign = -1
     else
         ps_bar(1) = (ps_eigen(1) + ps_eigen(3) + asin(fraction))/2
         ps_bar(3) = (ps_eigen(1) + ps_eigen(3) - asin(fraction))/2
+        sign = +1
     endif
+    d_ps_bar(: ,1) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) + sign/cos(fraction)**2*d_fraction)/2
+    d_ps_bar(: ,3) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) - sign/cos(fraction)**2*d_fraction)/2
 
-end function eigen_2_bar
+end subroutine eigen_2_bar
 
 !!
 !> @brief      Matches the uncoupled asymptotic solution the Coulomb wave function 
@@ -377,19 +525,26 @@ end function eigen_2_bar
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine match_uncoupled_waves(s, k, r, lambdas, tan_deltas)
+subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_deltas)
     implicit none
     integer, intent(in) :: s !< spin quantum number
     real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambdas(:) !< lambda strength coefficients for all uncoupled waves in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :)
     real(dp), intent(inout) :: tan_deltas(:) !< tangent of the phase shift for all uncoupled waves
-    real(dp) :: etap, lambda, eta0
+    real(dp), intent(inout) :: d_tan_deltas(:, :)
+    real(dp) :: etap, lambda, eta0, numerator, denominator, diff
+    real(dp), allocatable :: d_lambda(:), d_numerator(:), d_denominator(:), d_diff(:)
     integer :: l_max, l, ifail, i, lqm
     real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP, jc, yc, jcp, ycp
     real(dp) :: F, G, jh, yh, jhp, yhp, Fp, Gp
     ifail = 0
     l_max = size(lambdas)
+
+    allocate(d_lambda, mold = d_lambdas(:, 1))
+    d_lambda = 0
+    allocate(d_numerator, d_denominator, d_diff, source = d_lambda)
 
     if (l_max /= size(tan_deltas)) then
         stop 'lambdas and tan_deltas must have the same size in match_uncoupled_waves'
@@ -414,6 +569,7 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, tan_deltas)
             endif
             i = l + 1
             lambda = lambdas(i)
+            d_lambda = d_lambdas(:, i)
             jh = jc(lqm)*r*k
             yh = yc(lqm)*r*k
             jhp = jcp(lqm)*r*k + jc(lqm)
@@ -422,10 +578,14 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, tan_deltas)
             G = gc(lqm)
             Fp = fcp(lqm)
             Gp = gcp(lqm)
-            tan_deltas(i) = (lambda*(jh - tan_deltas(i)*yh)*F + &
-                             k*(F*jhp - jh*Fp + tan_deltas(i)*(yh*Fp - F*yhp)))/&
-                            (-lambda*(jh - tan_deltas(i)*yh)*G + &
-                             k*(jh*Gp - g*jhp + tan_deltas(i)*(G*yhp - yh*Gp)))
+            diff = jh - tan_deltas(i)*yh
+            d_diff = -d_tan_deltas(:, i)*yh
+            numerator   =  lambda*diff*F + k*(F*jhp - jh*Fp + tan_deltas(i)*(yh*Fp - F*yhp))
+            denominator = -lambda*diff*G + k*(jh*Gp - g*jhp + tan_deltas(i)*(G*yhp - yh*Gp))
+            d_numerator   =  (d_lambda*diff + lambda*d_diff)*F + k*d_tan_deltas(:, i)*(yh*Fp - F*yhp)
+            d_denominator = -(d_lambda*diff + lambda*d_diff)*G + k*d_tan_deltas(:, i)*(G*yhp - yh*Gp)
+            tan_deltas(i) = numerator/denominator
+            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator**2
         endif
     enddo
     
@@ -547,5 +707,73 @@ subroutine add_coulomb(r, k, v_pw)
         v_pw(5, i) = v_pw(5, i) + v_coul
     enddo
 end subroutine add_coulomb
+
+real(dp) function f_unc_variable_phase(x, data) result(r)
+    use num_recipes, only : context
+    use av18, only : av18_all_partial_waves
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+
+    real(dp), allocatable :: ap(:)
+    real(dp) :: t_lab, r_max, dr
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter
+    character(len=2) :: reaction 
+
+    allocate(ap, source = data%x)
+    t_lab = data%a
+    r_max = data%b 
+    dr = data%c
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    ap(i_parameter) = x
+
+    allocate(phases(1:5, i_target))
+
+    call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
+
+    if (i_target == 1) then
+        r = phases(3, i_target)
+    else
+        r = phases(3, i_target)
+    endif
+       
+end function f_unc_variable_phase
+
+function df_unc_variable_phase(data) result(r)
+    use num_recipes, only : context
+    use av18, only : av18_all_partial_waves
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    real(dp), allocatable :: r(:)
+
+    real(dp), allocatable :: ap(:)
+    real(dp) :: t_lab, r_max, dr
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter
+    character(len=2) :: reaction 
+
+    allocate(ap, source = data%x)
+    t_lab = data%a
+    r_max = data%b 
+    dr = data%c
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    allocate(phases(1:5, i_target))
+
+    call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
+
+    if (i_target == 1) then
+        r = d_phases(:, 3, i_target)
+    else
+        r = d_phases(:, 3, i_target)
+    endif
+       
+end function df_unc_variable_phase
 
 end module nn_scattering
