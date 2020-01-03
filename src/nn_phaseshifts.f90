@@ -1,4 +1,4 @@
-module nn_scattering
+module nn_phasehifts
 
 use precisions, only : dp
 use num_recipes, only : sphbes
@@ -820,4 +820,4 @@ function df_all_phaseshifts(data) result(r)
     r = d_phases(:, ic, ij)
 end function df_all_phaseshifts
 
-end module nn_scattering
+end module nn_phasehifts
