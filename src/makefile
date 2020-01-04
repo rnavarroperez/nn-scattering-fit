@@ -29,7 +29,10 @@ constants.o: constants.f90 precisions.o
 av18.o: av18.f90 precisions.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-nn_scattering.o: nn_scattering.f90 precisions.o num_recipes.o constants.o coul90.o
+nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o av18.o
+	$(COMPILER) $(FLAGS) -c $<
+
+amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 precisions.o

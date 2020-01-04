@@ -8,13 +8,14 @@
 module num_recipes
 
 use precisions, only : dp
-use constants, only : pi
+use constants, only : pi, i_
 
 implicit none
 
 private
 
-public :: dfridr, context, func, sphbes, bessjy
+public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
+    kronecker_delta
 
 !!
 !> @brief      generic type for data in function callbacks
@@ -49,6 +50,108 @@ end interface
 
 
 contains
+
+integer function kronecker_delta(i, j) result(delta)
+    implicit none
+    integer, intent(in) :: i
+    integer, intent(in) :: j
+    if (i == j) then
+        delta = 1
+    else
+        delta = 0
+    endif
+end function kronecker_delta
+
+complex(dp) function cmplx_log_gamma(z) result(l_gamma)
+    implicit none
+    complex(dp), intent(in) :: z
+
+    integer, parameter :: n_coeff = 6
+    real(dp), parameter :: lanczos_coefficients(0:n_coeff) = [1.000000000190015_dp, &
+        76.18009172947146_dp, -86.50532032941677_dp, 24.01409824083091_dp, -1.231739572450155_dp, &
+        0.1208650973866179e-2_dp, -0.5395239384953e-5_dp]
+    integer, parameter :: gamma = 5
+    complex (dp) :: sum
+    integer :: i
+
+    if (real(z) <= 0) then
+        stop 'cmplx_log_gamma is only valid for Re(z) > 0'
+    endif
+
+    sum = lanczos_coefficients(0)
+    do i = 1, n_coeff
+        sum = sum + lanczos_coefficients(i)/(z + i)
+    enddo
+
+    l_gamma = (z + 0.5_dp)*log(z + gamma + 0.5_dp) - (z + gamma + 0.5_dp) + log(sqrt(2*pi)*sum/z)
+end function cmplx_log_gamma
+
+complex(dp) function spherical_harmonic(l, m, theta, phi) result(Ylm)
+    implicit none
+    integer, intent(in) :: l
+    integer, intent(in) :: m
+    real(dp), intent(in) :: theta
+    real(dp), intent(in) :: phi
+
+    real(dp) :: ratio, factorial, x, Plm
+    integer :: lmm, i
+
+    if (m == 0) then
+        ratio = 1._dp
+    else
+        lmm = l - abs(m)
+        factorial = lmm + 1
+        do i = 2, 2*abs(m)
+            factorial = factorial*(lmm + i)
+        enddo
+        ratio = 1/factorial
+    endif
+    x = cos(theta)
+    Plm = legendre_poly(l, abs(m), x)
+    Ylm = sqrt((2*l + 1)*ratio/(4*pi))*Plm*exp(i_*m*phi)
+    if (m < 0) Ylm = (-1)**m*Ylm
+end function spherical_harmonic
+
+real(dp) function legendre_poly(l, m, x) result(r)
+    implicit none
+    integer, intent(in) :: l
+    integer, intent(in) :: m
+    real(dp), intent(in) :: x
+
+    real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
+    integer :: i
+
+    if (m < 0) stop 'legendre_poly is only valid for m <= 0'
+    if (l < m) stop 'legendre_poly is only valid for m <= l'
+    if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
+
+    p_mm = 1._dp
+    if (m > 0) then
+        factor = sqrt(1 - x**2)
+        odd_factorial = 1
+        do i = 1, m
+            p_mm = -p_mm*odd_factorial*factor
+            odd_factorial = odd_factorial + 2
+        enddo
+    endif
+    if (l == m) then
+        r = p_mm
+    else
+        p_mmp1 = x*(2*m + 1)*p_mm
+        if (l == m + 1) then
+            r = p_mmp1
+        else
+            p_ml = p_mmp1
+            do i = m + 2, l
+                p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m)
+                p_mm = p_mmp1
+                p_mmp1 = p_ml
+            enddo
+            r = p_ml
+        endif
+    endif
+    
+end function legendre_poly
 
 !!
 !> @brief      numerical derivative of a function
