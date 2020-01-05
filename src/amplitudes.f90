@@ -56,7 +56,7 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
     complex(dp), intent(out), allocatable  :: d_m(:)
 
     integer :: n_params, j_max, j, l, lp
-    real(dp) :: etap, sigma_0, sigma_l, sigma_lp, Ylp
+    real(dp) :: etap, sigma_0, sigma_l, sigma_lp, Ylp, cg_1, cg_2
     complex(dp) :: sm
     complex(dp), allocatable :: d_sm(:)
 
@@ -80,6 +80,8 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
                 if (lp >= abs(mj - ms) .and. lp >= 0 .and. l >= 0) then
                     Ylp = real(spherical_harmonic(lp, mj-ms, theta, 0._dp))
                     call s_matrix(lp, l, j, s, phases, d_phases, k_cm, etap, reaction, sm, d_sm)
+                    cg_1 = clebsch_gordan(lp, s , j, ms, mj)
+                    cg_2 = clebsch_gordan(l, s , j, mj, mj)
                 endif
             enddo
         enddo
@@ -119,7 +121,68 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
     
 end subroutine partial_wave_amplitude_sum
 
-!  s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm)
+real(dp) function clebsch_gordan(l_, s_ , j_, ms_, mj_) result(cgc)
+    implicit none
+    integer :: l_, s_ , j_, ms_, mj_
+    real(dp) :: l, s, j, ms, mj
+    l = real(l_, kind = dp)
+    s = real(s_, kind = dp)
+    j = real(j_, kind = dp)
+    ms = real(ms_, kind = dp)
+    mj = real(mj_, kind = dp)
+
+    if (abs(ms_) > 1 .or. abs(mj_) > j_ .or. abs(mj_ - ms_) > l_) then
+        cgc = 0._dp
+        return
+    endif
+
+    select case(s_)
+    case (0)
+        if (l_ == j_) then
+            cgc = 1._dp
+        else
+            cgc = 0._dp
+        endif
+    case (1)
+        select case(ms_)
+        case (1)
+            if (j_ == l_ + 1) then
+                cgc = sqrt((l + mj)*(l + mj + 1)/(2*l + 1)/(2*l + 2))
+            elseif (j_ == l_) then
+                cgc = -sqrt((l + mj)*(l - mj + 1)/(2*l)/(l + 1))
+            elseif (j_ == l_ - 1) then
+                cgc = sqrt((l - mj)*(l - mj + 1)/(2*l)/(2*l + 1))
+            else
+                cgc = 0._dp
+            endif
+        case (0)
+            if (j_ == l_ + 1) then
+                cgc = sqrt((l - mj + 1)*(l + mj + 1)/(2*l + 1)/(l + 1))
+            elseif (j_ == l_ .and. l_ > 0) then
+                cgc = sqrt(mj**2/l/(l+1))
+            elseif (j_ == l_ - 1) then
+                cgc = -sqrt((l - mj)*(l + mj)/l/(2*l + 1))
+            else
+                cgc = 0._dp
+            endif
+        case (-1)
+            if (j_ == l_ + 1) then
+                cgc = sqrt((l - mj)*(l - mj + 1)/(2*l + 1)/(2*l + 2))
+            elseif (j_ == l_) then
+                cgc = sqrt((l - mj)*(l + mj + 1)/(2*l)/(l + 1))
+            elseif (j_ == l_ - 1) then
+                cgc = sqrt((l + mj + 1)*(l + mj)/(2*l)/(2*l + 1))
+            else
+                cgc = 0._dp
+            endif
+        case default
+            stop 'ms_ has to be -1, 0, or 1 in clebsch_gordan'
+        end select
+    case default
+        stop 's_ has to be 0 or 1 in clebsch_gordan'
+    end select
+    
+end function clebsch_gordan
 
 subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm)
     implicit none
@@ -136,7 +199,8 @@ subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm
     complex(dp), intent(out), allocatable :: d_sm(:)
 
     integer :: n_params
-    real(dp) :: alphap, lambda, sigma_l, sigma_lambda, rho_l, t_lab, nu, tau00, tau0
+    real(dp) :: alphap, lambda, sigma_l, sigma_lambda, rho_l, t_lab, nu, tau00, tau0, lambdap, &
+        sigma_lp, sigma_lambdap, rho_lp
     real(dp), allocatable :: mm_phases(:, :)
 
     n_params = size(d_phases, 1)
@@ -154,6 +218,11 @@ subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm
         sigma_lambda = coulomb_sigma_l(lambda, eta)
         rho_l = sigma_lambda - sigma_l + (l - lambda)*pi/2._dp
 
+        lambdap = (-1 + sqrt(1 + 4*lp*(lp+1) - 4*alpha*alphap))/2._dp
+        sigma_lp = coulomb_sigma_l(real(lp, kind = dp), eta)
+        sigma_lambdap = coulomb_sigma_l(lambdap, eta)
+        rho_lp = sigma_lambdap - sigma_lp + (lp - lambdap)*pi/2._dp
+
         t_lab = 2/m_p*(k_cm*hbar_c)**2
         nu = 4*m_e**2/(m_p*t_lab)
         tau00 = -alpha*eta/(6*pi)*(0.5_dp*(log(2._dp/nu))**2 + 1.7615_dp - 0.2804_dp*log(2._dp/nu))
@@ -164,112 +233,58 @@ subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm
         endif
     case('np')
         rho_l = 0._dp
+        rho_lp = 0._dp
         tau0 = 0._dp
     case default
         stop 's_matrix only takes pp and np as reaction channel'
     end select
 
-
-
-    if (s == 0) then
+    select case(s)
+    case (0)
         if (lp == l .and. l == j) then
             sm = (exp(2*i_*phases(1, j+1)) - 1)*exp(2*i_*(rho_l + tau0))
             d_sm = 2*i_*exp(2*i_*phases(1, j+1))*d_phases(:, 1, j+1)*exp(2*i_*(rho_l + tau0))
         else
             sm = 1 - kronecker_delta(lp, l)
             d_sm = (0, 0)
-        endif
-    else if (s == 1) then
-        if (lp == l) then
-
-        else if (abs(l - lp) == 2) then
-            
+        endif        
+    case (1)
+        if (l == lp) then
+            if (l == j) then
+                sm = (exp(2*i_*phases(2, j+1)) - 1)*exp(2*i_*rho_l)*exp(2*i_*mm_phases(2, j+1))
+                d_sm = 2*i_*exp(2*i_*phases(2, j+1))*d_phases(:, 2, j+1)*exp(2*i_*rho_l)&
+                    *exp(2*i_*mm_phases(2, j+1))
+            else if (l == j-1) then
+                sm = (cos(2*phases(4, j+1))*exp(2*i_*phases(3, j+1)) - 1)*exp(2*i_*rho_l)&
+                    *exp(2*i_*mm_phases(3, j+1))
+                d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(3, j+1)) &
+                    + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(3, j+1))*d_phases(:, 3, j+1))&
+                    *exp(2*i_*rho_l)*exp(2*i_*mm_phases(3, j+1))
+            else if (l == j+1) then
+                sm = (cos(2*phases(4, j+1))*exp(2*i_*phases(5, j+1)) - 1)*exp(2*i_*rho_l)&
+                    *exp(2*i_*mm_phases(5, j+1))
+                d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(5, j+1)) &
+                    + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(5, j+1))*d_phases(:, 5, j+1))&
+                    *exp(2*i_*rho_l)*exp(2*i_*mm_phases(5, j+1))
+            else
+                sm = -1
+                d_sm = (0, 0)
+            endif
+        else if (abs(l-lp) == 2) then
+            sm = i_*sin(2*phases(4, j+1))*exp(i_*(phases(3, j+1) + phases(5, j+1)))&
+                *exp(i_*(rho_l + rho_lp))*exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
+            d_sm = i_*(2*cos(2*phases(4, j+1))*d_phases(:, 4, j+1)&
+                *exp(i_*(phases(3, j+1) + phases(5, j+1))) + sin(2*phases(4, j+1))*i_&
+                *exp(i_*(phases(3, j+1) + phases(5, j+1)))*(d_phases(:, 3, j+1) &
+                + d_phases(:, 5, j+1)))*exp(i_*(rho_l+rho_lp)) &
+                *exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
         else
-            
+            sm = -kronecker_delta(lp, l)
+            d_sm = (0, 0)
         endif
-    else
-    endif
-
-    ! If(S.eq.1) then
-    !    if(reac.eq.'pp') then
-    !       fLS = -alpha*(8._dp*mup-2._dp)/(4._dp*mp**2)
-    !       Call MMPhaseShifts(jmax,k,eta,fLS,MMPS)
-    !    elseif(reac.eq.'np') then
-    !       MMPS = 0._dp
-    !    else
-    !       write(*,*) 'WARNING: wrong reaction type in rmatrix' 
-    !    endif
-    !    If(abs(l-lp).eq.0) Then
-    !       If(l.eq.j)Then
-    !          Rm = (exp(2*ii*APS(J+1,2))-1.d0)*EXP(2*ii*rhol)&
-    !               *exp(2*ii*MMPS(j+1,2))
-    !          do iw = 1,nw
-    !             do il = 1,nl
-    !                drm(iw,il) = 2*ii*exp(2*ii*APS(J+1,2))&
-    !                     *dAPS(j+1,2,iw,il)*EXP(2*ii*rhol)&
-    !                     *exp(2*ii*MMPS(j+1,2))
-    !             enddo
-    !          enddo
-    !          return
-    !       EndIf
-    !       If(l.eq.j-1) Then
-    !          Rm = (cos(2*APS(j+1,4))*exp(2*ii*APS(j+1,3)) - 1.d0)&
-    !               *EXP(2*ii*rhol)*exp(2*ii*MMPS(j+1,3))
-    !          do iw = 1,nw
-    !             do il = 1,nl
-    !                drm(iw,il) = (-2*sin(2*APS(j+1,4))*dAPS(j+1,4,iw,il)&
-    !                     *exp(2*ii*APS(j+1,3))+cos(2*APS(j+1,4))*2*ii&
-    !                     *exp(2*ii*APS(j+1,3))*dAPS(j+1,3,iw,il))&
-    !                     *EXP(2*ii*rhol)*exp(2*ii*MMPS(j+1,3))
-    !             enddo
-    !          enddo
-    !          return
-    !       EndIf
-    !       If(l.eq.j+1) Then
-    !          Rm = (cos(2*APS(j+1,4))*exp(2*ii*APS(j+1,5)) - 1.d0)&
-    !               *EXP(2*ii*rhol)*exp(2*ii*MMPS(j+1,5))  
-    !          do iw = 1,nw
-    !             do il = 1,nl
-    !                drm(iw,il) = (-2*dsin(2*APS(j+1,4))*dAPS(j+1,4,iw,il)&
-    !                     *exp(2*ii*APS(j+1,5))&
-    !                     +cos(2*APS(j+1,4))*2*ii*exp(2*ii*APS(j+1,5))&
-    !                     *dAPS(j+1,5,iw,il))&
-    !                     *EXP(2*ii*rhol)*exp(2*ii*MMPS(j+1,5))  
-    !             enddo
-    !          enddo
-    !          return
-    !       EndIf
-    !    EndIf
-    !    If(abs(lp-l).eq.2) Then
-    !       if(reac.eq.'pp') then
-    !          lambdap = (-1+SQRT(1+4*lp*(lp+1)-4*alpha*alphap))/2._dp
-    !          Call CoulSigmal(real(lp,kind=dp),eta,Siglp)
-    !          Call CoulSigmal(lambdap,eta,Siglamp)
-    !          rholp = Siglamp - Siglp + (lp-lambdap)*PI/2._dp
-    !       elseif(reac.eq.'np') then
-    !          rholp = 0._dp
-    !       else
-    !          write(*,*) 'WARNING: wrong reaction type in rmatrix' 
-    !       endif
-    !       Rm = ii*sin(2*APS(j+1,4))*exp(ii*(APS(j+1,3)+APS(j+1,5)))&
-    !            *EXP(ii*(rhol+rholp))*exp(ii*(MMPS(j+1,3)+MMPS(j+1,5)))
-    !       do iw = 1,nw
-    !          do il = 1,nl
-    !             drm(iw,il) = ii*(2*cos(2*APS(j+1,4))*dAPS(j+1,4,iw,il)&
-    !                  *exp(ii*(APS(j+1,3)+APS(j+1,5)))&
-    !                  +sin(2*APS(j+1,4))*ii&
-    !                  *exp(ii*(APS(j+1,3)+APS(j+1,5)))&
-    !                  *(dAPS(j+1,3,iw,il)+dAPS(j+1,5,iw,il)))&
-    !                  *EXP(ii*(rhol+rholp))*exp(ii*(MMPS(j+1,3)&
-    !                  +MMPS(j+1,5)))
-    !          enddo
-    !       enddo
-    !       return
-    !    EndIf
-    ! Endif
-    ! Rm = 0._dp - deltak(lp,l)
-    ! drm = 0._dp
-    
+    case default
+        stop 's has to be zero or one in s_matrix'
+    end select
 end subroutine s_matrix
 
 subroutine mm_phaseshifts(k_cm, eta, mm_phases)
@@ -301,28 +316,7 @@ subroutine mm_phaseshifts(k_cm, eta, mm_phases)
         I_lp2lp2 = mm_coulomb_Ill(l+2, eta)
         mm_phases(5, i+1) = ((2*l + 6)/(2*l + 3._dp)*f_T + (l + 3)*f_ls)*I_lp2lp2
     enddo
-    mm_phases = m_p*k_cm*mm_phases*hbar_c
-
-    ! integer :: j,l,i
-    ! real(dp) :: Ill, Ilp2lp2, Illp2, fT
-    ! fT = -alpha*mup**2/(4._dp*mp**2)
-    ! MMPS = 0._dp
-    ! l = -1
-    ! call MMCDWBAIll(l+2,eta,Ilp2lp2)
-    ! MMPS(1,5)=-(-(2*l+6)/(2*l+3._dp)*fT-(l+3)*fLS)*Ilp2lp2
-    ! Ill = Ilp2lp2
-    ! do i = 2, Nj-1,2
-    !    l = i-1
-    !    MMPS(i,2)=-(2*fT-fLS)*Ill
-    !    MMPS(i+1,3)=-(-2*l/(2*l+3._dp)*fT+l*fLS)*Ill
-    !    call MMCDWBAIllp2(l,eta,Illp2)
-    !    MMPS(i+1,4)=-(6*sqrt((l+1._dp)*(l+2))/(2*l+3._dp)*fT)*Illp2
-    !    call MMCDWBAIll(l+2,eta,Ilp2lp2)
-    !    MMPS(i+1,5)=-(-(2*l+6)/(2*l+3._dp)*fT-(l+3)*fLS)*Ilp2lp2
-    !    Ill = Ilp2lp2
-    ! endDo
-    ! MMPS = mp*k*MMPS*hc
-    
+    mm_phases = m_p*k_cm*mm_phases*hbar_c    
 end subroutine mm_phaseshifts
 
 real(dp) function mm_coulomb_Ill(l, eta) result(I_ll)
