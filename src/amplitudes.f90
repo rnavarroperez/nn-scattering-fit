@@ -8,28 +8,36 @@ implicit none
 
 private
 
-public :: saclay_amplitudes
+public :: saclay_amplitudes!, f_amplitudes, df_amplitudes
 
 contains
 
+!!
+!> @brief      calculate Saclay amplitudes
+!!
+!! Calculates the NN scattering amplitude in the Saclay parametrization for a given c.m. momentum, scattering angle, 
+!! reaction channel and the corresponding phase-shifts.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, &
     d_c, d_d, d_e)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: theta
-    character(len=2), intent(in) :: reaction
-    real(dp), intent(in) :: phases(:, :)
-    real(dp), intent(in) :: d_phases(:, :, :)
-    complex(dp), intent(out) :: a
-    complex(dp), intent(out) :: b
-    complex(dp), intent(out) :: c
-    complex(dp), intent(out) :: d
-    complex(dp), intent(out) :: e
-    complex(dp), intent(out), allocatable :: d_a(:)
-    complex(dp), intent(out), allocatable :: d_b(:)
-    complex(dp), intent(out), allocatable :: d_c(:)
-    complex(dp), intent(out), allocatable :: d_d(:)
-    complex(dp), intent(out), allocatable :: d_e(:)
+    real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: theta !< scattering angle in radians
+    character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
+    real(dp), intent(in) :: phases(:, :) !< corresponding phase-shifts
+    real(dp), intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
+    complex(dp), intent(out) :: a !< Sacalay parameter \f$a\f$
+    complex(dp), intent(out) :: b !< Sacalay parameter \f$b\f$
+    complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
+    complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
+    complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
+    complex(dp), intent(out), allocatable :: d_a(:) !< derivatives of the Sacalay parameter \f$a\f$
+    complex(dp), intent(out), allocatable :: d_b(:) !< derivatives of the Sacalay parameter \f$b\f$
+    complex(dp), intent(out), allocatable :: d_c(:) !< derivatives of the Sacalay parameter \f$c\f$
+    complex(dp), intent(out), allocatable :: d_d(:) !< derivatives of the Sacalay parameter \f$d\f$
+    complex(dp), intent(out), allocatable :: d_e(:) !< derivatives of the Sacalay parameter \f$e\f$
 
     complex(dp) :: m_000, m_100, m_110, m_101, m_111, m_11m1
     complex(dp), allocatable, dimension(:) :: d_m_000, d_m_100, d_m_110, d_m_101, d_m_111, d_m_11m1
@@ -69,18 +77,35 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
 end subroutine saclay_amplitudes
 
 
+!!
+!> @brief      sums over partial waves to calculate the amplitude
+!!
+!! Calculates a particular Wolfenstein parameter of the NN scattering amplitude determined by the set of quantum numbers
+!! \f$s\f$, \f$m_s\f$ and \f$m_s'\f$
+!!
+!! The parameter is given by
+!! \f[M_{m_s',m_s}^s(\theta) = \frac{1}{2ik} \sum_{J,l',l} \sqrt{4\pi(2l+1)} Y_{m_s'-m_s}^{l'}(\theta,0)
+!!    C_{m_s-m_s',m_s',m_s}^{l',s,J} i^{l-l'} (S_{l,l'}^{J,s}-\delta_{l',l})C_{0,m_s,m_s}^{l,s,J},\f]
+!!
+!! where \f$Y_{m}^{l}(\theta,\varphi)\f$ are the spherical harmonics, \f$C_{m_l,m_s,m_j}^{l,s,j}\f$ are the 
+!! Clebsch-Gordan coefficients and \f$S_{l,l'}^{j,s}\f$ are the scattering matrix elements (i.e. phase-shifts)
+!!
+!! See equation 15 in Phys. Rev. C 91, 029901 (2015) for more details
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, d_phases, m, d_m)
     implicit none
-    integer, intent(in) :: s
-    integer, intent(in) :: ms
-    integer, intent(in) :: mj
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: theta
-    character(len=2), intent(in) :: reaction
-    real(dp), intent(in) :: phases(:, :)
-    real(dp), intent(in) :: d_phases(:, :, :)
-    complex(dp), intent(out) :: m
-    complex(dp), intent(out), allocatable  :: d_m(:)
+    integer, intent(in) :: s !< \f$s\f$ quantum number
+    integer, intent(in) :: ms !< \f$m_s\f$ quantum number
+    integer, intent(in) :: mj !< \f$m_j\f$ quantum number
+    real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: theta !< scattering angle in radians
+    character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
+    real(dp), intent(in) :: phases(:, :) !< corresponding phase-shifts
+    real(dp), intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
+    complex(dp), intent(out) :: m !< Wolfenstein parameter
+    complex(dp), intent(out), allocatable  :: d_m(:) !< derivatives of the Wolfenstein parameter
 
     integer :: n_params, j_max, j, l, lp
     real(dp) :: etap, sigma_0, sigma_l, sigma_lp, Ylp, cg_1, cg_2
@@ -92,9 +117,15 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
     allocate(d_m(1: n_params))
     d_m = (0, 0)
 
+    sigma_l = 0._dp
+    sigma_lp = 0._dp
+
     if (reaction == 'pp') then
         etap = eta_prime(k_cm)
         sigma_0 = coulomb_sigma_l(0._dp, etap)
+    else
+        etap = 0._dp
+        sigma_0 = 0._dp
     endif
 
     j_max = size(phases, 2) - 1
@@ -117,11 +148,28 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
             enddo
         enddo
     enddo
+    if (reaction == 'np') then
+        m = 0.5_dp*m
+        d_m = 0.5_dp*d_m
+    endif
 end subroutine partial_wave_amplitude_sum
 
+!!
+!> @brief      Clebsch-Gordan coefficient
+!!
+!! Calculates the Clebsch-Gordan coefficient \f$C_{ms,mj}^{l,s,j}\f$
+!!
+!! @return     Clebsch-Gordan coefficient \f$C_{ms,mj}^{l,s,j}\f$
+!!
+!! @author     Rodrigo Navarro
+!!
 real(dp) function clebsch_gordan(l_, s_ , j_, ms_, mj_) result(cgc)
     implicit none
-    integer :: l_, s_ , j_, ms_, mj_
+    integer, intent(in) :: l_ !< \f$l\f$ quantum number
+    integer, intent(in) :: s_ !< \f$s\f$ quantum number
+    integer, intent(in) :: j_ !< \f$j\f$ quantum number
+    integer, intent(in) :: ms_ !< \f$m_s\f$ quantum number
+    integer, intent(in) :: mj_ !< \f$m_j\f$ quantum number
     real(dp) :: l, s, j, ms, mj
     l = real(l_, kind = dp)
     s = real(s_, kind = dp)
@@ -182,19 +230,27 @@ real(dp) function clebsch_gordan(l_, s_ , j_, ms_, mj_) result(cgc)
     
 end function clebsch_gordan
 
+!!
+!> @brief      S mastrix elements
+!!
+!! Given a set of quantum number \f$l'\f$, \f$l\f$, \f$j\f$, \f$s\f$ extracts the corresponding element from the NN 
+!! scattering matrix \f$S - \detla_{l, l'}\f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm)
     implicit none
-    integer, intent(in) :: lp
-    integer, intent(in) :: l
-    integer, intent(in) :: j
-    integer, intent(in) :: s
-    real(dp), intent(in) :: phases(:,:)
-    real(dp), intent(in) :: d_phases(:, :, :)
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    character(len=2), intent(in) :: reaction
-    complex(dp), intent(out) :: sm
-    complex(dp), intent(out), allocatable :: d_sm(:)
+    integer, intent(in) :: lp !< \f$l'\f$ quantum number
+    integer, intent(in) :: l !< \f$l\f$ quantum number
+    integer, intent(in) :: j !< \f$j\f$ quantum number
+    integer, intent(in) :: s !< \f$s\f$ quantum number
+    real(dp), intent(in) :: phases(:,:) !< corresponding phase-shifts
+    real(dp), intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
+    real(dp), intent(in) :: k_cm !< C.M. momentum in \f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta'\f$
+    character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
+    complex(dp), intent(out) :: sm !< matrix element
+    complex(dp), intent(out), allocatable :: d_sm(:) !< derivatives of matrix element
 
     integer :: n_params
     real(dp) :: alphap, lambda, sigma_l, sigma_lambda, rho_l, t_lab, nu, tau00, tau0, lambdap, &
@@ -285,11 +341,23 @@ subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm
     end select
 end subroutine s_matrix
 
+!!
+!> @brief      magnetic moment pp phase-shifts
+!!
+!! Calculates the partial-wave \f$K\f$ matrix elements for the magnetic moment pp amplitude
+!!
+!! The \f$K\f$ matrix is defined as \f$S-1=2iK(1-iK)^{-1} \f$ where \f$S\f$ is the the scattering matrix determined by
+!! the pp magnetic moment potential.
+!!
+!! See Eq. 29 in PhysRevC.88.064002 for more details.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine mm_phaseshifts(k_cm, eta, mm_phases)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    real(dp), intent(out) :: mm_phases(:, :)
+    real(dp), intent(in) :: k_cm !< C.M. momentum in \f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta\f$
+    real(dp), intent(out) :: mm_phases(:, :) !< magnetic momentum phase-shifts
 
     real(dp) :: f_T, f_ls, I_ll, I_lp2lp2, I_llp2
     integer :: l, j_max, i
@@ -317,10 +385,27 @@ subroutine mm_phaseshifts(k_cm, eta, mm_phases)
     mm_phases = m_p*k_cm*mm_phases*hbar_c    
 end subroutine mm_phaseshifts
 
+!!
+!> @brief      \f$I_{l,l}\f$ term for mm phase-shifts
+!!
+!! Calculates the \f$I_{l,l}\f$ term necessary for the calculation of the magnetic moment phases
+!!
+!! The \f$I_{l,l}\f$ term results as an integral of the \f$1/r^3\f$ dependence on the magnetic moment potential and is
+!! given by
+!!
+!! \f[I_{l,l} = \frac{1}{2l(l+1)} + \frac{1-\pi \eta + \pi \eta \coth(\pi \eta)-2\eta^2\sum_{n=0}^l (n^2 + \eta^2)^{-1}}
+!!   {2l(l+1)(2l+1)}\f]
+!!
+!! See Eq. 31 of PhysRevC.88.064002 for more details.
+!!
+!! @return     \f$I_{l,l}\f$ term for mm phase-shifts
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function mm_coulomb_Ill(l, eta) result(I_ll)
     implicit none
-    integer, intent(in) :: l
-    real(dp), intent(in) :: eta
+    integer, intent(in) :: l !< \f$l\f$ quantum number
+    real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta\f$
     integer :: i
     real(dp) ::  sum
     sum = 0._dp
@@ -331,21 +416,186 @@ real(dp) function mm_coulomb_Ill(l, eta) result(I_ll)
         (2._dp*l*(l+1)*(2*l+1))
 end function mm_coulomb_Ill
 
+!!
+!> @brief      \f$I_{l,l+2}\f$ term for mm phase-shifts
+!!
+!! Calculates the \f$I_{l,l+2}\f$ term necessary for the calculation of the magnetic moment phases
+!!
+!! The \f$I_{l,l+2}\f$ term results as an integral of the \f$1/r^3\f$ dependence on the magnetic moment potential and 
+!! is given by
+!!
+!! \f[I_{l,l+2} = \frac{1}{6} |l+1+i\eta|^{-1} |l+2+i\eta|^{-1}\f]
+!!
+!! @return     \f$I_{l,l+2}\f$ term for mm phase-shifts
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function mm_coulomb_Illp2(l, eta) result(I_llp2)
     implicit none
-    integer, intent(in) :: l
-    real(dp), intent(in) :: eta
+    integer, intent(in) :: l !< \f$l\f$ quantum number
+    real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta\f$
     I_llp2 = 1._dp/(6*abs(l + 1 +i_*eta)*abs(l + 2 + i_*eta))
 end function mm_coulomb_Illp2
 
+!!
+!> @brief      Coulomb phase-shift
+!!
+!! Calculates the Coulomb phase-shift \f$\sigma_l \f$
+!!
+!! The phase-shift is given by
+!! \f[\sigma_l = {\rm arg} \Gamma(l+1+i\eta)\f]
+!!
+!! @return     Coulomb phase-shift \f$\sigma_l\f$
+!!
 real(dp) function coulomb_sigma_l(l, eta) result(sig_l)
     implicit none
-    real(dp), intent(in) :: l
-    real(dp), intent(in) :: eta
+    real(dp), intent(in) :: l !< \f$l\f$ quantum number
+    real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta\f$
     complex(dp) :: z
     z = 1 + l + i_*eta
     sig_l = aimag(cmplx_log_gamma(z))
 end function coulomb_sigma_l
+
+! The functions below were written to test the derivatives of saclay_parameters against numerical calculations
+! and require the av18 module. All analytic calculations of the derivatives match the numerical ones.
+! since the amplitudes module should not depend on a specific module for the NN interaction the functions
+! are commented and left here for reference.
+
+
+! !!
+! !> @brief      wrapper function for saclay_amplitudes
+! !!
+! !! This wrapper function is used to test the derivatives of the saclay_amplitudes subroutine.
+! !! The generic data of type context is used to receive all the arguments necessary to call 
+! !! saclay_amplitudes. The same data of type context is used to receive which parameter will
+! !! be varied by the dfridr subroutine and which partial wave will be returned.
+! !!
+! !! @returns    NN phase-shift at an specific lab energy and partial wave
+! !!
+! !! @author     Rodrigo Navarro Perez
+! !!
+! real(dp) function f_amplitudes(x, data) result(r)
+!     use num_recipes, only : context
+!     use av18, only : av18_all_partial_waves
+!     use nn_phaseshifts, only : all_phaseshifts
+!     implicit none
+!     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+!     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
+
+!     real(dp), allocatable :: ap(:)
+!     real(dp) :: t_lab, r_max, dr, theta, k_cm, phases(1:5,1:20)
+!     real(dp), allocatable :: d_phases(:, :, :)
+!     integer :: i_target, i_parameter
+!     character(len=2) :: reaction
+!     complex(dp) :: a, b, c, d, e
+!     complex(dp), allocatable, dimension(:) :: d_a, d_b, d_c, d_d, d_e
+
+!     allocate(ap, source = data%x)
+!     t_lab = data%a
+!     r_max = data%b 
+!     dr = data%c
+!     theta = data%d
+!     reaction = trim(data%string)
+!     i_parameter = data%i
+!     i_target = data%j
+
+!     ap(i_parameter) = x
+!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, k_cm, phases, d_phases)
+!     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
+
+!     select case (i_target)
+!     case (1)
+!         r = real(a)
+!     case (2)
+!         r = aimag(a)
+!     case (3)
+!         r = real(b)
+!     case (4)
+!         r = aimag(b)
+!     case (5)
+!         r = real(c)
+!     case (6)
+!         r = aimag(c)
+!     case (7)
+!         r = real(d)
+!     case (8)
+!         r = aimag(d)
+!     case (9)
+!         r = real(e)
+!     case (10)
+!         r = aimag(e)
+!     case default
+!         r = 0
+!     end select
+! end function f_amplitudes
+
+! !!
+! !> @brief      wrapper function for the derivatives of saclay_amplitudes
+! !!
+! !! This wrapper function is used to test the derivatives of the saclay_amplitudes subroutine.
+! !! The generic data of type context is used to receive all the arguments necessary to call 
+! !! saclay_amplitudes. The same data of type context is used to receive which parameter will
+! !! be varied by the dfridr subroutine and which partial wave will be returned.
+! !!
+! !! @returns    derivatives of a NN phase-shift at an specific lab energy and partial wave
+! !!
+! !! @author     Rodrigo Navarro Perez
+! !!
+! function df_amplitudes(data) result(r)
+!     use num_recipes, only : context
+!     use av18, only : av18_all_partial_waves
+!     use nn_phaseshifts, only : all_phaseshifts
+!     implicit none
+!     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
+!     real(dp), allocatable :: r(:)
+
+!     real(dp), allocatable :: ap(:)
+!     real(dp) :: t_lab, r_max, dr, theta, k_cm, phases(1:5, 1:20)
+!     real(dp), allocatable :: d_phases(:, :, :)
+!     integer :: i_target, i_parameter
+!     character(len=2) :: reaction 
+!     complex(dp) :: a, b, c, d, e
+!     complex(dp), allocatable, dimension(:) :: d_a, d_b, d_c, d_d, d_e
+
+!     allocate(ap, source = data%x)
+!     t_lab = data%a
+!     r_max = data%b 
+!     dr = data%c
+!     theta = data%d
+!     reaction = trim(data%string)
+!     i_parameter = data%i
+!     i_target = data%j
+
+!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, k_cm, phases, d_phases)
+!     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
+
+!     allocate(r, mold = ap)
+
+!     select case (i_target)
+!     case (1)
+!         r = real(d_a)
+!     case (2)
+!         r = aimag(d_a)
+!     case (3)
+!         r = real(d_b)
+!     case (4)
+!         r = aimag(d_b)
+!     case (5)
+!         r = real(d_c)
+!     case (6)
+!         r = aimag(d_c)
+!     case (7)
+!         r = real(d_d)
+!     case (8)
+!         r = aimag(d_d)
+!     case (9)
+!         r = real(d_e)
+!     case (10)
+!         r = aimag(d_e)
+!     case default
+!         r = 0
+!     end select
+! end function df_amplitudes
 
     
 end module amplitudes

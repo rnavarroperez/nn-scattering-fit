@@ -74,8 +74,8 @@ complex(dp) function cmplx_log_gamma(z) result(l_gamma)
     complex (dp) :: sum
     integer :: i
 
-    if (real(z) <= 0) then
-        stop 'cmplx_log_gamma is only valid for Re(z) > 0'
+    if (real(z) < 0) then
+        stop 'cmplx_log_gamma is only valid for Re(z) >= 0'
     endif
 
     sum = lanczos_coefficients(0)
