@@ -8,39 +8,66 @@ implicit none
 
 private
 
+public :: saclay_amplitudes
+
 contains
 
-! subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, &
-!     d_c, d_d, d_e)
-!     implicit none
-!     real(dp), intent(in) :: k_cm
-!     real(dp), intent(in) :: theta
-!     character(len=2), intent(in) :: reaction
-!     real(dp), intent(in) :: phases(:, :)
-!     real(dp), intent(in) :: d_phases(:, :, :)
-!     complex(dp), intent(out) :: a
-!     complex(dp), intent(out) :: b
-!     complex(dp), intent(out) :: c
-!     complex(dp), intent(out) :: d
-!     complex(dp), intent(out) :: e
-!     complex(dp), intent(out), allocatable :: d_a(:)
-!     complex(dp), intent(out), allocatable :: d_b(:)
-!     complex(dp), intent(out), allocatable :: d_c(:)
-!     complex(dp), intent(out), allocatable :: d_d(:)
-!     complex(dp), intent(out), allocatable :: d_e(:)
+subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, &
+    d_c, d_d, d_e)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(in) :: theta
+    character(len=2), intent(in) :: reaction
+    real(dp), intent(in) :: phases(:, :)
+    real(dp), intent(in) :: d_phases(:, :, :)
+    complex(dp), intent(out) :: a
+    complex(dp), intent(out) :: b
+    complex(dp), intent(out) :: c
+    complex(dp), intent(out) :: d
+    complex(dp), intent(out) :: e
+    complex(dp), intent(out), allocatable :: d_a(:)
+    complex(dp), intent(out), allocatable :: d_b(:)
+    complex(dp), intent(out), allocatable :: d_c(:)
+    complex(dp), intent(out), allocatable :: d_d(:)
+    complex(dp), intent(out), allocatable :: d_e(:)
 
-!     complex(dp) :: m_000, m_100, m_110, m_101, m_111, m_11m1
-!     complex(dp), allocatable, dimension(:) :: d_m_000, d_m_100, d_m_110, d_m_101, d_m_111, d_m_11m1
-!     integer :: n_params
+    complex(dp) :: m_000, m_100, m_110, m_101, m_111, m_11m1
+    complex(dp), allocatable, dimension(:) :: d_m_000, d_m_100, d_m_110, d_m_101, d_m_111, d_m_11m1
+    integer :: n_params
 
-!     n_params = size(d_phases, 1)
-!     allocate(d_a(1: n_params))
-!     d_a = (0, 0)
-!     allocate(d_b, d_c, d_d, d_e, source = d_a)
-    
-! end subroutine saclay_amplitudes
+    n_params = size(d_phases, 1)
+    allocate(d_a(1: n_params))
+    d_a = (0, 0)
+    allocate(d_b, d_c, d_d, d_e, source = d_a)
+    call partial_wave_amplitude_sum(0, 0, 0, k_cm, theta, reaction, phases, d_phases, m_000,  d_m_000)
+    call partial_wave_amplitude_sum(1, 0, 0, k_cm, theta, reaction, phases, d_phases, m_100,  d_m_100)
+    call partial_wave_amplitude_sum(1, 1, 0, k_cm, theta, reaction, phases, d_phases, m_110,  d_m_110)
+    call partial_wave_amplitude_sum(1, 0, 1, k_cm, theta, reaction, phases, d_phases, m_101,  d_m_101)
+    call partial_wave_amplitude_sum(1, 1, 1, k_cm, theta, reaction, phases, d_phases, m_111,  d_m_111)
+    call partial_wave_amplitude_sum(1, 1,-1, k_cm, theta, reaction, phases, d_phases, m_11m1, d_m_11m1)
 
-! !PWAMp(s,ms,mj,k,theta,eta,ps,dps,matrixS,reac,iderive,m,dm)
+
+    a = 0.5_dp*(m_111 + m_100 - m_11m1)
+    b = 0.5_dp*(m_111 + m_000 + m_11m1)
+    c = 0.5_dp*(m_111 - m_000 + m_11m1)
+    if (theta == 0 .or. theta == pi) then
+        d = (-m_111 + m_100 + m_11m1)/(2*cos(theta)) 
+    else
+        d = -(m_110 + m_101)/(sqrt(2._dp)*sin(Theta))
+    endif
+    e = i_*(m_110 - m_101)/sqrt(2._dp)
+
+    d_a = 0.5_dp*(d_m_111 + d_m_100 - d_m_11m1)
+    d_b = 0.5_dp*(d_m_111 + d_m_000 + d_m_11m1)
+    d_c = 0.5_dp*(d_m_111 - d_m_000 + d_m_11m1)
+    if (theta == 0 .or. theta == pi) then
+        d_d = (-d_m_111 + d_m_100 + d_m_11m1)/(2*cos(theta))
+    else
+        d_d = -(d_m_110 + d_m_101)/(sqrt(2._dp)*sin(Theta)) 
+    endif
+    d_e = i_*(d_m_110 - d_m_101)/sqrt(2._dp)
+end subroutine saclay_amplitudes
+
 
 subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, d_phases, m, d_m)
     implicit none
@@ -82,43 +109,14 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
                     call s_matrix(lp, l, j, s, phases, d_phases, k_cm, etap, reaction, sm, d_sm)
                     cg_1 = clebsch_gordan(lp, s , j, ms, mj)
                     cg_2 = clebsch_gordan(l, s , j, mj, mj)
+                    m = m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*sm &
+                        *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
+                    d_m = d_m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*d_sm &
+                        *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
                 endif
             enddo
         enddo
     enddo
-
-    ! do J=0,nj-1
-    !    do L=J-1,J+1
-    !       if(reac.eq.'pp') call coulSigmal(real(l,kind=dp),eta,Sigl)
-    !       do Lp=J-1,J+1
-    !          if(reac.eq.'pp') call coulSigmal(real(lp,kind=dp),eta,Siglp)
-    !          if(lp.ge.abs(Mj-MS)) then
-    !             call SphericalHarmonic(lp,MJ-MS,Theta,Ylp)
-    !          else
-    !             Ylp = 0._dp
-    !          endIf
-    !          if(lp.ge.0.and.l.ge.0) then
-    !             call matrixs(lp,l,j,s,ps,dps,k,eta,reac,rm,drm)
-    !             m = m + 2.d0*Ylp*CG(Lp,S,J,mS,mJ)*(ii**(l-lp))&
-    !                  *exp(II*(Siglp-Sig0))*rm*exp(II*(Sigl-Sig0))&
-    !                  *CG(L,S,J,mJ,mJ)*sqrt(2*L+1.d0)*sqrt(4*Pi)/(2*ii*k)
-    !             if (iderive.eq.1) then 
-    !                dm = dm+2.d0*Ylp*CG(Lp,S,J,mS,mJ)*(ii**(l-lp))&
-    !                     *exp(II*(Siglp-Sig0))*drm*exp(II*(Sigl-Sig0))&
-    !                     *CG(L,S,J,mJ,mJ)*sqrt(2*L+1.d0)*sqrt(4*Pi)/&
-    !                     (2*ii*k)
-    !             else
-    !                dm = 0._dp
-    !             endif
-    !          endIf
-    !       enddo
-    !    enddo
-    ! enddo
-    ! if(reac.eq.'np') then
-    !    m = 0.5d0*m
-    !    dm = 0.5d0*dm
-    ! endif
-    
 end subroutine partial_wave_amplitude_sum
 
 real(dp) function clebsch_gordan(l_, s_ , j_, ms_, mj_) result(cgc)
