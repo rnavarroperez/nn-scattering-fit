@@ -121,8 +121,8 @@ real(dp) function legendre_poly(l, m, x) result(r)
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
     integer :: i
 
-    if (m < 0) stop 'legendre_poly is only valid for m <= 0'
-    if (l < m) stop 'legendre_poly is only valid for m <= l'
+    if (m < 0) stop 'legendre_poly is only valid for m >= 0'
+    if (l < m) stop 'legendre_poly is only valid for m >= l'
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
 
     p_mm = 1._dp

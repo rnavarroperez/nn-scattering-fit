@@ -2,13 +2,33 @@ module amplitudes
 use precisions, only : dp
 use nn_phaseshifts, only : eta_prime
 use constants, only : i_, m_p => proton_mass, hbar_c, alpha, pi, m_e => electron_mass, &
-    mu_p => mu_proton
-use num_recipes, only : cmplx_log_gamma, spherical_harmonic, kronecker_delta
+    mu_p => mu_proton, m_n => neutron_mass, mu_n => mu_neutron
+use num_recipes, only : cmplx_log_gamma, spherical_harmonic, kronecker_delta, legendre_poly
 implicit none
+
+real(dp), parameter :: f_T = -alpha*mu_p**2/(4*m_p**2), f_ls = -alpha*(8*mu_p - 2)/(4*m_p**2)
 
 private
 
-public :: saclay_amplitudes!, f_amplitudes, df_amplitudes
+public :: saclay_amplitudes, em_pp_amplitudes, em_np_amplitudes!, f_amplitudes, df_amplitudes
+
+interface
+    subroutine s_matrix_elements(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
+        use precisions, only : dp
+        implicit none
+        integer, intent(in) :: lp
+        integer, intent(in) :: l
+        integer, intent(in) :: j
+        integer, intent(in) :: s
+        real(dp), intent(in) :: k_cm
+        real(dp), intent(in) :: eta
+        character(len=2), intent(in) :: reaction
+        real(dp), intent(in) :: phases(:,:)
+        real(dp), optional, intent(in) :: d_phases(:, :, :)
+        complex(dp), intent(out) :: sm
+        complex(dp), optional, intent(out), allocatable :: d_sm(:)
+    end subroutine s_matrix_elements
+end interface
 
 contains
 
@@ -47,19 +67,19 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     allocate(d_a(1: n_params))
     d_a = (0, 0)
     allocate(d_b, d_c, d_d, d_e, source = d_a)
-    call partial_wave_amplitude_sum(0, 0, 0, k_cm, theta, reaction, phases, d_phases, m_000,  d_m_000)
-    call partial_wave_amplitude_sum(1, 0, 0, k_cm, theta, reaction, phases, d_phases, m_100,  d_m_100)
-    call partial_wave_amplitude_sum(1, 1, 0, k_cm, theta, reaction, phases, d_phases, m_110,  d_m_110)
-    call partial_wave_amplitude_sum(1, 0, 1, k_cm, theta, reaction, phases, d_phases, m_101,  d_m_101)
-    call partial_wave_amplitude_sum(1, 1, 1, k_cm, theta, reaction, phases, d_phases, m_111,  d_m_111)
-    call partial_wave_amplitude_sum(1, 1,-1, k_cm, theta, reaction, phases, d_phases, m_11m1, d_m_11m1)
+    call partial_wave_amplitude_sum(s_matrix, 0, 0, 0, k_cm, theta, reaction, phases, d_phases, m_000,  d_m_000)
+    call partial_wave_amplitude_sum(s_matrix, 1, 0, 0, k_cm, theta, reaction, phases, d_phases, m_100,  d_m_100)
+    call partial_wave_amplitude_sum(s_matrix, 1, 1, 0, k_cm, theta, reaction, phases, d_phases, m_110,  d_m_110)
+    call partial_wave_amplitude_sum(s_matrix, 1, 0, 1, k_cm, theta, reaction, phases, d_phases, m_101,  d_m_101)
+    call partial_wave_amplitude_sum(s_matrix, 1, 1, 1, k_cm, theta, reaction, phases, d_phases, m_111,  d_m_111)
+    call partial_wave_amplitude_sum(s_matrix, 1, 1,-1, k_cm, theta, reaction, phases, d_phases, m_11m1, d_m_11m1)
 
 
     a = 0.5_dp*(m_111 + m_100 - m_11m1)
     b = 0.5_dp*(m_111 + m_000 + m_11m1)
     c = 0.5_dp*(m_111 - m_000 + m_11m1)
     if (theta == 0 .or. theta == pi) then
-        d = (-m_111 + m_100 + m_11m1)/(2*cos(theta)) 
+        d = (-m_111 + m_100 + m_11m1)/(2*cos(theta))
     else
         d = -(m_110 + m_101)/(sqrt(2._dp)*sin(Theta))
     endif
@@ -71,11 +91,302 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     if (theta == 0 .or. theta == pi) then
         d_d = (-d_m_111 + d_m_100 + d_m_11m1)/(2*cos(theta))
     else
-        d_d = -(d_m_110 + d_m_101)/(sqrt(2._dp)*sin(Theta)) 
+        d_d = -(d_m_110 + d_m_101)/(sqrt(2._dp)*sin(Theta))
     endif
     d_e = i_*(d_m_110 - d_m_101)/sqrt(2._dp)
 end subroutine saclay_amplitudes
 
+subroutine em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
+    implicit none
+    real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: theta !< scattering angle in radians
+    complex(dp), intent(out) :: a !< Sacalay parameter \f$a\f$
+    complex(dp), intent(out) :: b !< Sacalay parameter \f$b\f$
+    complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
+    complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
+    complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
+    
+    real(dp) :: etap
+    complex(dp) :: f_c, f_cpi, f_c2, f_c2pi, f_vp, f_vppi, m_c0, m_c1, a_coulomb, b_coulomb, c_coulomb, &
+        m_00, m_11, m_10, m_01, m_1m1, a_mm, b_mm, c_mm, d_mm, e_mm
+
+    etap = eta_prime(k_cm)
+    f_c   = f_coulomb(k_cm, etap, theta)
+    f_cpi = f_coulomb(k_cm, etap, pi - theta)
+    f_c2   = f_coulomb2(k_cm, etap, theta)
+    f_c2pi = f_coulomb2(k_cm, etap, pi - theta)
+    f_vp   = f_vacuum_polarization(k_cm, etap, theta)
+    f_vppi = f_vacuum_polarization(k_cm, etap, pi - theta)
+    m_c0 = (f_c + f_cpi) + (f_c2 + f_c2pi) + (f_vp + f_vppi)
+    m_c1 = (f_c - f_cpi) + (f_c2 - f_c2pi) + (f_vp - f_vppi)
+    a_coulomb = m_c1
+    b_coulomb = 0.5_dp*(m_c1 + m_c0)
+    c_coulomb = 0.5_dp*(m_c1 - m_c0)
+    call mm_amplitudes(k_cm, etap, theta, m_00, m_11, m_10, m_01, m_1m1)
+    a_mm = 0.5_dp*(m_11 + m_00 - m_1m1)
+    b_mm = 0.5_dp*(m_11 + m_1m1)
+    c_mm = 0.5_dp*(m_11 + m_1m1)
+    d_mm = -(m_10 + m_01)/(sqrt(2._dp)*sin(theta))
+    if(theta == 0._dp .or. theta == pi) then
+        d_mm = (-m_11 + m_00 + m_1m1)/(2._dp*cos(theta))
+    endIf
+    e_mm = i_*(m_10 - m_01)/sqrt(2._dp)
+    a = a_coulomb + a_mm
+    b = b_coulomb + b_mm
+    c = c_coulomb + c_mm
+    d = d_mm
+    e = e_mm
+end subroutine em_pp_amplitudes
+
+subroutine em_np_amplitudes(k_cm, theta, a, b, c, d, e)
+    implicit none
+    real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: theta !< scattering angle in radians
+    complex(dp), intent(out) :: a !< Sacalay parameter \f$a\f$
+    complex(dp), intent(out) :: b !< Sacalay parameter \f$b\f$
+    complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
+    complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
+    complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
+    
+    real(dp) :: etap, f1p, f2p, f1n, f2n, sm, tm, mp_fm, mn_fm
+    f1p = 1._dp
+    f1n = 0._dp
+    mp_fm = m_p/hbar_c !in fm-1
+    mn_fm = m_n/hbar_c !in fm-1
+    f2p = (mu_p - 1)/(2*mp_fm) !in fm
+    f2n = mu_n/(2*mn_fm) !in fm
+
+    etap = eta_prime(k_cm)
+
+    tm = -2*k_cm**2*(1 - cos(theta)) !in fm-2
+    sm = 2*sqrt((k_cm**2 + mn_fm**2)*(k_cm**2 + mp_fm**2)) + 2*k_cm**2 + mn_fm**2 + mp_fm**2 !in fm-2
+    a = alpha/(tm*sqrt(sm))*((f1n*f1p + tm*f2n*f2p)*(sm - mn_fm**2 - mp_fm**2 &
+        + tm/(8*sm*k_cm**2)*((sm - (mn_fm + mp_fm)**2)*(3*sm - (mn_fm - mp_fm)**2) &
+        + 2*(sm - (mn_fm - mp_fm)**2)*(sqrt(sm) - mn_fm - mp_fm)**2) + tm**2/(16*sm*k_cm**4)&
+        *(sm - (mn_fm - mp_fm)**2)*(sqrt(sm) - mn_fm - mp_fm)**2) &
+        + (f1n*f2p + f2n*f1p)*tm*(2*sqrt(sm) - mn_fm - mp_fm + tm/(2*k_cm**2)*(sqrt(sm)-mn_fm-mp_fm)))
+    b = alpha/(tm*sqrt(sm))*((f1n*f1p - tm*f2n*f2p)*(sm - mn_fm**2 - mp_fm**2 &
+        + tm/(8*sm*k_cm**2)*(sm + (mn_fm - mp_fm)**2)*(sm - (mn_fm + mp_fm)**2)) + (f1n*f2p - f2n*f1p)*tm*(mn_fm - mp_fm))
+    c = alpha/(2*sqrt(sm))*(f1n + 2*mn_fm*f2n)*(f1p + 2*mp_fm*f2p)
+    d = -c
+    e = -i_*alpha*sin(theta)/(tm*sqrt(sm))*((f1n*f1p + tm*f2n*f2p)*(sm - mn_fm**2 - mp_fm**2 &
+        - (mn_fm + mp_fm)/(2*sqrt(sm))*(sm - (mn_fm - mp_fm)**2) &
+        + (tm*(sqrt(sm) - mn_fm - mp_fm))/(2*(sqrt(sm) + mn_fm + mp_fm))) &
+        + (f1n*f2p + f2n*f1p)*(2*k_cm**2*sqrt(sm) + tm*(sqrt(sm) - mn_fm - mp_fm)))
+
+end subroutine em_np_amplitudes
+
+complex(dp) function f_coulomb(k_cm, eta, theta) result(f_c)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(in) :: eta
+    real(dp), intent(in) :: theta
+    f_c = -eta/k_cm*exp(-i_*eta*log((1 - cos(theta))/2._dp))/(1 - cos(theta))
+end function f_coulomb
+
+
+complex(dp) function f_coulomb2(k_cm, eta, theta) result(f_c)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(in) :: eta
+    real(dp), intent(in) :: theta
+    
+    integer, parameter :: l_max = 1000
+    integer :: l
+    real(dp) :: lambda, sigma_0, sigma_l, sigma_lambda, rho, x, alphap, p_l_0, p_lm2_0, p_lm1_0
+
+    f_c = (0._dp, 0._dp)
+    sigma_0 = coulomb_sigma_l(0._dp, eta)
+    x = cos(theta)
+    alphap = 2*k_cm*eta/m_p*hbar_c
+
+    ! l == 0
+    l = 0
+    lambda = (-1 + sqrt(1 + 4*l*(l+1) - 4*alpha*alphap))/2._dp
+    sigma_l = sigma_0
+    sigma_lambda = coulomb_sigma_l(lambda, eta)
+    rho = sigma_lambda - sigma_l + (l - lambda)*pi/2._dp
+    p_l_0 = legendre_poly(l, 0, x)
+    p_lm2_0 = p_l_0
+    f_c = (exp(2*i_*rho) - 1)*p_l_0/(2*i_*k_cm)
+
+    ! l == 1
+    l = 1
+    lambda = (-1 + sqrt(1 + 4*l*(l+1) - 4*alpha*alphap))/2._dp
+    sigma_l = coulomb_sigma_l(real(l, kind = dp), eta)
+    sigma_lambda = coulomb_sigma_l(lambda, eta)
+    rho = sigma_lambda - sigma_l + (l - lambda)*pi/2._dp
+    p_l_0 = legendre_poly(l, 0, x)
+    p_lm1_0 = p_l_0
+    f_c = f_c + (2*l + 1)*exp(2*i_*(sigma_l - sigma_0))*(exp(2*i_*rho) - 1)*p_l_0/(2*i_*k_cm)
+
+    do l = 2, l_max
+        lambda = (-1 + sqrt(1 + 4*l*(l+1) - 4*alpha*alphap))/2._dp
+        sigma_l = coulomb_sigma_l(real(l, kind = dp), eta)
+        sigma_lambda = coulomb_sigma_l(lambda, eta)
+        rho = sigma_lambda - sigma_l + (l - lambda)*pi/2._dp
+        p_l_0 = (x*(2*l - 1)*p_lm1_0 - (l - 1)*p_lm2_0)/l
+        f_c = f_c + (2*l + 1)*exp(2*i_*(sigma_l - sigma_0))*(exp(2*i_*rho) - 1)*p_l_0/(2*i_*k_cm)
+        p_lm2_0 = p_lm1_0
+        p_lm1_0 = p_l_0
+    enddo
+end function f_coulomb2
+
+complex(dp) function f_vacuum_polarization(k_cm, eta, theta) result(f_vp)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(in) :: eta
+    real(dp), intent(in) :: theta
+    
+    real(dp) :: f_vp_0, re_f_vp_1, im_f_vp_1, x, nu, y, F, k_MeV
+
+    k_MeV = k_cm*hbar_c
+    x = cos(theta)
+    nu = 2*m_e**2/(k_MeV**2)
+    y = nu/(1 - x)
+    F = -5/3._dp + y + sqrt(1 + y)*(1 - 0.5_dp*y)*log((sqrt(1 + y) + 1)/(sqrt(1 + y) -1))
+    f_vp_0 = -alpha*eta*F/(3*pi*(1 - x))
+    re_f_vp_1 = 4*eta**2*alpha/(3*pi*(1 - x))*sqrt((1 - x)/(1 + x))*(atan(sqrt((1 + x)/(1 - x))) &
+        - atan(sqrt((nu*(1 + x))/(2*(1 - x)))))
+    im_f_vp_1 = alpha*eta**2/(3*pi*(1 - x))*log(1/y)*(log(k_MeV/m_e) - 3._dp/2._dp*log(2/(1 - x)))
+    f_vp = f_vp_0  + re_f_vp_1 + i_*im_f_vp_1
+    f_vp = f_vp/k_cm
+end function f_vacuum_polarization
+
+subroutine mm_amplitudes(k_cm, eta, theta, m_00, m_11, m_10, m_01, m_1m1)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(in) :: eta
+    real(dp), intent(in) :: theta
+    complex(dp), intent(out) :: m_00
+    complex(dp), intent(out) :: m_11
+    complex(dp), intent(out) :: m_10
+    complex(dp), intent(out) :: m_01
+    complex(dp), intent(out) :: m_1m1
+
+    integer, parameter :: j_max = 1001
+    real(dp) :: mm_phases(1:5, 1:j_max), mm_phases_ls(1:5, 1:j_max)
+    character(len=2), parameter :: reaction = 'pp'
+    complex(dp) :: z_ls
+
+    call mm_phaseshifts(k_cm, eta, mm_phases)
+    call mm_phases_ls_term(k_cm, mm_phases_ls)
+    call partial_wave_amplitude_sum(s_matrix_mm, 1, 0, 0, k_cm, theta, reaction, mm_phases, m = m_00)
+    call partial_wave_amplitude_sum(s_matrix_mm, 1, 1, 0, k_cm, theta, reaction, mm_phases, m = m_11)
+    call partial_wave_amplitude_sum(s_matrix_mm, 1, 1,-1, k_cm, theta, reaction, mm_phases, m = m_1m1)
+    mm_phases = mm_phases - mm_phases_ls
+    call partial_wave_amplitude_sum(s_matrix_mm, 1, 1, 0, k_cm, theta, reaction, mm_phases, m = m_10)
+    call partial_wave_amplitude_sum(s_matrix_mm, 1, 0, 1, k_cm, theta, reaction, mm_phases, m = m_01)
+    call m01_ls_contribution(k_cm, eta, theta, mm_phases_ls, m_01)
+    z_ls = -m_p*f_ls/(sin(theta)*sqrt(2._dp))*(exp(-i_*eta*log((1 - cos(theta))/2._dp)) &
+        + exp(-i_*eta*log((1 + cos(theta))/2._dp)) - 1)*hbar_c
+    m_10 = m_10 + z_ls
+    m_01 = m_01 - z_ls
+
+end subroutine mm_amplitudes
+
+subroutine mm_phases_ls_term(k_cm, mm_phases)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(out) :: mm_phases(:, :)
+
+    integer :: l, i
+    real(dp) :: k_MeV, I_lp2lp2, I_ll
+
+    mm_phases = 0._dp
+
+    k_MeV = k_cm*hbar_c
+    l = -1
+    I_lp2lp2 = 1._dp/(2*(l+2)*((l+2)+1._dp))
+
+    mm_phases(5, 1) = m_p*k_MeV*(l + 3)*f_ls*I_lp2lp2
+    I_ll = I_lp2lp2
+
+    do i = 2, size(mm_phases, 2) - 1, 2
+        l = i - 1
+        mm_phases(3, i+1) = -m_p*k_MeV*l*f_ls*I_ll
+        I_lp2lp2 = 1/(2._dp*(l + 2)*(l + 3))
+        mm_phases(5, i+1) = m_p*k_MeV*(l+3)*f_ls*I_lp2lp2
+        I_ll = I_lp2lp2
+    enddo
+end subroutine mm_phases_ls_term
+
+subroutine m01_ls_contribution(k_cm, eta, theta, mm_phases, m_01)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp), intent(in) :: eta
+    real(dp), intent(in) :: theta
+    real(dp), intent(in) :: mm_phases(:, :)
+    complex(dp), intent(inout) :: m_01
+
+    integer :: l
+    real(dp) :: x, sigma_l, sigma_0
+    complex(dp) :: sm_lp1, sm_lm1
+    character(len=2), parameter :: reaction = 'pp'
+
+    x = cos(theta)
+
+    sigma_0 = coulomb_sigma_l(0._dp, eta)
+    do l=1, size(mm_phases, 2) - 2, 2
+        sigma_l = coulomb_sigma_l(real(l, kind = dp), eta)
+        call s_matrix_mm(l, l, l+1, 1, k_cm, eta, reaction, mm_phases, sm = sm_lp1)
+        call s_matrix_mm(l, l, l-1, 1, k_cm, eta, reaction, mm_phases, sm = sm_lm1)
+        m_01 = m_01 + legendre_poly(l, 1, x)*(1/(l+1._dp)*sm_lp1 + 1._dp/l*sm_lm1)*exp(2*i_*(sigma_l - sigma_0))&
+            /(i_*k_cm*sqrt(2._dp))
+    enddo
+    
+end subroutine m01_ls_contribution
+
+subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
+    implicit none
+    integer, intent(in) :: lp !< \f$l'\f$ quantum number
+    integer, intent(in) :: l !< \f$l\f$ quantum number
+    integer, intent(in) :: j !< \f$j\f$ quantum number
+    integer, intent(in) :: s !< \f$s\f$ quantum number
+    real(dp), intent(in) :: k_cm !< C.M. momentum in \f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta'\f$
+    character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
+    real(dp), intent(in) :: phases(:,:) !< corresponding phase-shifts
+    real(dp), optional, intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
+    complex(dp), intent(out) :: sm !< matrix element
+    complex(dp), optional, intent(out), allocatable :: d_sm(:) !< derivatives of matrix element
+
+    if (present(d_sm) .and. .not. present(d_phases)) then
+
+        stop 'if derivatives of m are requested in partial_wave_amplitude_sum, derivatives of phases need to be provided'
+        ! the lines below are to avoid -Wunused-dummy-argument warning during compilation, they're never really executed
+        if (reaction == 'pp') then
+            sm = k_cm + eta    
+        endif
+    endif
+
+    select case(s)
+    case (0)
+        if (lp == l .and. l == j) then
+            sm = 2*i_*phases(1, j+1)
+        else
+            sm = 1 - kronecker_delta(lp, l)
+        endif        
+    case (1)
+        if (l == lp) then
+            if (l == j) then
+                sm = 2*i_*phases(2, j+1)
+            else if (l == j-1) then
+                sm = 2*i_*phases(3, j+1)
+            else if (l == j+1) then
+                sm = 2*i_*phases(5, j+1)
+            else
+                sm = -1
+            endif
+        else if (abs(l-lp) == 2) then
+            sm = 2*i_*phases(4, j+1)
+        else
+            sm = -kronecker_delta(lp, l)
+        endif
+    case default
+        stop 's has to be zero or one in s_matrix_mm'
+    end select
+end subroutine s_matrix_mm
 
 !!
 !> @brief      sums over partial waves to calculate the amplitude
@@ -94,8 +405,9 @@ end subroutine saclay_amplitudes
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, d_phases, m, d_m)
+subroutine partial_wave_amplitude_sum(s_mat, s, ms, mj, k_cm, theta, reaction, phases, d_phases, m, d_m)
     implicit none
+    procedure(s_matrix_elements) :: s_mat !< S matrix elements (subroutine)
     integer, intent(in) :: s !< \f$s\f$ quantum number
     integer, intent(in) :: ms !< \f$m_s\f$ quantum number
     integer, intent(in) :: mj !< \f$m_j\f$ quantum number
@@ -103,19 +415,25 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
     real(dp), intent(in) :: theta !< scattering angle in radians
     character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
     real(dp), intent(in) :: phases(:, :) !< corresponding phase-shifts
-    real(dp), intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
+    real(dp), optional, intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
     complex(dp), intent(out) :: m !< Wolfenstein parameter
-    complex(dp), intent(out), allocatable  :: d_m(:) !< derivatives of the Wolfenstein parameter
+    complex(dp), optional, intent(out), allocatable  :: d_m(:) !< derivatives of the Wolfenstein parameter
 
     integer :: n_params, j_max, j, l, lp
     real(dp) :: etap, sigma_0, sigma_l, sigma_lp, Ylp, cg_1, cg_2
     complex(dp) :: sm
     complex(dp), allocatable :: d_sm(:)
 
+    if (present(d_m) .and. .not. present(d_phases)) then
+        stop 'if derivatives of m are requested in partial_wave_amplitude_sum, derivatives of phases need to be provided'
+    endif
+
     m = (0, 0)
     n_params = size(d_phases, 1)
-    allocate(d_m(1: n_params))
-    d_m = (0, 0)
+    if (present(d_m)) then
+        allocate(d_m(1: n_params))
+        d_m = (0, 0)
+    endif
 
     sigma_l = 0._dp
     sigma_lp = 0._dp
@@ -137,20 +455,29 @@ subroutine partial_wave_amplitude_sum(s, ms, mj, k_cm, theta, reaction, phases, 
                 if (reaction == 'pp') sigma_lp = coulomb_sigma_l(real(lp, kind=dp), etap)
                 if (lp >= abs(mj - ms) .and. lp >= 0 .and. l >= 0) then
                     Ylp = real(spherical_harmonic(lp, mj-ms, theta, 0._dp))
-                    call s_matrix(lp, l, j, s, phases, d_phases, k_cm, etap, reaction, sm, d_sm)
+                    if (present(d_m)) then
+                        call s_mat(lp, l, j, s, k_cm, etap, reaction, phases, d_phases, sm, d_sm)
+                    else
+                        call s_mat(lp, l, j, s, k_cm, etap, reaction, phases, sm = sm)
+                    endif
+                    
                     cg_1 = clebsch_gordan(lp, s , j, ms, mj)
                     cg_2 = clebsch_gordan(l, s , j, mj, mj)
                     m = m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*sm &
                         *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
-                    d_m = d_m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*d_sm &
-                        *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
+                    if (present(d_m)) then
+                        d_m = d_m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*d_sm &
+                            *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
+                    endif
                 endif
             enddo
         enddo
     enddo
     if (reaction == 'np') then
         m = 0.5_dp*m
-        d_m = 0.5_dp*d_m
+        if (present(d_m)) then
+            d_m = 0.5_dp*d_m            
+        endif
     endif
 end subroutine partial_wave_amplitude_sum
 
@@ -233,33 +560,39 @@ end function clebsch_gordan
 !!
 !> @brief      S mastrix elements
 !!
-!! Given a set of quantum number \f$l'\f$, \f$l\f$, \f$j\f$, \f$s\f$ extracts the corresponding element from the NN 
+!! Given a set of quantum number \f$l'\f$, \f$l\f$, \f$j\f$, \f$s\f$ extracts the corresponding element from the NN
 !! scattering matrix \f$S - \detla_{l, l'}\f$
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm)
+subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
     implicit none
     integer, intent(in) :: lp !< \f$l'\f$ quantum number
     integer, intent(in) :: l !< \f$l\f$ quantum number
     integer, intent(in) :: j !< \f$j\f$ quantum number
     integer, intent(in) :: s !< \f$s\f$ quantum number
-    real(dp), intent(in) :: phases(:,:) !< corresponding phase-shifts
-    real(dp), intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
     real(dp), intent(in) :: k_cm !< C.M. momentum in \f$^{-1}\f$
     real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta'\f$
     character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
+    real(dp), intent(in) :: phases(:,:) !< corresponding phase-shifts
+    real(dp), optional, intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
     complex(dp), intent(out) :: sm !< matrix element
-    complex(dp), intent(out), allocatable :: d_sm(:) !< derivatives of matrix element
+    complex(dp), optional, intent(out), allocatable :: d_sm(:) !< derivatives of matrix element
 
     integer :: n_params
     real(dp) :: alphap, lambda, sigma_l, sigma_lambda, rho_l, t_lab, nu, tau00, tau0, lambdap, &
         sigma_lp, sigma_lambdap, rho_lp
     real(dp), allocatable :: mm_phases(:, :)
 
+    if (present(d_sm) .and. .not. present(d_phases)) then
+        stop 'if derivatives of sm are requested in s_matrix, derivatives of phases need to be provided'
+    endif
+
     n_params = size(d_phases, 1)
-    allocate(d_sm(1: n_params))
-    d_sm = (0, 0)
+    if (present(d_sm)) then
+        allocate(d_sm(1: n_params))
+        d_sm = (0, 0)        
+    endif
 
     allocate(mm_phases, mold = phases)
     mm_phases = 0
@@ -297,44 +630,60 @@ subroutine s_matrix(lp, l, j, s, phases, d_phases, k_cm, eta, reaction, sm, d_sm
     case (0)
         if (lp == l .and. l == j) then
             sm = (exp(2*i_*phases(1, j+1)) - 1)*exp(2*i_*(rho_l + tau0))
-            d_sm = 2*i_*exp(2*i_*phases(1, j+1))*d_phases(:, 1, j+1)*exp(2*i_*(rho_l + tau0))
+            if (present(d_sm)) then
+                d_sm = 2*i_*exp(2*i_*phases(1, j+1))*d_phases(:, 1, j+1)*exp(2*i_*(rho_l + tau0))
+            endif
         else
             sm = 1 - kronecker_delta(lp, l)
-            d_sm = (0, 0)
+            if (present(d_sm)) then
+                d_sm = (0, 0)
+            endif
         endif        
     case (1)
         if (l == lp) then
             if (l == j) then
                 sm = (exp(2*i_*phases(2, j+1)) - 1)*exp(2*i_*rho_l)*exp(2*i_*mm_phases(2, j+1))
-                d_sm = 2*i_*exp(2*i_*phases(2, j+1))*d_phases(:, 2, j+1)*exp(2*i_*rho_l)&
-                    *exp(2*i_*mm_phases(2, j+1))
+                if (present(d_sm)) then
+                    d_sm = 2*i_*exp(2*i_*phases(2, j+1))*d_phases(:, 2, j+1)*exp(2*i_*rho_l)&
+                        *exp(2*i_*mm_phases(2, j+1))
+                endif
             else if (l == j-1) then
                 sm = (cos(2*phases(4, j+1))*exp(2*i_*phases(3, j+1)) - 1)*exp(2*i_*rho_l)&
                     *exp(2*i_*mm_phases(3, j+1))
-                d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(3, j+1)) &
-                    + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(3, j+1))*d_phases(:, 3, j+1))&
-                    *exp(2*i_*rho_l)*exp(2*i_*mm_phases(3, j+1))
+                if (present(d_sm)) then
+                    d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(3, j+1)) &
+                        + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(3, j+1))*d_phases(:, 3, j+1))&
+                        *exp(2*i_*rho_l)*exp(2*i_*mm_phases(3, j+1))
+                endif
             else if (l == j+1) then
                 sm = (cos(2*phases(4, j+1))*exp(2*i_*phases(5, j+1)) - 1)*exp(2*i_*rho_l)&
                     *exp(2*i_*mm_phases(5, j+1))
-                d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(5, j+1)) &
-                    + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(5, j+1))*d_phases(:, 5, j+1))&
-                    *exp(2*i_*rho_l)*exp(2*i_*mm_phases(5, j+1))
+                if (present(d_sm)) then
+                    d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(5, j+1)) &
+                        + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(5, j+1))*d_phases(:, 5, j+1))&
+                        *exp(2*i_*rho_l)*exp(2*i_*mm_phases(5, j+1))                    
+                endif
             else
                 sm = -1
-                d_sm = (0, 0)
+                if (present(d_sm)) then
+                    d_sm = (0, 0)
+                endif
             endif
         else if (abs(l-lp) == 2) then
             sm = i_*sin(2*phases(4, j+1))*exp(i_*(phases(3, j+1) + phases(5, j+1)))&
                 *exp(i_*(rho_l + rho_lp))*exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
-            d_sm = i_*(2*cos(2*phases(4, j+1))*d_phases(:, 4, j+1)&
-                *exp(i_*(phases(3, j+1) + phases(5, j+1))) + sin(2*phases(4, j+1))*i_&
-                *exp(i_*(phases(3, j+1) + phases(5, j+1)))*(d_phases(:, 3, j+1) &
-                + d_phases(:, 5, j+1)))*exp(i_*(rho_l+rho_lp)) &
-                *exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
+            if (present(d_sm)) then
+                d_sm = i_*(2*cos(2*phases(4, j+1))*d_phases(:, 4, j+1)&
+                    *exp(i_*(phases(3, j+1) + phases(5, j+1))) + sin(2*phases(4, j+1))*i_&
+                    *exp(i_*(phases(3, j+1) + phases(5, j+1)))*(d_phases(:, 3, j+1) &
+                    + d_phases(:, 5, j+1)))*exp(i_*(rho_l+rho_lp)) &
+                    *exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
+            endif
         else
             sm = -kronecker_delta(lp, l)
-            d_sm = (0, 0)
+            if (present(d_sm)) then
+                d_sm = (0, 0)            
+            endif
         endif
     case default
         stop 's has to be zero or one in s_matrix'
@@ -359,13 +708,12 @@ subroutine mm_phaseshifts(k_cm, eta, mm_phases)
     real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta\f$
     real(dp), intent(out) :: mm_phases(:, :) !< magnetic momentum phase-shifts
 
-    real(dp) :: f_T, f_ls, I_ll, I_lp2lp2, I_llp2
+    real(dp) :: I_ll, I_lp2lp2, I_llp2 !f_T, f_ls, 
     integer :: l, j_max, i
 
     j_max = size(mm_phases, 2)
 
-    f_T = -alpha*mu_p**2/(4*m_p**2)
-    f_ls = -alpha*(8*mu_p - 2)/(4*m_p**2)
+
     mm_phases = 0._dp
     l = -1
     I_lp2lp2 = mm_coulomb_Ill(l+2, eta)
@@ -384,6 +732,7 @@ subroutine mm_phaseshifts(k_cm, eta, mm_phases)
     enddo
     mm_phases = m_p*k_cm*mm_phases*hbar_c    
 end subroutine mm_phaseshifts
+
 
 !!
 !> @brief      \f$I_{l,l}\f$ term for mm phase-shifts
