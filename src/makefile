@@ -4,7 +4,7 @@ FLAGS = -Wall
 
 EXEC = nn_fit
 
-SRC = $(wildcard *.f90) 
+SRC = $(wildcard *.f90)
 
 OBJ = $(SRC:.f90=.o)
 
@@ -35,6 +35,8 @@ nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul
 amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o
 	$(COMPILER) $(FLAGS) -c $<
 
+read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshifts.o
+	$(COMPILER) $(FLAGS) -c $<
 main.o: main.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 

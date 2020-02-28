@@ -35,7 +35,7 @@ contains
 !!
 !> @brief      calculate Saclay amplitudes
 !!
-!! Calculates the NN scattering amplitude in the Saclay parametrization for a given c.m. momentum, scattering angle, 
+!! Calculates the NN scattering amplitude in the Saclay parametrization for a given c.m. momentum, scattering angle,
 !! reaction channel and the corresponding phase-shifts.
 !!
 !! @author     Rodrigo Navarro Perez
@@ -105,7 +105,7 @@ subroutine em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
     complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
     complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
     complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
-    
+
     real(dp) :: etap
     complex(dp) :: f_c, f_cpi, f_c2, f_c2pi, f_vp, f_vppi, m_c0, m_c1, a_coulomb, b_coulomb, c_coulomb, &
         m_00, m_11, m_10, m_01, m_1m1, a_mm, b_mm, c_mm, d_mm, e_mm
@@ -147,7 +147,7 @@ subroutine em_np_amplitudes(k_cm, theta, a, b, c, d, e)
     complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
     complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
     complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
-    
+
     real(dp) :: etap, f1p, f2p, f1n, f2n, sm, tm, mp_fm, mn_fm
     f1p = 1._dp
     f1n = 0._dp
@@ -190,7 +190,7 @@ complex(dp) function f_coulomb2(k_cm, eta, theta) result(f_c)
     real(dp), intent(in) :: k_cm
     real(dp), intent(in) :: eta
     real(dp), intent(in) :: theta
-    
+
     integer, parameter :: l_max = 1000
     integer :: l
     real(dp) :: lambda, sigma_0, sigma_l, sigma_lambda, rho, x, alphap, p_l_0, p_lm2_0, p_lm1_0
@@ -237,7 +237,7 @@ complex(dp) function f_vacuum_polarization(k_cm, eta, theta) result(f_vp)
     real(dp), intent(in) :: k_cm
     real(dp), intent(in) :: eta
     real(dp), intent(in) :: theta
-    
+
     real(dp) :: f_vp_0, re_f_vp_1, im_f_vp_1, x, nu, y, F, k_MeV
 
     k_MeV = k_cm*hbar_c
@@ -334,7 +334,7 @@ subroutine m01_ls_contribution(k_cm, eta, theta, mm_phases, m_01)
         m_01 = m_01 + legendre_poly(l, 1, x)*(1/(l+1._dp)*sm_lp1 + 1._dp/l*sm_lm1)*exp(2*i_*(sigma_l - sigma_0))&
             /(i_*k_cm*sqrt(2._dp))
     enddo
-    
+
 end subroutine m01_ls_contribution
 
 subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
@@ -356,7 +356,7 @@ subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d
         stop 'if derivatives of m are requested in partial_wave_amplitude_sum, derivatives of phases need to be provided'
         ! the lines below are to avoid -Wunused-dummy-argument warning during compilation, they're never really executed
         if (reaction == 'pp') then
-            sm = k_cm + eta    
+            sm = k_cm + eta
         endif
     endif
 
@@ -366,7 +366,7 @@ subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d
             sm = 2*i_*phases(1, j+1)
         else
             sm = 1 - kronecker_delta(lp, l)
-        endif        
+        endif
     case (1)
         if (l == lp) then
             if (l == j) then
@@ -398,7 +398,7 @@ end subroutine s_matrix_mm
 !! \f[M_{m_s',m_s}^s(\theta) = \frac{1}{2ik} \sum_{J,l',l} \sqrt{4\pi(2l+1)} Y_{m_s'-m_s}^{l'}(\theta,0)
 !!    C_{m_s-m_s',m_s',m_s}^{l',s,J} i^{l-l'} (S_{l,l'}^{J,s}-\delta_{l',l})C_{0,m_s,m_s}^{l,s,J},\f]
 !!
-!! where \f$Y_{m}^{l}(\theta,\varphi)\f$ are the spherical harmonics, \f$C_{m_l,m_s,m_j}^{l,s,j}\f$ are the 
+!! where \f$Y_{m}^{l}(\theta,\varphi)\f$ are the spherical harmonics, \f$C_{m_l,m_s,m_j}^{l,s,j}\f$ are the
 !! Clebsch-Gordan coefficients and \f$S_{l,l'}^{j,s}\f$ are the scattering matrix elements (i.e. phase-shifts)
 !!
 !! See equation 15 in Phys. Rev. C 91, 029901 (2015) for more details
@@ -460,7 +460,7 @@ subroutine partial_wave_amplitude_sum(s_mat, s, ms, mj, k_cm, theta, reaction, p
                     else
                         call s_mat(lp, l, j, s, k_cm, etap, reaction, phases, sm = sm)
                     endif
-                    
+
                     cg_1 = clebsch_gordan(lp, s , j, ms, mj)
                     cg_2 = clebsch_gordan(l, s , j, mj, mj)
                     m = m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*sm &
@@ -476,7 +476,7 @@ subroutine partial_wave_amplitude_sum(s_mat, s, ms, mj, k_cm, theta, reaction, p
     if (reaction == 'np') then
         m = 0.5_dp*m
         if (present(d_m)) then
-            d_m = 0.5_dp*d_m            
+            d_m = 0.5_dp*d_m
         endif
     endif
 end subroutine partial_wave_amplitude_sum
@@ -554,7 +554,7 @@ real(dp) function clebsch_gordan(l_, s_ , j_, ms_, mj_) result(cgc)
     case default
         stop 's_ has to be 0 or 1 in clebsch_gordan'
     end select
-    
+
 end function clebsch_gordan
 
 !!
@@ -591,7 +591,7 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
     n_params = size(d_phases, 1)
     if (present(d_sm)) then
         allocate(d_sm(1: n_params))
-        d_sm = (0, 0)        
+        d_sm = (0, 0)
     endif
 
     allocate(mm_phases, mold = phases)
@@ -638,7 +638,7 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
             if (present(d_sm)) then
                 d_sm = (0, 0)
             endif
-        endif        
+        endif
     case (1)
         if (l == lp) then
             if (l == j) then
@@ -661,7 +661,7 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
                 if (present(d_sm)) then
                     d_sm = (-2*sin(2*phases(4, j+1))*d_phases(:, 4, j+1)*exp(2*i_*phases(5, j+1)) &
                         + cos(2*phases(4, j+1))*2*i_*exp(2*i_*phases(5, j+1))*d_phases(:, 5, j+1))&
-                        *exp(2*i_*rho_l)*exp(2*i_*mm_phases(5, j+1))                    
+                        *exp(2*i_*rho_l)*exp(2*i_*mm_phases(5, j+1))
                 endif
             else
                 sm = -1
@@ -682,7 +682,7 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
         else
             sm = -kronecker_delta(lp, l)
             if (present(d_sm)) then
-                d_sm = (0, 0)            
+                d_sm = (0, 0)
             endif
         endif
     case default
@@ -708,7 +708,7 @@ subroutine mm_phaseshifts(k_cm, eta, mm_phases)
     real(dp), intent(in) :: eta !< Sommerfeld parameter \f$\eta\f$
     real(dp), intent(out) :: mm_phases(:, :) !< magnetic momentum phase-shifts
 
-    real(dp) :: I_ll, I_lp2lp2, I_llp2 !f_T, f_ls, 
+    real(dp) :: I_ll, I_lp2lp2, I_llp2 !f_T, f_ls,
     integer :: l, j_max, i
 
     j_max = size(mm_phases, 2)
@@ -730,7 +730,7 @@ subroutine mm_phaseshifts(k_cm, eta, mm_phases)
         I_lp2lp2 = mm_coulomb_Ill(l+2, eta)
         mm_phases(5, i+1) = ((2*l + 6)/(2*l + 3._dp)*f_T + (l + 3)*f_ls)*I_lp2lp2
     enddo
-    mm_phases = m_p*k_cm*mm_phases*hbar_c    
+    mm_phases = m_p*k_cm*mm_phases*hbar_c
 end subroutine mm_phaseshifts
 
 
@@ -770,7 +770,7 @@ end function mm_coulomb_Ill
 !!
 !! Calculates the \f$I_{l,l+2}\f$ term necessary for the calculation of the magnetic moment phases
 !!
-!! The \f$I_{l,l+2}\f$ term results as an integral of the \f$1/r^3\f$ dependence on the magnetic moment potential and 
+!! The \f$I_{l,l+2}\f$ term results as an integral of the \f$1/r^3\f$ dependence on the magnetic moment potential and
 !! is given by
 !!
 !! \f[I_{l,l+2} = \frac{1}{6} |l+1+i\eta|^{-1} |l+2+i\eta|^{-1}\f]
@@ -815,7 +815,7 @@ end function coulomb_sigma_l
 ! !> @brief      wrapper function for saclay_amplitudes
 ! !!
 ! !! This wrapper function is used to test the derivatives of the saclay_amplitudes subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call 
+! !! The generic data of type context is used to receive all the arguments necessary to call
 ! !! saclay_amplitudes. The same data of type context is used to receive which parameter will
 ! !! be varied by the dfridr subroutine and which partial wave will be returned.
 ! !!
@@ -841,7 +841,7 @@ end function coulomb_sigma_l
 
 !     allocate(ap, source = data%x)
 !     t_lab = data%a
-!     r_max = data%b 
+!     r_max = data%b
 !     dr = data%c
 !     theta = data%d
 !     reaction = trim(data%string)
@@ -882,7 +882,7 @@ end function coulomb_sigma_l
 ! !> @brief      wrapper function for the derivatives of saclay_amplitudes
 ! !!
 ! !! This wrapper function is used to test the derivatives of the saclay_amplitudes subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call 
+! !! The generic data of type context is used to receive all the arguments necessary to call
 ! !! saclay_amplitudes. The same data of type context is used to receive which parameter will
 ! !! be varied by the dfridr subroutine and which partial wave will be returned.
 ! !!
@@ -902,13 +902,13 @@ end function coulomb_sigma_l
 !     real(dp) :: t_lab, r_max, dr, theta, k_cm, phases(1:5, 1:20)
 !     real(dp), allocatable :: d_phases(:, :, :)
 !     integer :: i_target, i_parameter
-!     character(len=2) :: reaction 
+!     character(len=2) :: reaction
 !     complex(dp) :: a, b, c, d, e
 !     complex(dp), allocatable, dimension(:) :: d_a, d_b, d_c, d_d, d_e
 
 !     allocate(ap, source = data%x)
 !     t_lab = data%a
-!     r_max = data%b 
+!     r_max = data%b
 !     dr = data%c
 !     theta = data%d
 !     reaction = trim(data%string)
@@ -946,5 +946,5 @@ end function coulomb_sigma_l
 !     end select
 ! end function df_amplitudes
 
-    
+
 end module amplitudes

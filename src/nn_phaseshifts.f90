@@ -8,7 +8,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime!, f_all_phaseshifts, df_all_phaseshifts
+public :: all_phaseshifts, eta_prime, momentum_cm!, f_all_phaseshifts, df_all_phaseshifts
 
 interface
     subroutine nn_potential(ap, r, reaction, v_pw, dv_pw)
@@ -213,7 +213,7 @@ subroutine coupled_variable_phase(j, k, r, lambdas, d_lambdas, a, b, c, d, d_a, 
 
     d_lambda_jm1 = d_lambdas(:, 1)
     d_lambda_j   = d_lambdas(:, 2)
-    d_lambda_jp1 = d_lambdas(:, 3)    
+    d_lambda_jp1 = d_lambdas(:, 3)
 
     call sphbes(j - 1, r*k, sj, sy, sjp, syp)
     j_hat_m1 = sj*r*k
@@ -290,7 +290,7 @@ end subroutine uncoupled_variable_phase
 !! Given the energy in the LAB frame and the type of reaction, calculates the center of mass
 !! momentum in units of fm\f$^{-1}\f$
 !!
-!! @returns    center of mass in fm\f$^{-1}\f$ 
+!! @returns    center of mass in fm\f$^{-1}\f$
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -302,9 +302,9 @@ real(dp) function momentum_cm(t_lab, reaction) result(k)
     case ('pp')
         k = sqrt(m_p/2*t_lab)/hbar_c
     case ('np')
-        k = sqrt((m_p**2*t_lab*(t_lab + 2*m_n))/((m_p + m_n)**2 + 2*t_lab*m_p))/hbar_c 
+        k = sqrt((m_p**2*t_lab*(t_lab + 2*m_n))/((m_p + m_n)**2 + 2*t_lab*m_p))/hbar_c
     case ('nn')
-        k = sqrt(m_n/2*t_lab)/hbar_c        
+        k = sqrt(m_n/2*t_lab)/hbar_c
     case default
         stop 'incorrect reaction channel in av18_all_partial_waves'
     end select
@@ -347,7 +347,7 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d
     real(dp), allocatable, dimension(:) :: d_ar, d_br, d_cr, d_radical, d_numerator, d_denominator
     allocate(d_ar, mold = d_a1)
     ar = 0._dp
-    allocate(d_br, d_cr, d_radical, d_numerator, d_denominator, source = d_a1) 
+    allocate(d_br, d_cr, d_radical, d_numerator, d_denominator, source = d_a1)
     ar = a2*d2 - c2*b2
     br = a1*d2 + a2*d1 - c1*b2 - c2*b1
     cr = a1*d1 - c1*b1
@@ -374,7 +374,7 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d
         d_denominator = 2*d_ar
         alfa_1 = numerator/denominator
         d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
-        
+
         numerator = -br - sqrt(radical)
         d_numerator = -d_br - d_radical/(2*sqrt(radical))
         alfa_2 = numerator/denominator
@@ -436,7 +436,7 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
     ps_eigen(1) = -atan(argument)
     d_ps_eigen(:, 1) = -1/(1 + argument**2)*d_argument
-    
+
     numerator = d1 + alfa_1*d2
     denominator = b1 + alfa_1*b2
     argument = numerator/denominator
@@ -451,7 +451,7 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     argument = numerator/denominator
     d_numerator = d_d1 + d_alfa_2*d2 + alfa_2*d_d2
     d_denominator = d_c1 + d_alfa_2*c2 + alfa_2*d_c2
-    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2    
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
     ps_eigen(3) = -atan(argument)
     d_ps_eigen(:, 3) = -1/(1 + argument**2)*d_argument
 end subroutine eigen_phases
@@ -511,7 +511,7 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
 end subroutine eigen_2_bar
 
 !!
-!> @brief      Matches the uncoupled asymptotic solution the Coulomb wave function 
+!> @brief      Matches the uncoupled asymptotic solution the Coulomb wave function
 !!
 !! When integrating the uncoupled variable phase equation in the pp channel, the wave function
 !! in the last integration step is matched form the free particle wave functions (reduced spherical
@@ -582,17 +582,17 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
             d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator**2
         endif
     enddo
-    
+
 end subroutine match_uncoupled_waves
 
 real(dp) function eta_prime(k) result(etap)
     implicit none
     real(dp), intent(in) :: k
-    etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)    
+    etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)
 end function eta_prime
 
 !!
-!> @brief      Matches the coupled asymptotic solution to the Coulomb wave function 
+!> @brief      Matches the coupled asymptotic solution to the Coulomb wave function
 !!
 !! When integrating the coupled variable phase equation in the pp channel, the wave function
 !! in the last integration step is matched form the free particle wave functions (reduced spherical
@@ -613,7 +613,7 @@ subroutine match_coupled_waves(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d
     real(dp), intent(inout) :: d_a(:, :) !< derivatives of the \f$A\f$ parameter for all coupled waves
     real(dp), intent(inout) :: d_b(:, :) !< derivatives of the \f$B\f$ parameter for all coupled waves
     real(dp), intent(inout) :: d_c(:, :) !< derivatives of the \f$C\f$ parameter for all coupled waves
-    real(dp), intent(inout) :: d_d(:, :) !< derivatives of the \f$D\f$ parameter for all coupled waves    
+    real(dp), intent(inout) :: d_d(:, :) !< derivatives of the \f$D\f$ parameter for all coupled waves
     integer :: j_max, ifail, j, ij
     real(dp) :: eta0, etap, ljm1, lj, ljp1, jhjm1, yhjm1, jhpjm1, yhpjm1, jhjp1, yhjp1, jhpjp1, &
         yhpjp1, Fjm1, Gjm1, Fpjm1, Gpjm1, Fjp1, Gjp1, Fpjp1, Gpjp1, Bf, Df
@@ -629,7 +629,7 @@ subroutine match_coupled_waves(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d
     if (j_max /= size(a) + 1 ) stop 'incorrect array size in match_coupled_waves'
 
     if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in match_uncoupled_waves'
-    
+
     allocate(FC(0:j_max))
     FC = 0
     allocate(GC, FCP, GCP, jc, yc, jcp, ycp, source = FC)
@@ -708,7 +708,7 @@ end subroutine match_coupled_waves
 subroutine add_coulomb(r, k, v_pw)
     implicit none
     real(dp), intent(in) :: r !< potential radius in fm
-    real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$ 
+    real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
     real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
     integer :: i
     real(dp) :: v_coul, fcoulr, br, kmev, alphap
@@ -739,7 +739,7 @@ end subroutine add_coulomb
 ! !> @brief      wrapper function for all_phaseshifts
 ! !!
 ! !! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call 
+! !! The generic data of type context is used to receive all the arguments necessary to call
 ! !! all_phaseshifts. The same data of type context is used to receive which parameter will
 ! !! be varied by the dfridr subroutine and which partial wave will be returned.
 ! !!
@@ -758,11 +758,11 @@ end subroutine add_coulomb
 !     real(dp) :: t_lab, r_max, dr
 !     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
 !     integer :: i_target, i_parameter, ic, ij
-!     character(len=2) :: reaction 
+!     character(len=2) :: reaction
 
 !     allocate(ap, source = data%x)
 !     t_lab = data%a
-!     r_max = data%b 
+!     r_max = data%b
 !     dr = data%c
 !     reaction = trim(data%string)
 !     i_parameter = data%i
@@ -784,7 +784,7 @@ end subroutine add_coulomb
 ! !> @brief      wrapper function for the derivatives of all_phaseshifts
 ! !!
 ! !! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call 
+! !! The generic data of type context is used to receive all the arguments necessary to call
 ! !! all_phaseshifts. The same data of type context is used to receive which parameter will
 ! !! be varied by the dfridr subroutine and which partial wave will be returned.
 ! !!
@@ -803,11 +803,11 @@ end subroutine add_coulomb
 !     real(dp) :: t_lab, r_max, dr
 !     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
 !     integer :: i_target, i_parameter, ic, ij
-!     character(len=2) :: reaction 
+!     character(len=2) :: reaction
 
 !     allocate(ap, source = data%x)
 !     t_lab = data%a
-!     r_max = data%b 
+!     r_max = data%b
 !     dr = data%c
 !     reaction = trim(data%string)
 !     i_parameter = data%i
