@@ -13,10 +13,10 @@ private
 public :: saclay_amplitudes, em_pp_amplitudes, em_np_amplitudes!, f_amplitudes, df_amplitudes
 
 interface
-    subroutine s_matrix_elements(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
+    subroutine s_matrix_elements(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
         use precisions, only : dp
         implicit none
-        integer, intent(in) :: lp
+        integer, intent(in) :: l_prime
         integer, intent(in) :: l
         integer, intent(in) :: j
         integer, intent(in) :: s
@@ -272,7 +272,7 @@ subroutine mm_amplitudes(k_cm, eta, theta, m_00, m_11, m_10, m_01, m_1m1)
     call mm_phaseshifts(k_cm, eta, mm_phases)
     call mm_phases_ls_term(k_cm, mm_phases_ls)
     call partial_wave_amplitude_sum(s_matrix_mm, 1, 0, 0, k_cm, theta, reaction, mm_phases, m = m_00)
-    call partial_wave_amplitude_sum(s_matrix_mm, 1, 1, 0, k_cm, theta, reaction, mm_phases, m = m_11)
+    call partial_wave_amplitude_sum(s_matrix_mm, 1, 1, 1, k_cm, theta, reaction, mm_phases, m = m_11)
     call partial_wave_amplitude_sum(s_matrix_mm, 1, 1,-1, k_cm, theta, reaction, mm_phases, m = m_1m1)
     mm_phases = mm_phases - mm_phases_ls
     call partial_wave_amplitude_sum(s_matrix_mm, 1, 1, 0, k_cm, theta, reaction, mm_phases, m = m_10)
@@ -337,9 +337,9 @@ subroutine m01_ls_contribution(k_cm, eta, theta, mm_phases, m_01)
 
 end subroutine m01_ls_contribution
 
-subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
+subroutine s_matrix_mm(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
     implicit none
-    integer, intent(in) :: lp !< \f$l'\f$ quantum number
+    integer, intent(in) :: l_prime !< \f$l'\f$ quantum number
     integer, intent(in) :: l !< \f$l\f$ quantum number
     integer, intent(in) :: j !< \f$j\f$ quantum number
     integer, intent(in) :: s !< \f$s\f$ quantum number
@@ -362,13 +362,13 @@ subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d
 
     select case(s)
     case (0)
-        if (lp == l .and. l == j) then
+        if (l_prime == l .and. l == j) then
             sm = 2*i_*phases(1, j+1)
         else
-            sm = 1 - kronecker_delta(lp, l)
+            sm = 1 - kronecker_delta(l_prime, l)
         endif
     case (1)
-        if (l == lp) then
+        if (l == l_prime) then
             if (l == j) then
                 sm = 2*i_*phases(2, j+1)
             else if (l == j-1) then
@@ -378,10 +378,10 @@ subroutine s_matrix_mm(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d
             else
                 sm = -1
             endif
-        else if (abs(l-lp) == 2) then
+        else if (abs(l-l_prime) == 2) then
             sm = 2*i_*phases(4, j+1)
         else
-            sm = -kronecker_delta(lp, l)
+            sm = -kronecker_delta(l_prime, l)
         endif
     case default
         stop 's has to be zero or one in s_matrix_mm'
@@ -419,7 +419,7 @@ subroutine partial_wave_amplitude_sum(s_mat, s, ms, mj, k_cm, theta, reaction, p
     complex(dp), intent(out) :: m !< Wolfenstein parameter
     complex(dp), optional, intent(out), allocatable  :: d_m(:) !< derivatives of the Wolfenstein parameter
 
-    integer :: n_params, j_max, j, l, lp
+    integer :: n_params, j_max, j, l, l_prime
     real(dp) :: etap, sigma_0, sigma_l, sigma_lp, Ylp, cg_1, cg_2
     complex(dp) :: sm
     complex(dp), allocatable :: d_sm(:)
@@ -451,22 +451,22 @@ subroutine partial_wave_amplitude_sum(s_mat, s, ms, mj, k_cm, theta, reaction, p
     do j = 0, j_max
         do l = j-1, j+1
             if (reaction == 'pp') sigma_l = coulomb_sigma_l(real(l, kind=dp), etap)
-            do lp = j-1, j+1
-                if (reaction == 'pp') sigma_lp = coulomb_sigma_l(real(lp, kind=dp), etap)
-                if (lp >= abs(mj - ms) .and. lp >= 0 .and. l >= 0) then
-                    Ylp = real(spherical_harmonic(lp, mj-ms, theta, 0._dp))
+            do l_prime = j-1, j+1
+                if (reaction == 'pp') sigma_lp = coulomb_sigma_l(real(l_prime, kind=dp), etap)
+                if (l_prime >= abs(mj - ms) .and. l_prime >= 0 .and. l >= 0) then
+                    Ylp = real(spherical_harmonic(l_prime, mj-ms, theta, 0._dp))
                     if (present(d_m)) then
-                        call s_mat(lp, l, j, s, k_cm, etap, reaction, phases, d_phases, sm, d_sm)
+                        call s_mat(l_prime, l, j, s, k_cm, etap, reaction, phases, d_phases, sm, d_sm)
                     else
-                        call s_mat(lp, l, j, s, k_cm, etap, reaction, phases, sm = sm)
+                        call s_mat(l_prime, l, j, s, k_cm, etap, reaction, phases, sm = sm)
                     endif
 
-                    cg_1 = clebsch_gordan(lp, s , j, ms, mj)
+                    cg_1 = clebsch_gordan(l_prime, s , j, ms, mj)
                     cg_2 = clebsch_gordan(l, s , j, mj, mj)
-                    m = m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*sm &
+                    m = m + 2*Ylp*cg_1*(i_**(l - l_prime))*exp(i_*(sigma_lp - sigma_0))*sm &
                         *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
                     if (present(d_m)) then
-                        d_m = d_m + 2*Ylp*cg_1*(i_**(l - lp))*exp(i_*(sigma_lp - sigma_0))*d_sm &
+                        d_m = d_m + 2*Ylp*cg_1*(i_**(l - l_prime))*exp(i_*(sigma_lp - sigma_0))*d_sm &
                             *exp(i_*(sigma_l-sigma_0))*cg_2*sqrt(2*l + 1._dp)*sqrt(4*pi)/(2*i_*k_cm)
                     endif
                 endif
@@ -565,9 +565,9 @@ end function clebsch_gordan
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
+subroutine s_matrix(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
     implicit none
-    integer, intent(in) :: lp !< \f$l'\f$ quantum number
+    integer, intent(in) :: l_prime !< \f$l'\f$ quantum number
     integer, intent(in) :: l !< \f$l\f$ quantum number
     integer, intent(in) :: j !< \f$j\f$ quantum number
     integer, intent(in) :: s !< \f$s\f$ quantum number
@@ -605,10 +605,10 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
         sigma_lambda = coulomb_sigma_l(lambda, eta)
         rho_l = sigma_lambda - sigma_l + (l - lambda)*pi/2._dp
 
-        lambdap = (-1 + sqrt(1 + 4*lp*(lp+1) - 4*alpha*alphap))/2._dp
-        sigma_lp = coulomb_sigma_l(real(lp, kind = dp), eta)
+        lambdap = (-1 + sqrt(1 + 4*l_prime*(l_prime+1) - 4*alpha*alphap))/2._dp
+        sigma_lp = coulomb_sigma_l(real(l_prime, kind = dp), eta)
         sigma_lambdap = coulomb_sigma_l(lambdap, eta)
-        rho_lp = sigma_lambdap - sigma_lp + (lp - lambdap)*pi/2._dp
+        rho_lp = sigma_lambdap - sigma_lp + (l_prime - lambdap)*pi/2._dp
 
         t_lab = 2/m_p*(k_cm*hbar_c)**2
         nu = 4*m_e**2/(m_p*t_lab)
@@ -628,19 +628,19 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
 
     select case(s)
     case (0)
-        if (lp == l .and. l == j) then
+        if (l_prime == l .and. l == j) then
             sm = (exp(2*i_*phases(1, j+1)) - 1)*exp(2*i_*(rho_l + tau0))
             if (present(d_sm)) then
                 d_sm = 2*i_*exp(2*i_*phases(1, j+1))*d_phases(:, 1, j+1)*exp(2*i_*(rho_l + tau0))
             endif
         else
-            sm = 1 - kronecker_delta(lp, l)
+            sm = 1 - kronecker_delta(l_prime, l)
             if (present(d_sm)) then
                 d_sm = (0, 0)
             endif
         endif
     case (1)
-        if (l == lp) then
+        if (l == l_prime) then
             if (l == j) then
                 sm = (exp(2*i_*phases(2, j+1)) - 1)*exp(2*i_*rho_l)*exp(2*i_*mm_phases(2, j+1))
                 if (present(d_sm)) then
@@ -669,7 +669,7 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
                     d_sm = (0, 0)
                 endif
             endif
-        else if (abs(l-lp) == 2) then
+        else if (abs(l-l_prime) == 2) then
             sm = i_*sin(2*phases(4, j+1))*exp(i_*(phases(3, j+1) + phases(5, j+1)))&
                 *exp(i_*(rho_l + rho_lp))*exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
             if (present(d_sm)) then
@@ -680,7 +680,7 @@ subroutine s_matrix(lp, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm
                     *exp(i_*(mm_phases(3, j+1) + mm_phases(5, j+1)))
             endif
         else
-            sm = -kronecker_delta(lp, l)
+            sm = -kronecker_delta(l_prime, l)
             if (present(d_sm)) then
                 d_sm = (0, 0)
             endif

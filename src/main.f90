@@ -8,11 +8,12 @@
 !!
 program nn_fit
 
-use read_write, only: print_em_np_amplitudes
+use read_write, only: print_em_np_amplitudes, print_em_pp_amplitudes
 
 implicit none
 
 call print_em_np_amplitudes()
+call print_em_pp_amplitudes()
 
 
 end program nn_fit
