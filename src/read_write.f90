@@ -37,7 +37,7 @@ subroutine print_em_np_amplitudes()
     ! open file for output
     open(newunit=unit, file='new_out_np.dat', status='unknown')
     ! format
-    fmt = '(I3, 4x, F21.15, 5(5x, E21.15,SP, E21.15, "i"))'
+    fmt = '(I3, 4x, F21.15, 5(5x, E21.15,SP, E21.15, "j"))'
     ! file header
     write(unit, '(2(A,4x), 5(40x, A))') 't_lab', 'theta', 'a', 'b', 'c', 'd', 'e'
 
@@ -62,7 +62,7 @@ subroutine print_em_pp_amplitudes()
         ! open file for output
         open(newunit=unit, file='new_out_pp.dat', status='unknown')
         ! format
-        fmt = '(I3, 4x, F21.15, 5(5x, E21.15,SP, E21.15, "i"))'
+        fmt = '(I3, 4x, F21.15, 5(5x, E21.15,SP, E21.15, "j"))'
         ! file header
         write(unit, '(2(A,4x), 5(40x, A))') 't_lab', 'theta', 'a', 'b', 'c', 'd', 'e'
 
