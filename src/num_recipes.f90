@@ -121,7 +121,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
     real(dp), intent(in) :: x
     !------- place holder variables--------------------------
     real(dp) :: x_pre = -1.0, m_pre = -1.0
-    integer ::  i
+    integer ::  i, l_largest = -1
     !-------------------------------------------------------
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
 
@@ -143,45 +143,26 @@ real(dp) function legendre_poly(l, m, x) result(r)
             ! save results
             l_array(l) = p_ml
         else
-            p_mm = 1._dp
-            if (m > 0) then
-                factor = sqrt(1 - x**2)
-                odd_factorial = 1
-                do i = 1, m
-                    p_mm = -p_mm*odd_factorial*factor
-                    odd_factorial = odd_factorial + 2
-                enddo
-            endif
-            if (l == m) then
-                r = p_mm ! set l-2
-                ! save result
-                l_array(l) = p_mm
-            else
-                p_mmp1 = x*(2*m + 1)*p_mm
-                if (l == m + 1) then
-                    r = p_mmp1 ! set l-1
-                    ! save result
-                    l_array(l) = p_mmp1
-                else
-                    p_ml = p_mmp1 ! set current to l-1
-                    do i = m + 2, l
-                        p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
-                        l_array(i) = p_ml ! save value for future use
-                        p_mm = p_mmp1 ! set l-2 to l-1
-                        p_mmp1 = p_ml ! set l-1 to l+1
-                        ! repeat until you reach l
-                    enddo
-                    r = p_ml ! set final l
-                endif
-            endif
+            ! built up from previous values
+            do i = l_largest + 1, l
+                p_mm = l_array(i-2)
+                p_mmp1 = l_array(i-1)
+                p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+                l_array(i) = p_ml ! save value for future use
+            enddo
+            r = p_ml ! set final l
         endif
     else
+        ! check if x and m are the same
         if(x /= x_pre .or. m /= m_pre) then
+            ! reset parameters if not
             x_pre = x
             m_pre = m
             l_array = 0
+            l_largest = -1
         end if
         ! store the largest l called
+        if(l > l_largest) l_largest = l
         p_mm = 1._dp
         if (m > 0) then
             factor = sqrt(1 - x**2)
