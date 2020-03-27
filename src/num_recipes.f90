@@ -120,7 +120,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
     integer, intent(in) :: m
     real(dp), intent(in) :: x
     !------- place holder variables--------------------------
-    real(dp) :: x_pre = -1.0
+    real(dp) :: x_pre = -1.0, m_pre = -1.0
     integer ::  i
     !-------------------------------------------------------
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
@@ -132,7 +132,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
 
     !  check if x is the same and there is previous l's
-     if(x == x_pre .and. l-2 > 0) then
+     if(x == x_pre .and. m == m_pre .and. l-2 > 0) then
          ! check if l calls are in order
         if(l_array(l-1) /= 0 .and. l_array(l-2) /= 0) then
             ! use saved values to make next
@@ -176,8 +176,11 @@ real(dp) function legendre_poly(l, m, x) result(r)
             endif
         endif
     else
-        x_pre = x
-
+        if(x /= x_pre .or. m /= m_pre) then
+            x_pre = x
+            m_pre = m
+            l_array = 0
+        end if
         ! store the largest l called
         p_mm = 1._dp
         if (m > 0) then
@@ -200,7 +203,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
                 l_array(l) = p_mmp1
             else
                 p_ml = p_mmp1 ! set current to l-1
-                l_array = 0 ! set array to zero if
+                !l_array = 0 ! set array to zero if
                 do i = m + 2, l
                     p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
                     l_array(i) = p_ml ! save value for future use
