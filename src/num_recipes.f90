@@ -13,6 +13,8 @@ use constants, only : pi, i_
 implicit none
 
 private
+integer, parameter :: L_MAX = 2000 ! max number of polynomial iterations
+real(dp), dimension(0:L_MAX) :: l_array = 0 ! initialize to 0
 
 public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
     kronecker_delta
@@ -34,7 +36,7 @@ end type
 !!
 !> @brief      interface for function callbacks
 !!
-!! 
+!!
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -117,40 +119,109 @@ real(dp) function legendre_poly(l, m, x) result(r)
     integer, intent(in) :: l
     integer, intent(in) :: m
     real(dp), intent(in) :: x
-
+    !------- place holder variables--------------------------
+    real(dp) :: x_pre = -1.0, m_pre = -1.0
+    integer ::  i, l_largest = -1
+    !-------------------------------------------------------
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
-    integer :: i
 
+    ! set
     if (m < 0) stop 'legendre_poly is only valid for m >= 0'
     if (l < m) stop 'legendre_poly is only valid for m >= l'
+    if (l >= L_MAX) stop 'legendre_poly limit of 2000 reached'
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
 
-    p_mm = 1._dp
-    if (m > 0) then
-        factor = sqrt(1 - x**2)
-        odd_factorial = 1
-        do i = 1, m
-            p_mm = -p_mm*odd_factorial*factor
-            odd_factorial = odd_factorial + 2
-        enddo
-    endif
-    if (l == m) then
-        r = p_mm
-    else
-        p_mmp1 = x*(2*m + 1)*p_mm
-        if (l == m + 1) then
-            r = p_mmp1
-        else
-            p_ml = p_mmp1
-            do i = m + 2, l
-                p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m)
-                p_mm = p_mmp1
-                p_mmp1 = p_ml
-            enddo
+    !  check if x is the same and there is previous l's
+     if(x == x_pre .and. m == m_pre .and. l-2 > 0) then
+         ! check if l calls are in order
+        if(l_array(l-1) /= 0 .and. l_array(l-2) /= 0) then
+            ! use saved values to make next
+            p_mm = l_array(l-2)
+            p_mmp1 = l_array(l-1)
+            p_ml = (x*(2*l - 1)*p_mmp1 - (l + m - 1)*p_mm)/(l-m) ! build l+1 using l-2 and l-1
             r = p_ml
+            ! save results
+            l_array(l) = p_ml
+        else
+            ! built up from previous values
+            do i = l_largest + 1, l
+                p_mm = l_array(i-2)
+                p_mmp1 = l_array(i-1)
+                p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+                l_array(i) = p_ml ! save value for future use
+            enddo
+            r = p_ml ! set final l
         endif
-    endif
-    
+    else
+        ! check if x and m are the same
+        if(x /= x_pre .or. m /= m_pre) then
+            ! reset parameters if not
+            x_pre = x
+            m_pre = m
+            l_array = 0
+            l_largest = -1
+        end if
+        ! store the largest l called
+        if(l > l_largest) l_largest = l
+        p_mm = 1._dp
+        if (m > 0) then
+            factor = sqrt(1 - x**2)
+            odd_factorial = 1
+            do i = 1, m
+                p_mm = -p_mm*odd_factorial*factor
+                odd_factorial = odd_factorial + 2
+            enddo
+        endif
+        if (l == m) then
+            r = p_mm ! set l-2
+            ! save result
+            l_array(l) = p_mm
+        else
+            p_mmp1 = x*(2*m + 1)*p_mm
+            if (l == m + 1) then
+                r = p_mmp1 ! set l-1
+                ! save result
+                l_array(l) = p_mmp1
+            else
+                p_ml = p_mmp1 ! set current to l-1
+                !l_array = 0 ! set array to zero if
+                do i = m + 2, l
+                    p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+                    l_array(i) = p_ml ! save value for future use
+                    p_mm = p_mmp1 ! set l-2 to l-1
+                    p_mmp1 = p_ml ! set l-1 to l+1
+                    ! repeat until you reach l
+                enddo
+                r = p_ml ! set final l
+            endif
+        endif
+    end if
+    ! p_mm = 1._dp
+    ! if (m > 0) then
+    !     factor = sqrt(1 - x**2)
+    !     odd_factorial = 1
+    !     do i = 1, m
+    !         p_mm = -p_mm*odd_factorial*factor
+    !         odd_factorial = odd_factorial + 2
+    !     enddo
+    ! endif
+    ! if (l == m) then
+    !     r = p_mm ! set l-2
+    ! else
+    !     p_mmp1 = x*(2*m + 1)*p_mm
+    !     if (l == m + 1) then
+    !         r = p_mmp1 ! set l-1
+    !     else
+    !         p_ml = p_mmp1 ! set current to l-1
+    !         do i = m + 2, l
+    !             p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+    !             p_mm = p_mmp1 ! set l-2 to l-1
+    !             p_mmp1 = p_ml ! set l-1 to l+1
+    !             ! repeat until you reach l
+    !         enddo
+    !         r = p_ml ! set final l
+    !     endif
+    ! endif
 end function legendre_poly
 
 !!
@@ -171,7 +242,7 @@ subroutine dfridr(f, data, x, h, df_dx, err)
     real(dp), intent(in) :: h !< estimated initial step-size. should be an increment in x over which f changes substantially
     real(dp), intent(out) :: df_dx !< derivative of f at x
     real(dp), intent(out) :: err !< estimate of the error in the derivative
-    
+
     integer, parameter  :: ntab = 10
     real(dp), parameter :: con = 1.4_dp, con2 = con**2, big = 1.e+30_dp, safe = 2._dp
     integer :: i, j
@@ -210,7 +281,7 @@ end subroutine dfridr
 !!
 !! Modified from Numerical Recipes
 !!
-!! Calculates the spherical Bessel functions \f$ j_n(x) \f$, \f$ y_n(x) \f$, and their derivatives 
+!! Calculates the spherical Bessel functions \f$ j_n(x) \f$, \f$ y_n(x) \f$, and their derivatives
 !! \f$ j_n'(x) \f$, \f$ y_n'(x) \f$ for an integer \$f n \f$.
 !!
 !! @author     Rodrigo Navarro Perez
@@ -263,7 +334,7 @@ subroutine bessjy(x, nu, rj, ry, rjp, ryp)
     real(dp) :: a, b, br, bi, c, cr, ci, d, del, del1, den, di, dlr, dli, dr, e, f, fact, fact2, &
         fact3, ff, gam, gam1, gam2, gammi, gampl, h, p, pimu, pimu2, q, r, rjl, rjl1, rjmu, rjp1, &
         rjpl, rjtemp, ry1, rymu, rymup, rytemp, sum, sum1, temp, w, x2, xi, xi2, xmu, xmu2
-    
+
     if (x <=0 .or. nu <= 0) stop 'bad arguments in bessjy'
     if (x <= xmin ) then
         nl = int(nu + 0.5_dp)
@@ -417,7 +488,7 @@ end subroutine bessjy
 !! Modified from Numerical Recipes
 !!
 !! Evaluates the \f$ \Gamma_1(x) \f$ and \f$ \Gamma_2(x) \f$ terms for the bessjy calculation by
-!! Chebyshev expansion for \f$ |x| \leq 1/2 \f$. Also returns \f$ 1/\Gamma(1 + x ) \f$ and 
+!! Chebyshev expansion for \f$ |x| \leq 1/2 \f$. Also returns \f$ 1/\Gamma(1 + x ) \f$ and
 !! \f$ 1/\Gamma(1 − x ) \f$.
 !!
 !! \f$ \Gamma_1(x) = \frac{1}{2x} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
@@ -453,7 +524,7 @@ end subroutine beschb
 !! Modified from Numerical Recipes
 !!
 !! c(:) is an array of Chebyshev coefficients, usually the output from chebft (which must have been
-!! called with the same a and b ). The Chebyshev polynomial 
+!! called with the same a and b ). The Chebyshev polynomial
 !!
 !! \f$  \sum_{k=1}^m = c_k T_{k-1}(y) - c_1/2 \f$
 !!
@@ -469,7 +540,7 @@ real(dp) function chebev(a, b, c, x) result(r)
     real(dp), intent(in) :: x !< point where the polynomial es evaluated
     integer :: m, j
     real(dp) :: d, dd, sv, y, y2
-    
+
     m = size(c)
     if ((x - a)*(x - b) > 0) stop 'x not in range in chebev'
     d = 0
@@ -483,5 +554,5 @@ real(dp) function chebev(a, b, c, x) result(r)
     enddo
     r = y*d - dd + c(1)/2
 end function chebev
-     
+
 end module num_recipes
