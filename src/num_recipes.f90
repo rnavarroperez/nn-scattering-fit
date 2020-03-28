@@ -114,6 +114,16 @@ complex(dp) function spherical_harmonic(l, m, theta, phi) result(Ylm)
     if (m < 0) Ylm = (-1)**m*Ylm
 end function spherical_harmonic
 
+
+!!
+!> @brief      Optimized function to calculate legendre polynomials
+!!
+!! Modifies an algorithm to calculate legendre polynomials to save
+!! the previous values and build up from them. This eliminates the
+!! need to start from the beginning when using same x and m values 
+!!
+!! @author     Raul L Bernal-Gonzalez
+!!
 real(dp) function legendre_poly(l, m, x) result(r)
     implicit none
     integer, intent(in) :: l
@@ -196,6 +206,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
             endif
         endif
     end if
+    ! THIS IS THE ORIGINAL UNMODIFIED ALGORITHM
     ! p_mm = 1._dp
     ! if (m > 0) then
     !     factor = sqrt(1 - x**2)
