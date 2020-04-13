@@ -1,0 +1,455 @@
+\hypertarget{namespaceav18}{}\section{av18 Module Reference}
+\label{namespaceav18}\index{av18@{av18}}
+
+
+\hyperlink{namespaceav18}{av18} potential  
+
+
+\subsection*{Functions/\+Subroutines}
+\begin{DoxyCompactItemize}
+\item 
+subroutine, public \hyperlink{namespaceav18_aa3a8f4d6382c199fcc71197445711d3d}{av18\+\_\+all\+\_\+partial\+\_\+waves} (ap, r, reaction, v\+\_\+pw, dv\+\_\+pw)
+\begin{DoxyCompactList}\small\item\em \hyperlink{namespaceav18}{av18} potential in all partial waves \end{DoxyCompactList}\item 
+subroutine \hyperlink{namespaceav18_ac263bd481e6a61fd5eaae23d97dce143}{add\+\_\+em\+\_\+potential} (reaction, s, v\+\_\+em, v\+\_\+st)
+\begin{DoxyCompactList}\small\item\em Adds EM potential to strong potential in basis. \end{DoxyCompactList}\item 
+real(dp) function, dimension(1\+:\hyperlink{namespaceav18_abdf1bd7208851f82a6773c558de0602f}{n\+\_\+em\+\_\+terms}) \hyperlink{namespaceav18_af5419f35a68d9a2059fce4f02afd9af4}{em\+\_\+potential} (r)
+\begin{DoxyCompactList}\small\item\em electromagnetic potential in NN scattering \end{DoxyCompactList}\item 
+real(dp) function \hyperlink{namespaceav18_a9d2b56f5ea01d81ae52e60b023551d9e}{uncoupled\+\_\+pot} (l, s, j, v\+\_\+st)
+\begin{DoxyCompactList}\small\item\em potential in uncoupled partial wave \end{DoxyCompactList}\item 
+real(dp) function, dimension(1\+:3) \hyperlink{namespaceav18_a440cc1c708d1c17c19cad4ab67a6c289}{coupled\+\_\+pot} (j, v\+\_\+st)
+\begin{DoxyCompactList}\small\item\em potential in uncoupled partial wave \end{DoxyCompactList}\item 
+real(dp) function, dimension(1\+:\hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{n\+\_\+st\+\_\+terms}) \hyperlink{namespaceav18_aa01617c5c79d9290a3dce13819b9ef72}{operator\+\_\+2\+\_\+st\+\_\+basis} (tz1, tz2, s, t, v\+\_\+op)
+\begin{DoxyCompactList}\small\item\em transform potential from operator to st basis \end{DoxyCompactList}\item 
+real(dp) function, dimension(\+:, \+:), allocatable \hyperlink{namespaceav18_a19a966bb1b322e2d9e2c8816a6634ebb}{d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis} (tz1, tz2, s, t, dv\+\_\+op)
+\begin{DoxyCompactList}\small\item\em transform derivatives potential from operator to st basis \end{DoxyCompactList}\item 
+subroutine \hyperlink{namespaceav18_a371b28a37a073022fcb2d0cedc770b21}{av18\+\_\+operator} (ap, r, v\+\_\+nn, dv\+\_\+nn)
+\begin{DoxyCompactList}\small\item\em \hyperlink{namespaceav18}{av18} potential in operator basis \end{DoxyCompactList}\item 
+real(dp) function, public \hyperlink{namespaceav18_a111cfac79051da99e0b5895e5370c2bc}{f\+\_\+av18} (x, data)
+\begin{DoxyCompactList}\small\item\em wrapper function for the \hyperlink{namespaceav18}{av18} potential \end{DoxyCompactList}\item 
+real(dp) function, dimension(\+:), allocatable, public \hyperlink{namespaceav18_a6bc9abd9cec28d438ad5228c84238cbb}{df\+\_\+av18} (data)
+\begin{DoxyCompactList}\small\item\em wrapper function for the derivatives of the \hyperlink{namespaceav18}{av18} potential \end{DoxyCompactList}\item 
+real(dp) function, public \hyperlink{namespaceav18_a4092b1449c0991611a4a0be131e56e66}{f\+\_\+av18\+\_\+pw} (x, data)
+\begin{DoxyCompactList}\small\item\em wrapper function for av18\+\_\+all\+\_\+partial\+\_\+waves \end{DoxyCompactList}\item 
+real(dp) function, dimension(\+:), allocatable, public \hyperlink{namespaceav18_a8b7b43084d226bd7404444269717d26c}{df\+\_\+av18\+\_\+pw} (data)
+\begin{DoxyCompactList}\small\item\em wrapper function for the derivatives of av18\+\_\+all\+\_\+partial\+\_\+waves \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+integer, parameter, public \hyperlink{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}{n\+\_\+parameters} = 44
+\begin{DoxyCompactList}\small\item\em Number of phenomenological parameters. \end{DoxyCompactList}\item 
+integer, parameter \hyperlink{namespaceav18_a360396af16932b4172038bd146cb1e0a}{n\+\_\+operators} = 18
+\begin{DoxyCompactList}\small\item\em Number of operators in the A\+V18 basis. \end{DoxyCompactList}\item 
+integer, parameter \hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{n\+\_\+st\+\_\+terms} = 5
+\begin{DoxyCompactList}\small\item\em Number of terms in the spin-\/isospin basis. \end{DoxyCompactList}\item 
+integer, parameter \hyperlink{namespaceav18_abdf1bd7208851f82a6773c558de0602f}{n\+\_\+em\+\_\+terms} = 14
+\item 
+real(dp), dimension(1\+:\hyperlink{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}{n\+\_\+parameters}), parameter, public \hyperlink{namespaceav18_a8a031093cf20f6305f0a0b8f557c1deb}{default\+\_\+params} = \mbox{[} -\/7.\+62701\+\_\+dp, 1815.\+49200\+\_\+dp, 1847.\+80590\+\_\+dp, 1813.\+53150\+\_\+dp, 1811.\+57100\+\_\+dp, 1.\+07985\+\_\+dp, -\/190.\+09490\+\_\+dp, -\/811.\+20400\+\_\+dp, -\/0.\+62697\+\_\+dp, -\/570.\+55710\+\_\+dp, 819.\+12220\+\_\+dp, 0.\+06709\+\_\+dp, 342.\+06690\+\_\+dp, -\/615.\+23390\+\_\+dp, 0.\+74129\+\_\+dp, 9.\+34180\+\_\+dp, -\/376.\+43840\+\_\+dp, -\/8.\+62770\+\_\+dp, 2605.\+26820\+\_\+dp, 441.\+97330\+\_\+dp, 1.\+48560\+\_\+dp, -\/1126.\+83590\+\_\+dp, 370.\+13240\+\_\+dp, 0.\+10180\+\_\+dp, 86.\+06580\+\_\+dp, -\/356.\+51750\+\_\+dp, -\/0.\+13201\+\_\+dp, 253.\+43500\+\_\+dp, -\/1.\+00760\+\_\+dp, 0.\+07357\+\_\+dp, -\/217.\+57910\+\_\+dp, 18.\+39350\+\_\+dp, -\/11.\+27028\+\_\+dp, 3346.\+68740\+\_\+dp, -\/10.\+66788\+\_\+dp, 3126.\+55420\+\_\+dp, -\/11.\+27028\+\_\+dp, 3342.\+76640\+\_\+dp, 0.\+12472\+\_\+dp, 16.\+77800\+\_\+dp, -\/2.\+09971\+\_\+dp, 1204.\+43010\+\_\+dp, -\/0.\+31452\+\_\+dp, 217.\+45590\+\_\+dp\mbox{]}
+\begin{DoxyCompactList}\small\item\em default parameters in the A\+V18 potential \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\hyperlink{namespaceav18}{av18} potential 
+
+Module to calculate the A\+V18 potential in operator basis. See derivations and details in\+:
+
+Phys.\+Rev. C51 (1995) 38-\/51
+
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez 
+\end{DoxyAuthor}
+
+
+\subsection{Function/\+Subroutine Documentation}
+\mbox{\Hypertarget{namespaceav18_ac263bd481e6a61fd5eaae23d97dce143}\label{namespaceav18_ac263bd481e6a61fd5eaae23d97dce143}} 
+\index{av18@{av18}!add\+\_\+em\+\_\+potential@{add\+\_\+em\+\_\+potential}}
+\index{add\+\_\+em\+\_\+potential@{add\+\_\+em\+\_\+potential}!av18@{av18}}
+\subsubsection{\texorpdfstring{add\+\_\+em\+\_\+potential()}{add\_em\_potential()}}
+{\footnotesize\ttfamily subroutine av18\+::add\+\_\+em\+\_\+potential (\begin{DoxyParamCaption}\item[{character(len=2), intent(in)}]{reaction,  }\item[{integer, intent(in)}]{s,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_abdf1bd7208851f82a6773c558de0602f}{n\+\_\+em\+\_\+terms}), intent(in)}]{v\+\_\+em,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{n\+\_\+st\+\_\+terms}), intent(inout)}]{v\+\_\+st }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Adds EM potential to strong potential in basis. 
+
+Given an already calculated EM potential, reaction channel and spin quantum number, adds the EM potential to the strong potential in the spin-\/isospin channel
+
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em reaction} & reaction channel, \textquotesingle{}pp\textquotesingle{}, \textquotesingle{}np\textquotesingle{} or \textquotesingle{}nn\textquotesingle{}\\
+\hline
+\mbox{\tt in}  & {\em s} & spin quantum number\\
+\hline
+\mbox{\tt in}  & {\em v\+\_\+em} & EM potential as defined in A\+V18 paper\\
+\hline
+\mbox{\tt in,out}  & {\em v\+\_\+st} & Strong potential in spin-\/isospin basis \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_aa3a8f4d6382c199fcc71197445711d3d}\label{namespaceav18_aa3a8f4d6382c199fcc71197445711d3d}} 
+\index{av18@{av18}!av18\+\_\+all\+\_\+partial\+\_\+waves@{av18\+\_\+all\+\_\+partial\+\_\+waves}}
+\index{av18\+\_\+all\+\_\+partial\+\_\+waves@{av18\+\_\+all\+\_\+partial\+\_\+waves}!av18@{av18}}
+\subsubsection{\texorpdfstring{av18\+\_\+all\+\_\+partial\+\_\+waves()}{av18\_all\_partial\_waves()}}
+{\footnotesize\ttfamily subroutine, public av18\+::av18\+\_\+all\+\_\+partial\+\_\+waves (\begin{DoxyParamCaption}\item[{real(dp), dimension(\+:), intent(in)}]{ap,  }\item[{real(dp), intent(in)}]{r,  }\item[{character(len=2), intent(in)}]{reaction,  }\item[{real(dp), dimension(\+:, \+:), intent(out)}]{v\+\_\+pw,  }\item[{real(dp), dimension(\+:, \+:, \+:), intent(out), allocatable}]{dv\+\_\+pw }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{namespaceav18}{av18} potential in all partial waves 
+
+Given a set of parameters and a radius (in units of fm) returns the nuclear part of the A\+V18 potential (in units of MeV) in all partial waves and the derivative of each potential with respect of the given parameters.
+
+The role of every parameter and the derivation of the potential can be found
+
+Phys.\+Rev. C51 (1995) 38-\/51
+
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ap} & Phenomenological parameters\\
+\hline
+\mbox{\tt in}  & {\em r} & radius in units of fm\\
+\hline
+\mbox{\tt in}  & {\em reaction} & reaction channel\+: np, pp, or nn\\
+\hline
+\mbox{\tt out}  & {\em v\+\_\+pw} & A\+V18 potential in all partial waves, units of MeV\\
+\hline
+\mbox{\tt out}  & {\em dv\+\_\+pw} & derivatives of v\+\_\+nn with respect to the parameters in ap \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_a371b28a37a073022fcb2d0cedc770b21}\label{namespaceav18_a371b28a37a073022fcb2d0cedc770b21}} 
+\index{av18@{av18}!av18\+\_\+operator@{av18\+\_\+operator}}
+\index{av18\+\_\+operator@{av18\+\_\+operator}!av18@{av18}}
+\subsubsection{\texorpdfstring{av18\+\_\+operator()}{av18\_operator()}}
+{\footnotesize\ttfamily subroutine av18\+::av18\+\_\+operator (\begin{DoxyParamCaption}\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}{n\+\_\+parameters}), intent(in)}]{ap,  }\item[{real(dp), intent(in)}]{r,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_a360396af16932b4172038bd146cb1e0a}{n\+\_\+operators}), intent(out)}]{v\+\_\+nn,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}{n\+\_\+parameters}, 1\+:\hyperlink{namespaceav18_a360396af16932b4172038bd146cb1e0a}{n\+\_\+operators}), intent(out)}]{dv\+\_\+nn }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+\hyperlink{namespaceav18}{av18} potential in operator basis 
+
+Given a set of parameters and a radius (in units of fm) returns the nuclear part of the A\+V18 potential (in units of MeV) in operator basis and the derivative of each potential with respect of the given parameters.
+
+The role of every parameter and the derivation of the potential can be found
+
+Phys.\+Rev. C51 (1995) 38-\/51
+
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ap} & Phenomenological parameters\\
+\hline
+\mbox{\tt in}  & {\em r} & radius in units of fm\\
+\hline
+\mbox{\tt out}  & {\em v\+\_\+nn} & A\+V18 potential in operator basis, units of MeV\\
+\hline
+\mbox{\tt out}  & {\em dv\+\_\+nn} & derivatives of v\+\_\+nn with respect to the parameters in ap \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_a440cc1c708d1c17c19cad4ab67a6c289}\label{namespaceav18_a440cc1c708d1c17c19cad4ab67a6c289}} 
+\index{av18@{av18}!coupled\+\_\+pot@{coupled\+\_\+pot}}
+\index{coupled\+\_\+pot@{coupled\+\_\+pot}!av18@{av18}}
+\subsubsection{\texorpdfstring{coupled\+\_\+pot()}{coupled\_pot()}}
+{\footnotesize\ttfamily real(dp) function, dimension(1\+:3) av18\+::coupled\+\_\+pot (\begin{DoxyParamCaption}\item[{integer, intent(in)}]{j,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{n\+\_\+st\+\_\+terms}), intent(in)}]{v\+\_\+st }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+potential in uncoupled partial wave 
+
+Given a potential in spin-\/isospin basis and the total angular momentum j, calculates the coupled potential in the corresponding channel
+
+\begin{DoxyReturn}{Returns}
+coupled potential in the given j channel
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em j} & total angular momentum quantum number\\
+\hline
+\mbox{\tt in}  & {\em v\+\_\+st} & potential in spin-\/isospin basis\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+coupled potential in the j channel 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespaceav18_a19a966bb1b322e2d9e2c8816a6634ebb}\label{namespaceav18_a19a966bb1b322e2d9e2c8816a6634ebb}} 
+\index{av18@{av18}!d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis@{d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis}}
+\index{d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis@{d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis}!av18@{av18}}
+\subsubsection{\texorpdfstring{d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis()}{d\_operator\_2\_st\_basis()}}
+{\footnotesize\ttfamily real(dp) function, dimension(\+:, \+:), allocatable av18\+::d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis (\begin{DoxyParamCaption}\item[{integer, intent(in)}]{tz1,  }\item[{integer, intent(in)}]{tz2,  }\item[{integer, intent(in)}]{s,  }\item[{integer, intent(in)}]{t,  }\item[{real(dp), dimension(\+:, \+:), intent(in)}]{dv\+\_\+op }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+transform derivatives potential from operator to st basis 
+
+Given the derivatives of potential in the A\+V18 operator basis with respect to phenomenological parameters and the corresponding spin and isospin quantum numbers, returns the derivatives in the spin-\/isospin basis.
+
+The five terms in the basis are central, tensor, spin-\/orbit, l squared, and spin-\/orbit squared
+
+\begin{DoxyReturn}{Returns}
+derivatives of the potential in spin-\/isospin basis
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tz1} & isospin projected in the z direction for the first particle\\
+\hline
+\mbox{\tt in}  & {\em tz2} & isospin projected in the z direction for the second particle\\
+\hline
+\mbox{\tt in}  & {\em s} & spin quantum number\\
+\hline
+\mbox{\tt in}  & {\em t} & isospin quantum number\\
+\hline
+\mbox{\tt in}  & {\em dv\+\_\+op} & derivatives of the potential in the A\+V18 operator basis\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+derivatives of the potential in the spin-\/isospin basis 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespaceav18_a6bc9abd9cec28d438ad5228c84238cbb}\label{namespaceav18_a6bc9abd9cec28d438ad5228c84238cbb}} 
+\index{av18@{av18}!df\+\_\+av18@{df\+\_\+av18}}
+\index{df\+\_\+av18@{df\+\_\+av18}!av18@{av18}}
+\subsubsection{\texorpdfstring{df\+\_\+av18()}{df\_av18()}}
+{\footnotesize\ttfamily real(dp) function, dimension(\+:), allocatable, public av18\+::df\+\_\+av18 (\begin{DoxyParamCaption}\item[{type(\hyperlink{structnum__recipes_1_1context}{context}), intent(in)}]{data }\end{DoxyParamCaption})}
+
+
+
+wrapper function for the derivatives of the \hyperlink{namespaceav18}{av18} potential 
+
+This wrapper function is used to test the derivatives of the av18\+\_\+operator subroutine. The generic data of type context is used to receive all the arguments necessary to call the av18\+\_\+operator subroutine. The same data of type context is used to receive which operator will be returned
+
+\begin{DoxyReturn}{Returns}
+the derivatives of one of the operators of the \hyperlink{namespaceav18}{av18} potential at an specific radius
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em data} & data structure with all the arguments for av18\+\_\+operator \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_a8b7b43084d226bd7404444269717d26c}\label{namespaceav18_a8b7b43084d226bd7404444269717d26c}} 
+\index{av18@{av18}!df\+\_\+av18\+\_\+pw@{df\+\_\+av18\+\_\+pw}}
+\index{df\+\_\+av18\+\_\+pw@{df\+\_\+av18\+\_\+pw}!av18@{av18}}
+\subsubsection{\texorpdfstring{df\+\_\+av18\+\_\+pw()}{df\_av18\_pw()}}
+{\footnotesize\ttfamily real(dp) function, dimension(\+:), allocatable, public av18\+::df\+\_\+av18\+\_\+pw (\begin{DoxyParamCaption}\item[{type(\hyperlink{structnum__recipes_1_1context}{context}), intent(in)}]{data }\end{DoxyParamCaption})}
+
+
+
+wrapper function for the derivatives of av18\+\_\+all\+\_\+partial\+\_\+waves 
+
+This wrapper function is used to test the derivatives of the av18\+\_\+all\+\_\+partial\+\_\+waves subroutine. The generic data of type context is used to receive all the arguments necessary to call av18\+\_\+all\+\_\+partial\+\_\+waves. The same data of type context is used to receive which operator will be returned
+
+\begin{DoxyReturn}{Returns}
+the derivatives of the \hyperlink{namespaceav18}{av18} potential at an specific radius and partial wave
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em data} & data structure with all the arguments for av18\+\_\+operator \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_af5419f35a68d9a2059fce4f02afd9af4}\label{namespaceav18_af5419f35a68d9a2059fce4f02afd9af4}} 
+\index{av18@{av18}!em\+\_\+potential@{em\+\_\+potential}}
+\index{em\+\_\+potential@{em\+\_\+potential}!av18@{av18}}
+\subsubsection{\texorpdfstring{em\+\_\+potential()}{em\_potential()}}
+{\footnotesize\ttfamily real(dp) function, dimension(1\+:\hyperlink{namespaceav18_abdf1bd7208851f82a6773c558de0602f}{n\+\_\+em\+\_\+terms}) av18\+::em\+\_\+potential (\begin{DoxyParamCaption}\item[{real(dp), intent(in)}]{r }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+electromagnetic potential in NN scattering 
+
+EM potential in NN scattering as calculated in the A\+V18 potential
+
+For details see Phys.\+Rev. C51 (1995) 38-\/51
+
+\begin{DoxyReturn}{Returns}
+electromagnetic potential
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em r} & radius at which the potential is evaluated\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+electromagnetic potential 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespaceav18_a111cfac79051da99e0b5895e5370c2bc}\label{namespaceav18_a111cfac79051da99e0b5895e5370c2bc}} 
+\index{av18@{av18}!f\+\_\+av18@{f\+\_\+av18}}
+\index{f\+\_\+av18@{f\+\_\+av18}!av18@{av18}}
+\subsubsection{\texorpdfstring{f\+\_\+av18()}{f\_av18()}}
+{\footnotesize\ttfamily real(dp) function, public av18\+::f\+\_\+av18 (\begin{DoxyParamCaption}\item[{real(dp), intent(in)}]{x,  }\item[{type(\hyperlink{structnum__recipes_1_1context}{context}), intent(in)}]{data }\end{DoxyParamCaption})}
+
+
+
+wrapper function for the \hyperlink{namespaceav18}{av18} potential 
+
+This wrapper function is used to test the derivatives of the av18\+\_\+operator subroutine. The generic data of type context is used to receive all the arguments necessary to call the av18\+\_\+operator subroutine. The same data of type context is used to receive which parameter will be varied by the dfridr subroutine and which operator will be returned.
+
+\begin{DoxyReturn}{Returns}
+one of the operators of the \hyperlink{namespaceav18}{av18} potential at an specific radius
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em x} & parameter that will be varied by the dfridr subroutine\\
+\hline
+\mbox{\tt in}  & {\em data} & data structure with all the arguments for av18\+\_\+operator \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_a4092b1449c0991611a4a0be131e56e66}\label{namespaceav18_a4092b1449c0991611a4a0be131e56e66}} 
+\index{av18@{av18}!f\+\_\+av18\+\_\+pw@{f\+\_\+av18\+\_\+pw}}
+\index{f\+\_\+av18\+\_\+pw@{f\+\_\+av18\+\_\+pw}!av18@{av18}}
+\subsubsection{\texorpdfstring{f\+\_\+av18\+\_\+pw()}{f\_av18\_pw()}}
+{\footnotesize\ttfamily real(dp) function, public av18\+::f\+\_\+av18\+\_\+pw (\begin{DoxyParamCaption}\item[{real(dp), intent(in)}]{x,  }\item[{type(\hyperlink{structnum__recipes_1_1context}{context}), intent(in)}]{data }\end{DoxyParamCaption})}
+
+
+
+wrapper function for av18\+\_\+all\+\_\+partial\+\_\+waves 
+
+This wrapper function is used to test the derivatives of the av18\+\_\+all\+\_\+partial\+\_\+waves subroutine. The generic data of type context is used to receive all the arguments necessary to call av18\+\_\+all\+\_\+partial\+\_\+waves. The same data of type context is used to receive which parameter will be varied by the dfridr subroutine and which partial wave will be returned.
+
+\begin{DoxyReturn}{Returns}
+\hyperlink{namespaceav18}{av18} potential at an specific radius and partial wave
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em x} & parameter that will be varied by the dfridr subroutine\\
+\hline
+\mbox{\tt in}  & {\em data} & data structure with all the arguments for av18\+\_\+operator \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{namespaceav18_aa01617c5c79d9290a3dce13819b9ef72}\label{namespaceav18_aa01617c5c79d9290a3dce13819b9ef72}} 
+\index{av18@{av18}!operator\+\_\+2\+\_\+st\+\_\+basis@{operator\+\_\+2\+\_\+st\+\_\+basis}}
+\index{operator\+\_\+2\+\_\+st\+\_\+basis@{operator\+\_\+2\+\_\+st\+\_\+basis}!av18@{av18}}
+\subsubsection{\texorpdfstring{operator\+\_\+2\+\_\+st\+\_\+basis()}{operator\_2\_st\_basis()}}
+{\footnotesize\ttfamily real(dp) function, dimension(1\+:\hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{n\+\_\+st\+\_\+terms}) av18\+::operator\+\_\+2\+\_\+st\+\_\+basis (\begin{DoxyParamCaption}\item[{integer, intent(in)}]{tz1,  }\item[{integer, intent(in)}]{tz2,  }\item[{integer, intent(in)}]{s,  }\item[{integer, intent(in)}]{t,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_a360396af16932b4172038bd146cb1e0a}{n\+\_\+operators}), intent(in)}]{v\+\_\+op }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+transform potential from operator to st basis 
+
+Given a potential in the A\+V18 operator basis and the corresponding spin and isospin quantum numbers, returns the potential in the spin-\/isospin basis.
+
+The five terms in the basis are central, tensor, spin-\/orbit, l squared, and spin-\/orbit squared
+
+\begin{DoxyReturn}{Returns}
+potential in spin-\/isospin basis
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tz1} & isospin projected in the z direction for the first particle\\
+\hline
+\mbox{\tt in}  & {\em tz2} & isospin projected in the z direction for the second particle\\
+\hline
+\mbox{\tt in}  & {\em s} & spin quantum number\\
+\hline
+\mbox{\tt in}  & {\em t} & isospin quantum number\\
+\hline
+\mbox{\tt in}  & {\em v\+\_\+op} & potential in the A\+V18 operator basis\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+potential in the spin-\/isospin basis 
+\end{DoxyReturn}
+\mbox{\Hypertarget{namespaceav18_a9d2b56f5ea01d81ae52e60b023551d9e}\label{namespaceav18_a9d2b56f5ea01d81ae52e60b023551d9e}} 
+\index{av18@{av18}!uncoupled\+\_\+pot@{uncoupled\+\_\+pot}}
+\index{uncoupled\+\_\+pot@{uncoupled\+\_\+pot}!av18@{av18}}
+\subsubsection{\texorpdfstring{uncoupled\+\_\+pot()}{uncoupled\_pot()}}
+{\footnotesize\ttfamily real(dp) function av18\+::uncoupled\+\_\+pot (\begin{DoxyParamCaption}\item[{integer, intent(in)}]{l,  }\item[{integer, intent(in)}]{s,  }\item[{integer, intent(in)}]{j,  }\item[{real(dp), dimension(1\+:\hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{n\+\_\+st\+\_\+terms}), intent(in)}]{v\+\_\+st }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+potential in uncoupled partial wave 
+
+Given a potential in spin-\/isospin basis and a set of angular momentum quantum numbers (l, s, j), calculates the uncoupled potential in the corresponding partial wave
+
+\begin{DoxyReturn}{Returns}
+uncoupled potential in the given partial wave
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Rodrigo Navarro Perez
+\end{DoxyAuthor}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em l} & orbital angular momentum quantum number\\
+\hline
+\mbox{\tt in}  & {\em s} & spin quantum number\\
+\hline
+\mbox{\tt in}  & {\em j} & total angular momentum quantum number\\
+\hline
+\mbox{\tt in}  & {\em v\+\_\+st} & potential in spin-\/isospin basis\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+uncoupled potential in the given partial wave 
+\end{DoxyReturn}
+
+
+\subsection{Variable Documentation}
+\mbox{\Hypertarget{namespaceav18_a8a031093cf20f6305f0a0b8f557c1deb}\label{namespaceav18_a8a031093cf20f6305f0a0b8f557c1deb}} 
+\index{av18@{av18}!default\+\_\+params@{default\+\_\+params}}
+\index{default\+\_\+params@{default\+\_\+params}!av18@{av18}}
+\subsubsection{\texorpdfstring{default\+\_\+params}{default\_params}}
+{\footnotesize\ttfamily real(dp), dimension(1\+:\hyperlink{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}{n\+\_\+parameters}), parameter, public av18\+::default\+\_\+params = \mbox{[} -\/7.\+62701\+\_\+dp, 1815.\+49200\+\_\+dp, 1847.\+80590\+\_\+dp, 1813.\+53150\+\_\+dp, 1811.\+57100\+\_\+dp, 1.\+07985\+\_\+dp, -\/190.\+09490\+\_\+dp, -\/811.\+20400\+\_\+dp, -\/0.\+62697\+\_\+dp, -\/570.\+55710\+\_\+dp, 819.\+12220\+\_\+dp, 0.\+06709\+\_\+dp, 342.\+06690\+\_\+dp, -\/615.\+23390\+\_\+dp, 0.\+74129\+\_\+dp, 9.\+34180\+\_\+dp, -\/376.\+43840\+\_\+dp, -\/8.\+62770\+\_\+dp, 2605.\+26820\+\_\+dp, 441.\+97330\+\_\+dp, 1.\+48560\+\_\+dp, -\/1126.\+83590\+\_\+dp, 370.\+13240\+\_\+dp, 0.\+10180\+\_\+dp, 86.\+06580\+\_\+dp, -\/356.\+51750\+\_\+dp, -\/0.\+13201\+\_\+dp, 253.\+43500\+\_\+dp, -\/1.\+00760\+\_\+dp, 0.\+07357\+\_\+dp, -\/217.\+57910\+\_\+dp, 18.\+39350\+\_\+dp, -\/11.\+27028\+\_\+dp, 3346.\+68740\+\_\+dp, -\/10.\+66788\+\_\+dp, 3126.\+55420\+\_\+dp, -\/11.\+27028\+\_\+dp, 3342.\+76640\+\_\+dp, 0.\+12472\+\_\+dp, 16.\+77800\+\_\+dp, -\/2.\+09971\+\_\+dp, 1204.\+43010\+\_\+dp, -\/0.\+31452\+\_\+dp, 217.\+45590\+\_\+dp\mbox{]}}
+
+
+
+default parameters in the A\+V18 potential 
+
+\mbox{\Hypertarget{namespaceav18_abdf1bd7208851f82a6773c558de0602f}\label{namespaceav18_abdf1bd7208851f82a6773c558de0602f}} 
+\index{av18@{av18}!n\+\_\+em\+\_\+terms@{n\+\_\+em\+\_\+terms}}
+\index{n\+\_\+em\+\_\+terms@{n\+\_\+em\+\_\+terms}!av18@{av18}}
+\subsubsection{\texorpdfstring{n\+\_\+em\+\_\+terms}{n\_em\_terms}}
+{\footnotesize\ttfamily integer, parameter av18\+::n\+\_\+em\+\_\+terms = 14\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{namespaceav18_a360396af16932b4172038bd146cb1e0a}\label{namespaceav18_a360396af16932b4172038bd146cb1e0a}} 
+\index{av18@{av18}!n\+\_\+operators@{n\+\_\+operators}}
+\index{n\+\_\+operators@{n\+\_\+operators}!av18@{av18}}
+\subsubsection{\texorpdfstring{n\+\_\+operators}{n\_operators}}
+{\footnotesize\ttfamily integer, parameter av18\+::n\+\_\+operators = 18\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Number of operators in the A\+V18 basis. 
+
+\mbox{\Hypertarget{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}\label{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}} 
+\index{av18@{av18}!n\+\_\+parameters@{n\+\_\+parameters}}
+\index{n\+\_\+parameters@{n\+\_\+parameters}!av18@{av18}}
+\subsubsection{\texorpdfstring{n\+\_\+parameters}{n\_parameters}}
+{\footnotesize\ttfamily integer, parameter, public av18\+::n\+\_\+parameters = 44}
+
+
+
+Number of phenomenological parameters. 
+
+\mbox{\Hypertarget{namespaceav18_ae95361ff4578323939542bc0807d127d}\label{namespaceav18_ae95361ff4578323939542bc0807d127d}} 
+\index{av18@{av18}!n\+\_\+st\+\_\+terms@{n\+\_\+st\+\_\+terms}}
+\index{n\+\_\+st\+\_\+terms@{n\+\_\+st\+\_\+terms}!av18@{av18}}
+\subsubsection{\texorpdfstring{n\+\_\+st\+\_\+terms}{n\_st\_terms}}
+{\footnotesize\ttfamily integer, parameter av18\+::n\+\_\+st\+\_\+terms = 5\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Number of terms in the spin-\/isospin basis. 
+

@@ -1,0 +1,47 @@
+\hypertarget{av18_8f90}{}\section{av18.\+f90 File Reference}
+\label{av18_8f90}\index{av18.\+f90@{av18.\+f90}}
+\subsection*{Modules}
+\begin{DoxyCompactItemize}
+\item 
+module \hyperlink{namespaceav18}{av18}
+\begin{DoxyCompactList}\small\item\em \hyperlink{namespaceav18}{av18} potential \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions/\+Subroutines}
+\begin{DoxyCompactItemize}
+\item 
+subroutine, public \hyperlink{namespaceav18_aa3a8f4d6382c199fcc71197445711d3d}{av18\+::av18\+\_\+all\+\_\+partial\+\_\+waves} (ap, r, reaction, v\+\_\+pw, dv\+\_\+pw)
+\begin{DoxyCompactList}\small\item\em \hyperlink{namespaceav18}{av18} potential in all partial waves \end{DoxyCompactList}\item 
+subroutine \hyperlink{namespaceav18_ac263bd481e6a61fd5eaae23d97dce143}{av18\+::add\+\_\+em\+\_\+potential} (reaction, s, v\+\_\+em, v\+\_\+st)
+\begin{DoxyCompactList}\small\item\em Adds EM potential to strong potential in basis. \end{DoxyCompactList}\item 
+real(dp) function, dimension(1\+:n\+\_\+em\+\_\+terms) \hyperlink{namespaceav18_af5419f35a68d9a2059fce4f02afd9af4}{av18\+::em\+\_\+potential} (r)
+\begin{DoxyCompactList}\small\item\em electromagnetic potential in NN scattering \end{DoxyCompactList}\item 
+real(dp) function \hyperlink{namespaceav18_a9d2b56f5ea01d81ae52e60b023551d9e}{av18\+::uncoupled\+\_\+pot} (l, s, j, v\+\_\+st)
+\begin{DoxyCompactList}\small\item\em potential in uncoupled partial wave \end{DoxyCompactList}\item 
+real(dp) function, dimension(1\+:3) \hyperlink{namespaceav18_a440cc1c708d1c17c19cad4ab67a6c289}{av18\+::coupled\+\_\+pot} (j, v\+\_\+st)
+\begin{DoxyCompactList}\small\item\em potential in uncoupled partial wave \end{DoxyCompactList}\item 
+real(dp) function, dimension(1\+:n\+\_\+st\+\_\+terms) \hyperlink{namespaceav18_aa01617c5c79d9290a3dce13819b9ef72}{av18\+::operator\+\_\+2\+\_\+st\+\_\+basis} (tz1, tz2, s, t, v\+\_\+op)
+\begin{DoxyCompactList}\small\item\em transform potential from operator to st basis \end{DoxyCompactList}\item 
+real(dp) function, dimension(\+:, \+:), allocatable \hyperlink{namespaceav18_a19a966bb1b322e2d9e2c8816a6634ebb}{av18\+::d\+\_\+operator\+\_\+2\+\_\+st\+\_\+basis} (tz1, tz2, s, t, dv\+\_\+op)
+\begin{DoxyCompactList}\small\item\em transform derivatives potential from operator to st basis \end{DoxyCompactList}\item 
+subroutine \hyperlink{namespaceav18_a371b28a37a073022fcb2d0cedc770b21}{av18\+::av18\+\_\+operator} (ap, r, v\+\_\+nn, dv\+\_\+nn)
+\begin{DoxyCompactList}\small\item\em \hyperlink{namespaceav18}{av18} potential in operator basis \end{DoxyCompactList}\item 
+real(dp) function, public \hyperlink{namespaceav18_a111cfac79051da99e0b5895e5370c2bc}{av18\+::f\+\_\+av18} (x, data)
+\begin{DoxyCompactList}\small\item\em wrapper function for the \hyperlink{namespaceav18}{av18} potential \end{DoxyCompactList}\item 
+real(dp) function, dimension(\+:), allocatable, public \hyperlink{namespaceav18_a6bc9abd9cec28d438ad5228c84238cbb}{av18\+::df\+\_\+av18} (data)
+\begin{DoxyCompactList}\small\item\em wrapper function for the derivatives of the \hyperlink{namespaceav18}{av18} potential \end{DoxyCompactList}\item 
+real(dp) function, public \hyperlink{namespaceav18_a4092b1449c0991611a4a0be131e56e66}{av18\+::f\+\_\+av18\+\_\+pw} (x, data)
+\begin{DoxyCompactList}\small\item\em wrapper function for av18\+\_\+all\+\_\+partial\+\_\+waves \end{DoxyCompactList}\item 
+real(dp) function, dimension(\+:), allocatable, public \hyperlink{namespaceav18_a8b7b43084d226bd7404444269717d26c}{av18\+::df\+\_\+av18\+\_\+pw} (data)
+\begin{DoxyCompactList}\small\item\em wrapper function for the derivatives of av18\+\_\+all\+\_\+partial\+\_\+waves \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+integer, parameter, public \hyperlink{namespaceav18_a227e50c056ed5f33a1de8f7536c2393b}{av18\+::n\+\_\+parameters} = 44
+\begin{DoxyCompactList}\small\item\em Number of phenomenological parameters. \end{DoxyCompactList}\item 
+integer, parameter \hyperlink{namespaceav18_a360396af16932b4172038bd146cb1e0a}{av18\+::n\+\_\+operators} = 18
+\begin{DoxyCompactList}\small\item\em Number of operators in the A\+V18 basis. \end{DoxyCompactList}\item 
+integer, parameter \hyperlink{namespaceav18_ae95361ff4578323939542bc0807d127d}{av18\+::n\+\_\+st\+\_\+terms} = 5
+\begin{DoxyCompactList}\small\item\em Number of terms in the spin-\/isospin basis. \end{DoxyCompactList}\item 
+integer, parameter \hyperlink{namespaceav18_abdf1bd7208851f82a6773c558de0602f}{av18\+::n\+\_\+em\+\_\+terms} = 14
+\item 
+real(dp), dimension(1\+:n\+\_\+parameters), parameter, public \hyperlink{namespaceav18_a8a031093cf20f6305f0a0b8f557c1deb}{av18\+::default\+\_\+params} = \mbox{[} -\/7.\+62701\+\_\+dp, 1815.\+49200\+\_\+dp, 1847.\+80590\+\_\+dp, 1813.\+53150\+\_\+dp, 1811.\+57100\+\_\+dp, 1.\+07985\+\_\+dp, -\/190.\+09490\+\_\+dp, -\/811.\+20400\+\_\+dp, -\/0.\+62697\+\_\+dp, -\/570.\+55710\+\_\+dp, 819.\+12220\+\_\+dp, 0.\+06709\+\_\+dp, 342.\+06690\+\_\+dp, -\/615.\+23390\+\_\+dp, 0.\+74129\+\_\+dp, 9.\+34180\+\_\+dp, -\/376.\+43840\+\_\+dp, -\/8.\+62770\+\_\+dp, 2605.\+26820\+\_\+dp, 441.\+97330\+\_\+dp, 1.\+48560\+\_\+dp, -\/1126.\+83590\+\_\+dp, 370.\+13240\+\_\+dp, 0.\+10180\+\_\+dp, 86.\+06580\+\_\+dp, -\/356.\+51750\+\_\+dp, -\/0.\+13201\+\_\+dp, 253.\+43500\+\_\+dp, -\/1.\+00760\+\_\+dp, 0.\+07357\+\_\+dp, -\/217.\+57910\+\_\+dp, 18.\+39350\+\_\+dp, -\/11.\+27028\+\_\+dp, 3346.\+68740\+\_\+dp, -\/10.\+66788\+\_\+dp, 3126.\+55420\+\_\+dp, -\/11.\+27028\+\_\+dp, 3342.\+76640\+\_\+dp, 0.\+12472\+\_\+dp, 16.\+77800\+\_\+dp, -\/2.\+09971\+\_\+dp, 1204.\+43010\+\_\+dp, -\/0.\+31452\+\_\+dp, 217.\+45590\+\_\+dp\mbox{]}
+\begin{DoxyCompactList}\small\item\em default parameters in the A\+V18 potential \end{DoxyCompactList}\end{DoxyCompactItemize}
