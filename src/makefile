@@ -17,6 +17,9 @@ precisions.o: precisions.f90
 coul90.o: coul90.f90
 	$(COMPILER) $(FLAGS) -c $<
 
+string_functions.o: string_functions.f90
+	$(COMPILER) $(FLAGS) -c $<
+
 num_recipes.o: num_recipes.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
@@ -38,7 +41,7 @@ amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o
 observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshifts.o
+read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshifts.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 precisions.o

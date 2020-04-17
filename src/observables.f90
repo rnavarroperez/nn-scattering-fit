@@ -10,11 +10,12 @@ private
 
 integer, parameter :: n_obs = 26
 integer, parameter :: j_max = 20
-character(len=4), dimension(1:n_obs), parameter :: &
-       obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
-         ,'RT  ','RPT ','AT  ','D0SK','NSKN','NSSN','NNKK','A   '&
-         ,'AXX ','CKP ','RP  ','MSSN','MSKN','AZX ','AP  ','DTRT'&
-         ,'SGT ','SGTT','SGTL']
+! Valid observables
+! character(len=4), dimension(1:n_obs), parameter :: &
+!        obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
+!          ,'RT  ','RPT ','AT  ','D0SK','NSKN','NSSN','NNKK','A   '&
+!          ,'AXX ','CKP ','RP  ','MSSN','MSKN','AZX ','AP  ','DTRT'&
+!          ,'SGT ','SGTT','SGTL']
 
 contains
 
@@ -44,7 +45,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     character(len=*), intent(in) :: type !< ind_ex to indicate the type of observable
     character(len=*), intent(in) :: reac !< reaction channel
     real(dp), intent(out) :: obs !< NN scattering observable
-    real(dp), allocatable ,intent(out), dimension(:) :: d_obs !< d_erivitive of observbles
+    real(dp), allocatable, intent(out) :: d_obs(:) !< d_erivitive of observbles
     real(dp), allocatable :: phases(:,:)
     real(dp), allocatable :: d_phases(:,:,:)
     complex(dp) :: a, b, c, d, e
@@ -60,6 +61,9 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     n_parameters = size(default_params)
 
     ! allocate all arrays
+    if(allocated(d_obs)) deallocate(d_obs)
+    if(allocated(phases)) deallocate(phases)
+    if(allocated(d_phases)) deallocate(d_phases)
     allocate(d_obs(1:n_parameters))
     allocate(phases(1:5, 1:j_max))
     allocate(d_phases(1:5, 1:j_max, 1:n_parameters))
@@ -258,12 +262,12 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          num = obs*sg
          d_obs = (d_num*sg-num*d_sg)/sg**2
      case ('rp')
-         obs = (sin(0.5d0*theta)*( real(conjg(a)*b-conjg(c)*d)) &
-         +cos(0.5d0*theta)*(aimag(conjg(b)*e)))/sg
+         obs = (sin(0.5_dp*theta)*(real(conjg(a)*b-conjg(c)*d)) &
+         +cos(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
          do i = 1, n_parameters
-             d_num(i) = sin(0.5d0*theta)*( real(conjg(d_a(i))*b &
+             d_num(i) = sin(0.5_dp*theta)*( real(conjg(d_a(i))*b &
              +conjg(a)*d_b(i)-conjg(d_c(i))*d-conjg(c)*d_d(i))) &
-             +cos(0.5d0*theta)*(aimag(conjg(d_b(i))*e+conjg(b)*d_e(i)))
+             +cos(0.5_dp*theta)*(aimag(conjg(d_b(i))*e+conjg(b)*d_e(i)))
          end do
          num = obs*sg
          d_obs = (d_num*sg-num*d_sg)/sg**2
@@ -283,7 +287,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          do i = 1, n_parameters
              d_num(i)= -sin(0.5_dp*theta)*(real(conjg(d_b(i))*e+conjg(b)*d_e(i))) &
              +cos(0.5_dp*theta)*(aimag(conjg(d_a(i))*b &
-             +conjg(a)*d_b(i)-conjg(d_c(i))*d -conjg(c)*d_d(i)))
+             +conjg(a)*d_b(i)-conjg(d_c(i))*d-conjg(c)*d_d(i)))
       end do
       num = obs*sg
       d_obs = (d_num*sg-num*d_sg)/sg**2
@@ -291,7 +295,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          obs = (sin(theta)*(real(conjg(a)*d)) &
          +cos(theta)*(aimag(conjg(d)*e)))/sg
          do i = 1, n_parameters
-             d_num(i)=+sin(theta)*( real(conjg(d_a(i))*d+conjg(a)*d_d(i))) &
+             d_num(i) = sin(theta)*( real(conjg(d_a(i))*d+conjg(a)*d_d(i))) &
              +cos(theta)*(aimag(conjg(d_d(i))*e+conjg(d)*d_e(i)))
          end do
          num = obs*sg
@@ -300,7 +304,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          obs = (-sin(0.5_dp*theta)*(aimag(conjg(b)*e)) &
          +cos(0.5_dp*theta)*( real(conjg(a)*b-conjg(c)*d)))/sg
         do i = 1,n_parameters
-             d_num(i)=-sin(0.5_dp*theta)*(aimag(conjg(d_b(i))*e+conjg(b)*d_e(i))) &
+             d_num(i) = -sin(0.5_dp*theta)*(aimag(conjg(d_b(i))*e+conjg(b)*d_e(i))) &
              +cos(0.5_dp*theta)*(real(conjg(d_a(i))*b+conjg(a)*d_b(i)-conjg(d_c(i))*d&
              -conjg(c)*d_d(i)))
          end do
@@ -312,7 +316,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          -cos(0.5_dp*(pi-theta))*( real(conjg(b)*d)) &
          +sin(0.5_dp*(pi+theta))*(aimag(conjg(c)*e)))
          do i = 1, n_parameters
-             d_num(i)=(real(a)*real(d_a(i))+aimag(a)*aimag(d_a(i)) &
+             d_num(i) = (real(a)*real(d_a(i))+aimag(a)*aimag(d_a(i)) &
              -real(b)*real(d_b(i))-aimag(b)*aimag(d_b(i)) &
              +real(c)*real(d_c(i))+aimag(c)*aimag(d_c(i)) &
              -real(d)*real(d_d(i))-aimag(d)*aimag(d_d(i)) &
@@ -334,7 +338,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          obs =-40*pi*(aimag(c-d))/(k)
          d_obs=-40*pi*(aimag(d_c-d_d))/(k)
      case default
-         stop 'WRONG TYPE OF OBSERVABLE'
+         write(*,*) 'INVALID OBSERVABLE', trim(type)
      end select
 end subroutine observable
 end module observables
