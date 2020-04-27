@@ -108,9 +108,9 @@ subroutine print_observables()
 
     ! pp
     do i = 50, 350, 50
-        momentum = real(i, kind=dp)
+        momentum = momentum_cm(real(i, kind=dp), 'pp')
         do j = 10, 180, 10
-            angle = j
+            angle = real(j, dp)
             do k = 1, size(obs_types)
                 type = lower(obs_types(k))
                 call observable(momentum, pre, angle, type, 'pp', obs, d_obs)
@@ -122,10 +122,8 @@ subroutine print_observables()
     end do
 
     ! np
-    obs = 0
-    d_obs = 0
     do i = 50, 350, 50
-        momentum = real(i, kind=dp)
+        momentum = momentum_cm(real(i, kind=dp), 'np')
         do j = 10, 180, 10
             angle = j
             do k = 1, size(obs_types)
@@ -138,5 +136,4 @@ subroutine print_observables()
         end do
     end do
 end subroutine print_observables
-
 end module read_write
