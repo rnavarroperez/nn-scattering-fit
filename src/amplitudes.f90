@@ -74,7 +74,6 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     call partial_wave_amplitude_sum(s_matrix, 1, 1, 1, k_cm, theta, reaction, phases, d_phases, m_111,  d_m_111)
     call partial_wave_amplitude_sum(s_matrix, 1, 1,-1, k_cm, theta, reaction, phases, d_phases, m_11m1, d_m_11m1)
 
-
     a = 0.5_dp*(m_111 + m_100 - m_11m1)
     b = 0.5_dp*(m_111 + m_000 + m_11m1)
     c = 0.5_dp*(m_111 - m_000 + m_11m1)
@@ -353,7 +352,7 @@ subroutine s_matrix_mm(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, 
 
     if (present(d_sm) .and. .not. present(d_phases)) then
 
-        stop 'if derivatives of m are requested in partial_wave_amplitude_sum, derivatives of phases need to be provided'
+        stop 'if derivatives of m are requested in s_matrix_mm, derivatives of phases need to be provided'
         ! the lines below are to avoid -Wunused-dummy-argument warning during compilation, they're never really executed
         if (reaction == 'pp') then
             sm = k_cm + eta

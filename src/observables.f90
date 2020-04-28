@@ -54,14 +54,14 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     real(dp) :: k, theta, sg, num, denom !< place hold_er values
     real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) !< place hold_er values
     integer :: i !< loop ind_ex
-    save k
+    save k, phases, d_phases
 
     ! Set number of parameters
     n_parameters = size(default_params)
 
     ! allocate all arrays
     allocate(d_obs(1:n_parameters))
-    allocate(phases(1:5, 1:j_max))
+    if(.not. allocated(phases)) allocate(phases(1:5, 1:j_max))
     !allocate(d_phases(1:j_max, 1:5, 1:n_parameters))
     allocate(d_sg(1:n_parameters))
     allocate(d_num(1:n_parameters))
