@@ -53,25 +53,19 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     integer :: n_parameters !< number of parameters from the mod_el
     real(dp) :: k, theta, sg, num, denom !< place hold_er values
     real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) !< place hold_er values
-    real(dp), allocatable :: dsg1(:), dsg2(:), dsg3(:), dsg4(:), dsg5(:), dsg6(:) !< place hold_er values
     integer :: i !< loop ind_ex
-    save k
+    save k, phases, d_phases
 
     ! Set number of parameters
     n_parameters = size(default_params)
 
     ! allocate all arrays
-    if(allocated(d_obs)) deallocate(d_obs)
-    if(allocated(phases)) deallocate(phases)
-    if(allocated(d_phases)) deallocate(d_phases)
     allocate(d_obs(1:n_parameters))
-    allocate(phases(1:5, 1:j_max))
-    allocate(d_phases(1:5, 1:j_max, 1:n_parameters))
+    if(.not. allocated(phases)) allocate(phases(1:5, 1:j_max))
+    !allocate(d_phases(1:j_max, 1:5, 1:n_parameters))
     allocate(d_sg(1:n_parameters))
     allocate(d_num(1:n_parameters))
     allocate(d_denom(1:n_parameters))
-    allocate(dsg1, dsg2, dsg3, dsg4, dsg5, dsg6, mold=d_sg)
-
 
     if(t_lab /= pre_t_lab) then
         k = momentum_cm(t_lab, reac)
@@ -84,16 +78,12 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
      ! Initialize values for calculation observable
      obs = 0.0_dp
      d_obs = 0.0_dp
-     sg = (abs(a)**2 + abs(b)**2 + abs(c)**2 + abs(d)**2 + abs(e)**2)*0.5_dp
-     ! seperate dsg into terms
-     dsg1 = real(a)*real(d_a)
-     dsg2 = aimag(a)*aimag(d_a)
-     dsg3 = real(b)*real(d_b) + aimag(b)*aimag(d_b)
-     dsg4 = real(c)*real(d_c) + aimag(c)*aimag(d_c)
-     dsg5 = real(d)*real(d_d) + aimag(d)*aimag(d_d)
-     dsg6 = real(e)*real(d_e) + aimag(e)*aimag(d_e)
-     ! set d_sg
-     d_sg = dsg1 + dsg2 + dsg3 + dsg4 + dsg5 + dsg6
+     sg = (abs(a)**2+abs(b)**2+abs(c)**2+abs(d)**2+abs(e)**2)*0.5_dp
+     d_sg = real(a)*real(d_a)+aimag(a)*aimag(d_a) &
+     +real(b)*real(d_b)+aimag(b)*aimag(d_b) &
+     +real(c)*real(d_c)+aimag(c)*aimag(d_c) &
+     +real(d)*real(d_d)+aimag(d)*aimag(d_d) &
+     +real(e)*real(d_e)+aimag(e)*aimag(d_e)
      ! switch case for all observable
      select case (trim(type))
      case ('dsg')

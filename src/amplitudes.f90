@@ -63,7 +63,7 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     complex(dp), allocatable, dimension(:) :: d_m_000, d_m_100, d_m_110, d_m_101, d_m_111, d_m_11m1
     integer :: n_params
 
-    n_params = size(d_phases, 3)
+    n_params = size(d_phases, 1)
     allocate(d_a(1: n_params))
     d_a = (0, 0)
     allocate(d_b, d_c, d_d, d_e, source = d_a)
@@ -73,7 +73,6 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     call partial_wave_amplitude_sum(s_matrix, 1, 0, 1, k_cm, theta, reaction, phases, d_phases, m_101,  d_m_101)
     call partial_wave_amplitude_sum(s_matrix, 1, 1, 1, k_cm, theta, reaction, phases, d_phases, m_111,  d_m_111)
     call partial_wave_amplitude_sum(s_matrix, 1, 1,-1, k_cm, theta, reaction, phases, d_phases, m_11m1, d_m_11m1)
-
 
     a = 0.5_dp*(m_111 + m_100 - m_11m1)
     b = 0.5_dp*(m_111 + m_000 + m_11m1)
@@ -353,7 +352,7 @@ subroutine s_matrix_mm(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, 
 
     if (present(d_sm) .and. .not. present(d_phases)) then
 
-        stop 'if derivatives of m are requested in partial_wave_amplitude_sum, derivatives of phases need to be provided'
+        stop 'if derivatives of m are requested in s_matrix_mm, derivatives of phases need to be provided'
         ! the lines below are to avoid -Wunused-dummy-argument warning during compilation, they're never really executed
         if (reaction == 'pp') then
             sm = k_cm + eta
@@ -429,7 +428,7 @@ subroutine partial_wave_amplitude_sum(s_mat, s, ms, mj, k_cm, theta, reaction, p
     endif
 
     m = (0, 0)
-    n_params = size(d_phases, 3)
+    n_params = size(d_phases, 1)
     if (present(d_m)) then
         allocate(d_m(1: n_params))
         d_m = (0, 0)
@@ -588,7 +587,7 @@ subroutine s_matrix(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, sm,
         stop 'if derivatives of sm are requested in s_matrix, derivatives of phases need to be provided'
     endif
 
-    n_params = size(d_phases, 3)
+    n_params = size(d_phases, 1)
     if (present(d_sm)) then
         allocate(d_sm(1: n_params))
         d_sm = (0, 0)
