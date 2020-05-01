@@ -65,7 +65,7 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
 
     n_params = size(d_phases, 1)
     allocate(d_a(1: n_params))
-    d_a = (0, 0)
+    d_a = 0
     allocate(d_b, d_c, d_d, d_e, source = d_a)
     call partial_wave_amplitude_sum(s_matrix, 0, 0, 0, k_cm, theta, reaction, phases, d_phases, m_000,  d_m_000)
     call partial_wave_amplitude_sum(s_matrix, 1, 0, 0, k_cm, theta, reaction, phases, d_phases, m_100,  d_m_100)

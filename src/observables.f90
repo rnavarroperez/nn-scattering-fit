@@ -2,10 +2,10 @@ module observables
 use av18, only: av18_all_partial_waves, default_params
 use nn_phaseshifts, only: all_phaseshifts, momentum_cm
 use amplitudes, only: saclay_amplitudes
-use precisions, only: dp
+use precisions
 use constants
 implicit none
-public observable
+public observable, just_phases
 private
 
 integer, parameter :: n_obs = 26
@@ -54,7 +54,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     real(dp) :: k, theta, sg, num, denom !< place hold_er values
     real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) !< place hold_er values
     integer :: i !< loop ind_ex
-    save k, phases, d_phases
+    save phases, d_phases
 
     ! Set number of parameters
     n_parameters = size(default_params)
@@ -62,16 +62,15 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     ! allocate all arrays
     allocate(d_obs(1:n_parameters))
     if(.not. allocated(phases)) allocate(phases(1:5, 1:j_max))
-    !allocate(d_phases(1:j_max, 1:5, 1:n_parameters))
     allocate(d_sg(1:n_parameters))
     allocate(d_num(1:n_parameters))
     allocate(d_denom(1:n_parameters))
 
     if(t_lab /= pre_t_lab) then
-        k = momentum_cm(t_lab, reac)
-        call all_phaseshifts(av18_all_partial_waves, default_params, t_lab, reac, r_max, dr, k, phases, d_phases)
+        call all_phaseshifts(av18_all_partial_waves, default_params, t_lab, reac, r_max, dr, phases, d_phases)
     end if
     theta = angle*pi/180.0_dp ! angle in d_egrees to radians
+    k = momentum_cm(t_lab, reac)
     call saclay_amplitudes(k, theta, reac, phases, d_phases, a, b, c, d, e, &
      d_a, d_b, d_c, d_d, d_e)
 
@@ -84,6 +83,7 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
      +real(c)*real(d_c)+aimag(c)*aimag(d_c) &
      +real(d)*real(d_d)+aimag(d)*aimag(d_d) &
      +real(e)*real(d_e)+aimag(e)*aimag(d_e)
+
      ! switch case for all observable
      select case (trim(type))
      case ('dsg')
@@ -331,4 +331,18 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
          write(*,*) 'INVALID OBSERVABLE', trim(type)
      end select
 end subroutine observable
+
+subroutine just_phases(t_lab, reac, phases)
+    implicit none
+    real(dp), parameter :: r_max = 12.5_dp , dr = 0.01_dp
+    real(dp), intent(in) :: t_lab
+    character(len=*), intent(in) :: reac
+    real(dp), allocatable, intent(out) :: phases(:,:)
+    real(dp), allocatable :: d_phases(:,:,:)
+
+     allocate(phases(1:5, 1:j_max))
+
+     call all_phaseshifts(av18_all_partial_waves, default_params, t_lab, reac, r_max, dr, phases, d_phases)
+
+end subroutine just_phases
 end module observables

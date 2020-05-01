@@ -33,7 +33,7 @@ contains
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, k_cm, phases, d_phases)
+subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_phases)
     implicit none
     procedure(nn_potential) :: model !< local NN potential (subroutine)
     real(dp), intent(in) :: params(:) !< phenomenological parameters for the local potential
@@ -41,10 +41,10 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, k_cm, phas
     character(len=2), intent(in) :: reaction !< reaction channel (pp, np or nn)
     real(dp), intent(in) :: r_max !< maximum radius of integration
     real(dp), intent(in) :: dr !< integration step
-    real(dp), intent(out) :: k_cm !< exchange momentum in center of mass frame. In units of fm \f$^{-1}\f$
     real(dp), intent(out) :: phases(:, :) !< phaseshifts in all partial waves
     real(dp), allocatable, intent(out) :: d_phases(:, :, :) !< derivatives of the partial waves with respect to the potential parameters
 
+    real(dp) :: k_cm !< exchange momentum in center of mass frame. In units of fm \f$^{-1}\f$
     integer :: n_params, n_waves, j_max
     integer :: ij, j
     real(dp) :: r, mu, alfa_1, alfa_2, ps_eigen(1:3)
@@ -63,7 +63,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, k_cm, phas
     if (n_waves /= 5) stop 'incorrect number of waves for v_pw in all_phaseshifts'
 
     allocate(d_phases(1:n_params, 1:n_waves, 1:j_max))
-    d_phases = 0._dp
+    d_phases = 0
     allocate(v_pw(1:n_waves, 1:j_max))
     allocate(singlets(1:j_max))
     singlets = 0
@@ -98,7 +98,6 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, k_cm, phas
     case default
         stop 'incorrect reaction channel in all_phaseshifts'
     end select
-
     k_cm = momentum_cm(t_lab, reaction)
     r = dr/2
     do
