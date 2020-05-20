@@ -95,6 +95,14 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     d_e = i_*(d_m_110 - d_m_101)/sqrt(2._dp)
 end subroutine saclay_amplitudes
 
+!!
+!! @brief      Calculates the pp electromagnetic amplitude
+!! 
+!! Given the C.M. momentum and scattering angle, calculates the corresponding pp electromagnetic amplitude.
+!! See section III A of PhysRevC.88.064002 for more details.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
     implicit none
     real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
@@ -137,6 +145,14 @@ subroutine em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
     e = e_mm
 end subroutine em_pp_amplitudes
 
+!!
+!! @brief      Calculates the np electromagnetic amplitude
+!! 
+!! Given the C.M. momentum and scattering angle, calculates the corresponding np electromagnetic amplitude.
+!! See section 34 of PhysRevC.88.064002 for more details.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine em_np_amplitudes(k_cm, theta, a, b, c, d, e)
     implicit none
     real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
@@ -175,20 +191,46 @@ subroutine em_np_amplitudes(k_cm, theta, a, b, c, d, e)
 
 end subroutine em_np_amplitudes
 
+!!
+!! @brief      Coulomb scattering amplitude
+!!
+!! Calculates the scattering amplitude corresponding to the energy dependent Coulomb potential
+!! \f$ f_{C1, k}(\theta) = - \frac{\eta}{k} \frac{e^{-i\eta\ln[(1-\cos\theta)/2]}}{1-\cos\theta} \f$.
+!!
+!! See equation 20 in Phys. Rev. C 91, 029901 (2015) for more details
+!!
+!! @return     Coulomb scattering amplitude
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function f_coulomb(k_cm, eta, theta) result(f_c)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    real(dp), intent(in) :: theta
+    real(dp), intent(in) :: k_cm !< Center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Energy dependent Sommerfeld parameter (dimensionless)
+    real(dp), intent(in) :: theta !< Scattering angle in radians
     f_c = -eta/k_cm*exp(-i_*eta*log((1 - cos(theta))/2._dp))/(1 - cos(theta))
 end function f_coulomb
 
 
+!!
+!! @brief      Two photon exchange scattering amplitude
+!!
+!! Calculates the scattering amplitude corresponding to the energy dependent two photon exchange potential
+!! \f$ f_{C2, k}(\theta) = \frac{1}{2ik} \sum_l (2_l+1) e^{2i(\sigma_l - \sigma_0)} (e^{2i\rho_l}-1) P_l(\theta) \f$,
+!! where \f$\sigma_l\f$ is the Coulomb phase-shift, \f$\rho_l\f$ is the two photon exchange phase-shift, and 
+!! \f$ P_l(\theta) \f$ are the usual Legendre polynomials.
+!!
+!! See equations 22 in Phys. Rev. C 91, 029901 (2015) for more details
+!! 
+!! @return     Two photon exchange scattering amplitude
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function f_coulomb2(k_cm, eta, theta) result(f_c)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    real(dp), intent(in) :: theta
+    real(dp), intent(in) :: k_cm !< Center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Energy dependent Sommerfeld parameter (dimensionless)
+    real(dp), intent(in) :: theta !< Scattering angle in radians
 
     integer, parameter :: l_max = 1000
     integer :: l
@@ -231,11 +273,23 @@ complex(dp) function f_coulomb2(k_cm, eta, theta) result(f_c)
     enddo
 end function f_coulomb2
 
+!!
+!! @brief      Vacuum polarization scattering amplitude
+!!
+!! Calculates a series expansion to second leading order of scattering amplitude corresponding to the
+!! energy dependent vacuum polarization potential.
+!!
+!! See equation 22 to 27 in Phys. Rev. C 91, 029901 (2015) for more details
+!! 
+!! @return     Vacuum polarization scattering amplitude
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function f_vacuum_polarization(k_cm, eta, theta) result(f_vp)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    real(dp), intent(in) :: theta
+    real(dp), intent(in) :: k_cm !< Center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Energy dependent Sommerfeld parameter (dimensionless)
+    real(dp), intent(in) :: theta !< Scattering angle in radians
 
     real(dp) :: f_vp_0, re_f_vp_1, im_f_vp_1, x, nu, y, F, k_MeV
 
@@ -252,16 +306,25 @@ complex(dp) function f_vacuum_polarization(k_cm, eta, theta) result(f_vp)
     f_vp = f_vp/k_cm
 end function f_vacuum_polarization
 
+!!
+!! @brief      pp magnetic moment scattering amplitude
+!!
+!! Calculates the pp magnetic moment scattering amplitude for a given center of mass momentum, and scattering angle
+!!
+!! See equations 15 and 29 to 33 in Phys. Rev. C 91, 029901 (2015) for more details
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine mm_amplitudes(k_cm, eta, theta, m_00, m_11, m_10, m_01, m_1m1)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    real(dp), intent(in) :: theta
-    complex(dp), intent(out) :: m_00
-    complex(dp), intent(out) :: m_11
-    complex(dp), intent(out) :: m_10
-    complex(dp), intent(out) :: m_01
-    complex(dp), intent(out) :: m_1m1
+    real(dp), intent(in) :: k_cm !< Center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Energy dependent Sommerfeld parameter (dimensionless)
+    real(dp), intent(in) :: theta !< Scattering angle in radians
+    complex(dp), intent(out) :: m_00 !< \f$ M^1_{00} \f$ pp magnetic moment amplitude
+    complex(dp), intent(out) :: m_11 !< \f$ M^1_{11} \f$ pp magnetic moment amplitude
+    complex(dp), intent(out) :: m_10 !< \f$ M^1_{10} \f$ pp magnetic moment amplitude
+    complex(dp), intent(out) :: m_01 !< \f$ M^1_{01} \f$ pp magnetic moment amplitude
+    complex(dp), intent(out) :: m_1m1 !< \f$ M^1_{1-1} \f$ pp magnetic moment amplitude
 
     integer, parameter :: j_max = 1001
     real(dp) :: mm_phases(1:5, 1:j_max), mm_phases_ls(1:5, 1:j_max)
@@ -284,10 +347,17 @@ subroutine mm_amplitudes(k_cm, eta, theta, m_00, m_11, m_10, m_01, m_1m1)
 
 end subroutine mm_amplitudes
 
+!!
+!! @brief      Spin-Orbit contribution to the pp magnetic moment phase-shifts
+!!
+!! Calculates only the spin orbit contribution to the pp magnetic moment phase-shifts
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine mm_phases_ls_term(k_cm, mm_phases)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(out) :: mm_phases(:, :)
+    real(dp), intent(in) :: k_cm !< Center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(out) :: mm_phases(:, :) !< pp magnetic moment phase-shifts
 
     integer :: l, i
     real(dp) :: k_MeV, I_lp2lp2, I_ll
@@ -310,13 +380,20 @@ subroutine mm_phases_ls_term(k_cm, mm_phases)
     enddo
 end subroutine mm_phases_ls_term
 
+!!
+!! @brief     Spin-Orbit contribution to the \f$ M^1_{01} \f$ pp magnetic moment amplitude
+!!
+!! Calculate only the spin orbit contribution to the \f$ M^1_{01} \f$ pp magnetic moment amplitude
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine m01_ls_contribution(k_cm, eta, theta, mm_phases, m_01)
     implicit none
-    real(dp), intent(in) :: k_cm
-    real(dp), intent(in) :: eta
-    real(dp), intent(in) :: theta
-    real(dp), intent(in) :: mm_phases(:, :)
-    complex(dp), intent(inout) :: m_01
+    real(dp), intent(in) :: k_cm !< Center of mass momentum in fm\f$^{-1}\f$
+    real(dp), intent(in) :: eta !< Energy dependent Sommerfeld parameter (dimensionless)
+    real(dp), intent(in) :: theta !< Scattering angle in radians
+    real(dp), intent(in) :: mm_phases(:, :) !< pp magnetic moment phase-shifts without LS terms
+    complex(dp), intent(inout) :: m_01 !< \f$ M^1_{01} \f$ pp magnetic moment amplitude
 
     integer :: l
     real(dp) :: x, sigma_l, sigma_0
@@ -336,6 +413,17 @@ subroutine m01_ls_contribution(k_cm, eta, theta, mm_phases, m_01)
 
 end subroutine m01_ls_contribution
 
+!!
+!! @brief     S matrix approximation for pp magnetic moment amplitude 
+!!
+!! Gives the \f$ S_{\rm MM, pp} - 1 \approx 2 i K_{\rm MM, pp} \f$
+!! 
+!! The k_cm, eta, reaction, d_phases, and d_sm variables are only used to have the same
+!! interface as the s_matrix subroutine so that both can be given as arguments to 
+!! partial_wave_amplitude_sum
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine s_matrix_mm(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
     implicit none
     integer, intent(in) :: l_prime !< \f$l'\f$ quantum number
@@ -351,9 +439,9 @@ subroutine s_matrix_mm(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, 
     complex(dp), optional, intent(out), allocatable :: d_sm(:) !< derivatives of matrix element
 
     if (present(d_sm) .and. .not. present(d_phases)) then
-
         stop 'if derivatives of m are requested in s_matrix_mm, derivatives of phases need to be provided'
-        ! the lines below are to avoid -Wunused-dummy-argument warning during compilation, they're never really executed
+        ! the lines below are to avoid -Wunused-dummy-argument warning during compilation,
+        ! they're never really executed
         if (reaction == 'pp') then
             sm = k_cm + eta
         endif
@@ -825,7 +913,7 @@ end function coulomb_sigma_l
 ! real(dp) function f_amplitudes(x, data) result(r)
 !     use num_recipes, only : context
 !     use av18, only : av18_all_partial_waves
-!     use nn_phaseshifts, only : all_phaseshifts
+!     use nn_phaseshifts, only : all_phaseshifts, momentum_cm
 !     implicit none
 !     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
 !     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
@@ -848,7 +936,8 @@ end function coulomb_sigma_l
 !     i_target = data%j
 
 !     ap(i_parameter) = x
-!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, k_cm, phases, d_phases)
+!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
+!     k_cm = momentum_cm(t_lab, reaction)
 !     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
 
 !     select case (i_target)
@@ -892,7 +981,7 @@ end function coulomb_sigma_l
 ! function df_amplitudes(data) result(r)
 !     use num_recipes, only : context
 !     use av18, only : av18_all_partial_waves
-!     use nn_phaseshifts, only : all_phaseshifts
+!     use nn_phaseshifts, only : all_phaseshifts, momentum_cm
 !     implicit none
 !     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
 !     real(dp), allocatable :: r(:)
@@ -914,7 +1003,8 @@ end function coulomb_sigma_l
 !     i_parameter = data%i
 !     i_target = data%j
 
-!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, k_cm, phases, d_phases)
+!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
+!     k_cm = momentum_cm(t_lab, reaction)
 !     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
 
 !     allocate(r, mold = ap)

@@ -584,9 +584,21 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
 
 end subroutine match_uncoupled_waves
 
+!!
+!! @brief      energy dependent Sommerfeld parameter
+!!
+!! Calculates the energy dependent Sommerfeld parameter
+!! \f$\eta' = \alpha M_p / (2 k) \left(\frac{1 + 2 k^2/M_p^2}{\sqrt{1 + k^2/M_p^2}} \right) \f$,
+!! where \f$ \alpha \f$ is the fine structure constant, \f$ M_p \f$ is the mass of the proton
+!! and \f$ k \f$ is the center of mass momentum
+!!
+!! @return     energy dependent Sommerfeld parameter
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function eta_prime(k) result(etap)
     implicit none
-    real(dp), intent(in) :: k
+    real(dp), intent(in) :: k !< Center of mass momentum in fm\f$^{-1}\f$
     etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)
 end function eta_prime
 
