@@ -13,8 +13,6 @@ use constants, only : pi, i_
 implicit none
 
 private
-integer, parameter :: L_MAX = 2000 ! max number of polynomial iterations
-real(dp), dimension(0:L_MAX) :: l_array = 0 ! initialize to 0
 
 public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
     kronecker_delta
@@ -130,49 +128,47 @@ real(dp) function legendre_poly(l, m, x) result(r)
     integer, intent(in) :: m
     real(dp), intent(in) :: x
     !------- place holder variables--------------------------
-    real(dp) :: x_pre = -1.0, m_pre = -1.0
-    integer ::  i, l_largest = -1
+    real(dp), save :: x_pre = -1.1
+    integer, save :: m_pre = -1, l_largest = -1
+    integer, parameter :: L_MAX = 2000 ! max number of polynomial iterations
+    real(dp), save, dimension(0:L_MAX) :: pl_array = 0 ! initialize to 0
     !-------------------------------------------------------
+    integer ::  i
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
 
     ! set
     if (m < 0) stop 'legendre_poly is only valid for m >= 0'
-    if (l < m) stop 'legendre_poly is only valid for m >= l'
-    if (l >= L_MAX) stop 'legendre_poly limit of 2000 reached'
+    if (l < m) stop 'legendre_poly is only valid for l >= m'
+    if (l > L_MAX) stop 'legendre_poly limit of 2000 reached'
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
 
-    !  check if x is the same and there is previous l's
-     if(x == x_pre .and. m == m_pre .and. l-2 > 0) then
-         ! check if l calls are in order
-        if(l_array(l-1) /= 0 .and. l_array(l-2) /= 0) then
-            ! use saved values to make next
-            p_mm = l_array(l-2)
-            p_mmp1 = l_array(l-1)
-            p_ml = (x*(2*l - 1)*p_mmp1 - (l + m - 1)*p_mm)/(l-m) ! build l+1 using l-2 and l-1
-            r = p_ml
-            ! save results
-            l_array(l) = p_ml
+    if (x==x_pre .and. m==m_pre) then
+        !Same arguments were used last time, we can use previous calculations
+        if (l <= l_largest) then
+            !The polynomial for this l has been calculated, use it
+            r = pl_array(l)
         else
-            ! built up from previous values
-            do i = l_largest + 1, l
-                p_mm = l_array(i-2)
-                p_mmp1 = l_array(i-1)
-                p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
-                l_array(i) = p_ml ! save value for future use
-            enddo
+            ! The The polynomial for this l has NOT been calculated
+            if (l == m+1) then
+                ! There's only one previous calculation
+                p_mm = pl_array(l-1)
+                p_ml = x*(2*m + 1)*p_mm
+                pl_array(l) = p_ml
+            else
+                ! build up from previous values
+                do i = l_largest + 1, l
+                    p_mm = pl_array(i-2)
+                    p_mmp1 = pl_array(i-1)
+                    p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+                    pl_array(i) = p_ml ! save value for future use
+                enddo
+            endif
             r = p_ml ! set final l
+            l_largest = l
         endif
     else
-        ! check if x and m are the same
-        if(x /= x_pre .or. m /= m_pre) then
-            ! reset parameters if not
-            x_pre = x
-            m_pre = m
-            l_array = 0
-            l_largest = -1
-        end if
-        ! store the largest l called
-        if(l > l_largest) l_largest = l
+        !Arguments are different, we need to start from scracth
+        pl_array = 0
         p_mm = 1._dp
         if (m > 0) then
             factor = sqrt(1 - x**2)
@@ -183,21 +179,20 @@ real(dp) function legendre_poly(l, m, x) result(r)
             enddo
         endif
         if (l == m) then
-            r = p_mm ! set l-2
+            r = p_mm
             ! save result
-            l_array(l) = p_mm
+            pl_array(l) = p_mm
         else
             p_mmp1 = x*(2*m + 1)*p_mm
             if (l == m + 1) then
-                r = p_mmp1 ! set l-1
+                r = p_mmp1
                 ! save result
-                l_array(l) = p_mmp1
+                pl_array(l) = p_mmp1
             else
-                p_ml = p_mmp1 ! set current to l-1
-                !l_array = 0 ! set array to zero if
+                p_ml = p_mmp1
                 do i = m + 2, l
                     p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
-                    l_array(i) = p_ml ! save value for future use
+                    pl_array(i) = p_ml ! save value for future use
                     p_mm = p_mmp1 ! set l-2 to l-1
                     p_mmp1 = p_ml ! set l-1 to l+1
                     ! repeat until you reach l
@@ -205,7 +200,10 @@ real(dp) function legendre_poly(l, m, x) result(r)
                 r = p_ml ! set final l
             endif
         endif
-    end if
+        l_largest = l
+        x_pre = x
+        m_pre = m
+    endif
     ! THIS IS THE ORIGINAL UNMODIFIED ALGORITHM
     ! p_mm = 1._dp
     ! if (m > 0) then
