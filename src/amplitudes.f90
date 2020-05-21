@@ -48,16 +48,16 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
     character(len=2), intent(in) :: reaction !< reaction channel (pp or np)
     real(dp), intent(in) :: phases(:, :) !< corresponding phase-shifts
     real(dp), intent(in) :: d_phases(:, :, :) !< derivatives of the phase-shifts
-    complex(dp), intent(out) :: a !< Sacalay parameter \f$a\f$
-    complex(dp), intent(out) :: b !< Sacalay parameter \f$b\f$
-    complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
-    complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
-    complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
-    complex(dp), intent(out), allocatable :: d_a(:) !< derivatives of the Sacalay parameter \f$a\f$
-    complex(dp), intent(out), allocatable :: d_b(:) !< derivatives of the Sacalay parameter \f$b\f$
-    complex(dp), intent(out), allocatable :: d_c(:) !< derivatives of the Sacalay parameter \f$c\f$
-    complex(dp), intent(out), allocatable :: d_d(:) !< derivatives of the Sacalay parameter \f$d\f$
-    complex(dp), intent(out), allocatable :: d_e(:) !< derivatives of the Sacalay parameter \f$e\f$
+    complex(dp), intent(out) :: a !< Saclay parameter \f$a\f$
+    complex(dp), intent(out) :: b !< Saclay parameter \f$b\f$
+    complex(dp), intent(out) :: c !< Saclay parameter \f$c\f$
+    complex(dp), intent(out) :: d !< Saclay parameter \f$d\f$
+    complex(dp), intent(out) :: e !< Saclay parameter \f$e\f$
+    complex(dp), intent(out), allocatable :: d_a(:) !< derivatives of the Saclay parameter \f$a\f$
+    complex(dp), intent(out), allocatable :: d_b(:) !< derivatives of the Saclay parameter \f$b\f$
+    complex(dp), intent(out), allocatable :: d_c(:) !< derivatives of the Saclay parameter \f$c\f$
+    complex(dp), intent(out), allocatable :: d_d(:) !< derivatives of the Saclay parameter \f$d\f$
+    complex(dp), intent(out), allocatable :: d_e(:) !< derivatives of the Saclay parameter \f$e\f$
 
     complex(dp) :: m_000, m_100, m_110, m_101, m_111, m_11m1
     complex(dp), allocatable, dimension(:) :: d_m_000, d_m_100, d_m_110, d_m_101, d_m_111, d_m_11m1
@@ -107,11 +107,11 @@ subroutine em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
     implicit none
     real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
     real(dp), intent(in) :: theta !< scattering angle in radians
-    complex(dp), intent(out) :: a !< Sacalay parameter \f$a\f$
-    complex(dp), intent(out) :: b !< Sacalay parameter \f$b\f$
-    complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
-    complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
-    complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
+    complex(dp), intent(out) :: a !< Saclay parameter \f$a\f$
+    complex(dp), intent(out) :: b !< Saclay parameter \f$b\f$
+    complex(dp), intent(out) :: c !< Saclay parameter \f$c\f$
+    complex(dp), intent(out) :: d !< Saclay parameter \f$d\f$
+    complex(dp), intent(out) :: e !< Saclay parameter \f$e\f$
 
     real(dp) :: etap
     complex(dp) :: f_c, f_cpi, f_c2, f_c2pi, f_vp, f_vppi, m_c0, m_c1, a_coulomb, b_coulomb, c_coulomb, &
@@ -157,11 +157,11 @@ subroutine em_np_amplitudes(k_cm, theta, a, b, c, d, e)
     implicit none
     real(dp), intent(in) :: k_cm !< C.M. momentum in fm\f$^{-1}\f$
     real(dp), intent(in) :: theta !< scattering angle in radians
-    complex(dp), intent(out) :: a !< Sacalay parameter \f$a\f$
-    complex(dp), intent(out) :: b !< Sacalay parameter \f$b\f$
-    complex(dp), intent(out) :: c !< Sacalay parameter \f$c\f$
-    complex(dp), intent(out) :: d !< Sacalay parameter \f$d\f$
-    complex(dp), intent(out) :: e !< Sacalay parameter \f$e\f$
+    complex(dp), intent(out) :: a !< Saclay parameter \f$a\f$
+    complex(dp), intent(out) :: b !< Saclay parameter \f$b\f$
+    complex(dp), intent(out) :: c !< Saclay parameter \f$c\f$
+    complex(dp), intent(out) :: d !< Saclay parameter \f$d\f$
+    complex(dp), intent(out) :: e !< Saclay parameter \f$e\f$
 
     real(dp) :: etap, f1p, f2p, f1n, f2n, sm, tm, mp_fm, mn_fm
     f1p = 1._dp
