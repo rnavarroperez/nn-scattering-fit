@@ -121,6 +121,7 @@ end function spherical_harmonic
 !! need to start from the beginning when using same x and m values 
 !!
 !! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
 !!
 real(dp) function legendre_poly(l, m, x) result(r)
     implicit none
