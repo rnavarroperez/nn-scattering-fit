@@ -35,7 +35,9 @@ contains
 !! The d_erivative of the observable with respect of the parameters is stored
 !! on the ap array
 !!
-!! @author Raul L Bernal-Gonzalez
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     implicit none
     real(dp), parameter :: r_max = 12.5_dp , dr = 0.01_dp !< integration radius and step in fm
@@ -53,7 +55,6 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
     integer :: n_parameters !< number of parameters from the mod_el
     real(dp) :: k, theta, sg, num, denom !< place hold_er values
     real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) !< place hold_er values
-    integer :: i !< loop ind_ex
     save phases, d_phases, k
 
     ! Set number of parameters
@@ -90,211 +91,169 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
         d_obs = d_sg*10.0_dp
     case ('dt')
         obs = 0.5_dp*(abs(a)**2 - abs(b)**2 + abs(c)**2 - abs(d)**2 + abs(e)**2)/sg
-        do i = 1, n_parameters
-            d_num(i) = real(a)*real(d_a(i)) + aimag(a)*aimag(d_a(i)) &
-                     - real(b)*real(d_b(i)) - aimag(b)*aimag(d_b(i)) &
-                     + real(c)*real(d_c(i)) + aimag(c)*aimag(d_c(i)) &
-                     - real(d)*real(d_d(i)) - aimag(d)*aimag(d_d(i)) &
-                     + real(e)*real(d_e(i)) + aimag(e)*aimag(d_e(i))
-        end do
+        d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
+                  -real(b)*real(d_b) - aimag(b)*aimag(d_b) &
+                  +real(c)*real(d_c) + aimag(c)*aimag(d_c) &
+                  -real(d)*real(d_d) - aimag(d)*aimag(d_d) &
+                  +real(e)*real(d_e) + aimag(e)*aimag(d_e)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('ayy')
        obs = 0.5_dp*(abs(a)**2-abs(b)**2-abs(c)**2+abs(d)**2+abs(e)**2)/sg
-        do i = 1, n_parameters
-            d_num(i) = real(a)*real(d_a(i)) + aimag(a)*aimag(d_a(i)) &
-                     - real(b)*real(d_b(i)) - aimag(b)*aimag(d_b(i)) &
-                     - real(c)*real(d_c(i)) - aimag(c)*aimag(d_c(i)) &
-                     + real(d)*real(d_d(i)) + aimag(d)*aimag(d_d(i)) &
-                     + real(e)*real(d_e(i)) + aimag(e)*aimag(d_e(i))
-        end do
+        d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
+                     - real(b)*real(d_b) - aimag(b)*aimag(d_b) &
+                     - real(c)*real(d_c) - aimag(c)*aimag(d_c) &
+                     + real(d)*real(d_d) + aimag(d)*aimag(d_d) &
+                     + real(e)*real(d_e) + aimag(e)*aimag(d_e)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('d')
         obs = 0.5_dp*(abs(a)**2+abs(b)**2-abs(c)**2-abs(d)**2+abs(e)**2)/sg
-        do i = 1, n_parameters
-            d_num(i) = real(a)*real(d_a(i)) + aimag(a)*aimag(d_a(i)) &
-                     + real(b)*real(d_b(i)) + aimag(b)*aimag(d_b(i)) &
-                     - real(c)*real(d_c(i)) - aimag(c)*aimag(d_c(i)) &
-                     - real(d)*real(d_d(i)) - aimag(d)*aimag(d_d(i)) &
-                     + real(e)*real(d_e(i)) + aimag(e)*aimag(d_e(i))
-        end do
+        d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
+               +real(b)*real(d_b) + aimag(b)*aimag(d_b) &
+               -real(c)*real(d_c) - aimag(c)*aimag(d_c) &
+               -real(d)*real(d_d) - aimag(d)*aimag(d_d) &
+               +real(e)*real(d_e) + aimag(e)*aimag(d_e)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('p')
         obs = real(conjg(a)*e)/sg
-        do i = 1, n_parameters
-            d_num(i) = real(conjg(d_a(i))*e + conjg(a)*d_e(i))
-        end do
+        d_num = real(conjg(d_a)*e + conjg(a)*d_e)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('azz')
         obs = (-real(conjg(a)*d)*cos(theta) + real(conjg(b)*c) + aimag(conjg(d)*e)*sin(theta))/sg
-        do i = 1, n_parameters
-            d_num(i) = -  real(conjg(d_a(i))*d + conjg(a)*d_d(i))*cos(theta) &
-                       +  real(conjg(d_b(i))*c + conjg(b)*d_c(i)) &
-                       + aimag(conjg(d_d(i))*e + conjg(d)*d_e(i))*sin(theta)
-        end do
+        d_num = - real(conjg(d_a)*d + conjg(a)*d_d)*cos(theta) &
+                + real(conjg(d_b)*c + conjg(b)*d_c) &
+                +aimag(conjg(d_d)*e + conjg(d)*d_e)*sin(theta)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('r')
         obs = (cos(0.5_dp*theta)*( real(conjg(a)*b + conjg(c)*d)) &
               -sin(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = cos(0.5_dp*theta)*( real(conjg(d_a(i))*b + conjg(a)*d_b(i) &
-                                              + conjg(d_c(i))*d + conjg(c)*d_d(i))) &
-                     - sin(0.5_dp*theta)*(aimag(conjg(d_b(i))*e + conjg(b)*d_e(i)))
-        end do
+        d_num = cos(0.5_dp*theta)*( real(conjg(d_a)*b + conjg(a)*d_b &
+                                        +conjg(d_c)*d + conjg(c)*d_d)) &
+               -sin(0.5_dp*theta)*(aimag(conjg(d_b)*e + conjg(b)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('rt')
         obs = (-cos(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                -cos(0.5_dp*(pi - theta))*( real(conjg(b)*d)) &
                +sin(0.5_dp*(pi + theta))*(aimag(conjg(c)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = - cos(0.5_dp*(pi + theta))*( real(conjg(d_a(i))*c + conjg(a)*d_c(i))) &
-                       - cos(0.5_dp*(pi - theta))*( real(conjg(d_b(i))*d + conjg(b)*d_d(i))) &
-                       + sin(0.5_dp*(pi + theta))*(aimag(conjg(d_c(i))*e + conjg(c)*d_e(i)))
-        end do
+        d_num = -cos(0.5_dp*(pi + theta))*( real(conjg(d_a)*c + conjg(a)*d_c)) &
+                -cos(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d)) &
+                +sin(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('rpt')
         obs = ( sin(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                +sin(0.5_dp*(pi - theta))*( real(conjg(b)*d)) &
                +cos(0.5_dp*(pi + theta))*(aimag(conjg(c)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = sin(0.5_dp*(pi + theta))*( real(conjg(d_a(i))*c + conjg(a)*d_c(i))) &
-                     + sin(0.5_dp*(pi - theta))*( real(conjg(d_b(i))*d + conjg(b)*d_d(i))) &
-                     + cos(0.5_dp*(pi + theta))*(aimag(conjg(d_c(i))*e + conjg(c)*d_e(i)))
-        end do
+        d_num = sin(0.5_dp*(pi + theta))*( real(conjg(d_a)*c + conjg(a)*d_c)) &
+               +sin(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d)) &
+               +cos(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('at')
         obs = -( sin(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                 -sin(0.5_dp*(pi - theta))*( real(conjg(b)*d))&
                 +cos(0.5_dp*(pi + theta))*(aimag(conjg(c)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = -sin(0.5_dp*(pi + theta))*( real(conjg(d_a(i))*c + conjg(a)*d_c(i)))&
-                       +sin(0.5_dp*(pi - theta))*( real(conjg(d_b(i))*d + conjg(b)*d_d(i)))&
-                       -cos(0.5_dp*(pi + theta))*(aimag(conjg(d_c(i))*e + conjg(c)*d_e(i)))
-        end do
+        d_num = -sin(0.5_dp*(pi + theta))*( real(conjg(d_a)*c + conjg(a)*d_c))&
+                +sin(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d))&
+                -cos(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('d0sk')
         obs = ( sin(0.5_dp*(pi + theta))*( real(conjg(a)*b)) &
                -sin(0.5_dp*(pi - theta))*( real(conjg(c)*d)) &
                +cos(0.5_dp*(pi + theta))*(aimag(conjg(b)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = sin(0.5_dp*(pi + theta))*( real(conjg(d_a(i))*b + conjg(a)*d_b(i))) &
-                      -sin(0.5_dp*(pi - theta))*( real(conjg(d_c(i))*d + conjg(c)*d_d(i))) &
-                      +cos(0.5_dp*(pi + theta))*(aimag(conjg(d_b(i))*e + conjg(b)*d_e(i)))
-        end do
+        d_num = sin(0.5_dp*(pi + theta))*( real(conjg(d_a)*b + conjg(a)*d_b)) &
+               -sin(0.5_dp*(pi - theta))*( real(conjg(d_c)*d + conjg(c)*d_d)) &
+               +cos(0.5_dp*(pi + theta))*(aimag(conjg(d_b)*e + conjg(b)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('nskn')
         obs = (sin(0.5_dp*(pi + theta))*( real(conjg(c)*e)) &
               -cos(0.5_dp*(pi + theta))*(aimag(conjg(a)*c)) &
               +cos(0.5_dp*(pi - theta))*(aimag(conjg(b)*d)))/sg
-        do i = 1, n_parameters
-        d_num(i) = sin(0.5_dp*(pi + theta))*( real(conjg(d_c(i))*e + conjg(c)*d_e(i))) &
-                  -cos(0.5_dp*(pi + theta))*(aimag(conjg(d_a(i))*c + conjg(a)*d_c(i))) &
-                  +cos(0.5_dp*(pi - theta))*(aimag(conjg(d_b(i))*d + conjg(b)*d_d(i)))
-        end do
+        d_num = sin(0.5_dp*(pi + theta))*( real(conjg(d_c)*e + conjg(c)*d_e)) &
+               -cos(0.5_dp*(pi + theta))*(aimag(conjg(d_a)*c + conjg(a)*d_c)) &
+               +cos(0.5_dp*(pi - theta))*(aimag(conjg(d_b)*d + conjg(b)*d_d))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('nssn')
         obs = (-cos(0.5_dp*(pi + theta))*( real(conjg(c)*e)) &
                -sin(0.5_dp*(pi + theta))*(aimag(conjg(a)*c)) &
                -sin(0.5_dp*(pi - theta))*(aimag(conjg(b)*d)))/sg
-        do i = 1, n_parameters
-            d_num(i) = -cos(0.5_dp*(pi + theta))*( real(conjg(d_c(i))*e + conjg(c)*d_e(i))) &
-                       -sin(0.5_dp*(pi + theta))*(aimag(conjg(d_a(i))*c + conjg(a)*d_c(i))) &
-                       -sin(0.5_dp*(pi - theta))*(aimag(conjg(d_b(i))*d + conjg(b)*d_d(i)))
-        end do
+        d_num = -cos(0.5_dp*(pi + theta))*( real(conjg(d_c)*e + conjg(c)*d_e)) &
+                -sin(0.5_dp*(pi + theta))*(aimag(conjg(d_a)*c + conjg(a)*d_c)) &
+                -sin(0.5_dp*(pi - theta))*(aimag(conjg(d_b)*d + conjg(b)*d_d))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('nnkk')
         obs = (-cos(theta)*(real(conjg(d)*e)) - sin(theta)*(aimag(conjg(a)*d)))/sg
-        do i = 1, n_parameters
-            d_num(i) = -cos(theta)*( real(conjg(d_d(i))*e + conjg(d)*d_e(i))) &
-                       -sin(theta)*(aimag(conjg(d_a(i))*d + conjg(a)*d_d(i)))
-        end do
+        d_num = -cos(theta)*( real(conjg(d_d)*e + conjg(d)*d_e)) &
+                -sin(theta)*(aimag(conjg(d_a)*d + conjg(a)*d_d))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('a')
         obs = (-sin(0.5_dp*theta)*( real(conjg(a)*b + conjg(c)*d)) &
                -cos(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = -sin(0.5_dp*theta)*( real(conjg(d_a(i))*b + conjg(a)*d_b(i) &
-                                                +conjg(d_c(i))*d + conjg(c)*d_d(i))) &
-                       -cos(0.5_dp*theta)*(aimag(conjg(d_b(i))*e + conjg(b)*d_e(i)))
-        end do
+        d_num = -sin(0.5_dp*theta)*( real(conjg(d_a)*b + conjg(a)*d_b &
+                                         +conjg(d_c)*d + conjg(c)*d_d)) &
+                -cos(0.5_dp*theta)*(aimag(conjg(d_b)*e + conjg(b)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('axx')
         obs = (cos(theta)* real(conjg(a)*d) + real(conjg(b)*c) &
               -sin(theta)*aimag(conjg(d)*e))/sg
-        do i = 1, n_parameters
-            d_num(i) = cos(theta)* real(conjg(d_a(i))*d + conjg(a)*d_d(i)) &
-                                 + real(conjg(d_b(i))*c + conjg(b)*d_c(i)) &
-                      -sin(theta)*aimag(conjg(d_d(i))*e + conjg(d)*d_e(i))
-        end do
+        d_num = cos(theta)*real(conjg(d_a)*d + conjg(a)*d_d) &
+                          +real(conjg(d_b)*c + conjg(b)*d_c) &
+               -sin(theta)*aimag(conjg(d_d)*e + conjg(d)*d_e)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('ckp')
         obs = aimag(conjg(d)*e)/sg
-        do i = 1, n_parameters
-            d_num(i) = aimag(conjg(d_d(i))*e + conjg(d)*d_e(i))
-        end do
+        d_num = aimag(conjg(d_d)*e + conjg(d)*d_e)
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('rp')
         obs = (sin(0.5_dp*theta)*( real(conjg(a)*b-conjg(c)*d)) &
               +cos(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = sin(0.5_dp*theta)*( real(conjg(d_a(i))*b + conjg(a)*d_b(i) &
-                                               -conjg(d_c(i))*d - conjg(c)*d_d(i))) &
-                      +cos(0.5_dp*theta)*(aimag(conjg(d_b(i))*e+conjg(b)*d_e(i)))
-        end do
+        d_num = sin(0.5_dp*theta)*( real(conjg(d_a)*b + conjg(a)*d_b &
+                                        -conjg(d_c)*d - conjg(c)*d_d)) &
+               +cos(0.5_dp*theta)*(aimag(conjg(d_b)*e+conjg(b)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('mssn')
         obs = (cos(0.5_dp*theta)*( real(conjg(b)*e)) &
               +sin(0.5_dp*theta)*(aimag(conjg(a)*b-conjg(c)*d)))/sg
-        do i = 1,n_parameters
-            d_num(i) = cos(0.5_dp*theta)*( real(conjg(d_b(i))*e + conjg(b)*d_e(i)))&
-                      +sin(0.5_dp*theta)*(aimag(conjg(d_a(i))*b + conjg(a)*d_b(i) &
-                                               -conjg(d_c(i))*d - conjg(c)*d_d(i)))
-        end do
+        d_num = cos(0.5_dp*theta)*( real(conjg(d_b)*e + conjg(b)*d_e))&
+               +sin(0.5_dp*theta)*(aimag(conjg(d_a)*b + conjg(a)*d_b &
+                                        -conjg(d_c)*d - conjg(c)*d_d))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('mskn')
         obs = (-sin(0.5_dp*theta)*(real(conjg(b)*e)) &
                +cos(0.5_dp*theta)*(aimag(conjg(a)*b-conjg(c)*d)))/sg
-        do i = 1, n_parameters
-            d_num(i)= -sin(0.5_dp*theta)*( real(conjg(d_b(i))*e + conjg(b)*d_e(i))) &
-                      +cos(0.5_dp*theta)*(aimag(conjg(d_a(i))*b + conjg(a)*d_b(i) &
-                                               -conjg(d_c(i))*d - conjg(c)*d_d(i)))
-        end do
+        d_num= -sin(0.5_dp*theta)*( real(conjg(d_b)*e + conjg(b)*d_e)) &
+               +cos(0.5_dp*theta)*(aimag(conjg(d_a)*b + conjg(a)*d_b &
+                                        -conjg(d_c)*d - conjg(c)*d_d))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('azx')
         obs = (sin(theta)*( real(conjg(a)*d)) &
               +cos(theta)*(aimag(conjg(d)*e)))/sg
-        do i = 1, n_parameters
-            d_num(i) = sin(theta)*( real(conjg(d_a(i))*d + conjg(a)*d_d(i))) &
-                      +cos(theta)*(aimag(conjg(d_d(i))*e + conjg(d)*d_e(i)))
-        end do
+        d_num = sin(theta)*( real(conjg(d_a)*d + conjg(a)*d_d)) &
+               +cos(theta)*(aimag(conjg(d_d)*e + conjg(d)*d_e))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('ap')
         obs = (-sin(0.5_dp*theta)*(aimag(conjg(b)*e)) &
                +cos(0.5_dp*theta)*( real(conjg(a)*b - conjg(c)*d)))/sg
-        do i = 1,n_parameters
-            d_num(i) = -sin(0.5_dp*theta)*(aimag(conjg(d_b(i))*e + conjg(b)*d_e(i))) &
-                       +cos(0.5_dp*theta)*( real(conjg(d_a(i))*b + conjg(a)*d_b(i) &
-                                                -conjg(d_c(i))*d - conjg(c)*d_d(i)))
-        end do
+        d_num = -sin(0.5_dp*theta)*(aimag(conjg(d_b)*e + conjg(b)*d_e)) &
+                +cos(0.5_dp*theta)*( real(conjg(d_a)*b + conjg(a)*d_b &
+                                         -conjg(d_c)*d - conjg(c)*d_d))
         num = obs*sg
         d_obs = (d_num*sg - num*d_sg)/sg**2
     case ('dtrt')
@@ -302,16 +261,14 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
         denom = -cos(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                 -cos(0.5_dp*(pi - theta))*( real(conjg(b)*d)) &
                 +sin(0.5_dp*(pi + theta))*(aimag(conjg(c)*e))
-        do i = 1, n_parameters
-            d_num(i) = real(a)*real(d_a(i)) + aimag(a)*aimag(d_a(i)) &
-                      -real(b)*real(d_b(i)) - aimag(b)*aimag(d_b(i)) &
-                      +real(c)*real(d_c(i)) + aimag(c)*aimag(d_c(i)) &
-                      -real(d)*real(d_d(i)) - aimag(d)*aimag(d_d(i)) &
-                      +real(e)*real(d_e(i)) + aimag(e)*aimag(d_e(i))
-            d_denom(i) = -cos(0.5_dp*(pi + theta))*( real(conjg(d_a(i))*c + conjg(a)*d_c(i))) &
-                         -cos(0.5_dp*(pi - theta))*( real(conjg(d_b(i))*d + conjg(b)*d_d(i))) &
-                         +sin(0.5_dp*(pi + theta))*(aimag(conjg(d_c(i))*e + conjg(c)*d_e(i)))
-        end do
+        d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
+               -real(b)*real(d_b) - aimag(b)*aimag(d_b) &
+               +real(c)*real(d_c) + aimag(c)*aimag(d_c) &
+               -real(d)*real(d_d) - aimag(d)*aimag(d_d) &
+               +real(e)*real(d_e) + aimag(e)*aimag(d_e)
+        d_denom = -cos(0.5_dp*(pi + theta))*( real(conjg(d_a)*c + conjg(a)*d_c)) &
+                  -cos(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d)) &
+                  +sin(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         obs = num/denom
         d_obs = (d_num*denom - num*d_denom)/denom**2
     case ('sgt')
