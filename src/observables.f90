@@ -1,15 +1,13 @@
 module observables
-use av18, only: av18_all_partial_waves, default_params
-use nn_phaseshifts, only: all_phaseshifts, momentum_cm
+use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_potential
 use amplitudes, only: saclay_amplitudes
 use precisions
 use constants
 implicit none
-public observable, just_phases
+public observable, f_observable, df_observable!, just_phases
 private
 
-integer, parameter :: n_obs = 26
-integer, parameter :: j_max = 20
+
 ! Valid observables
 ! character(len=4), dimension(1:n_obs), parameter :: &
 !        obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
@@ -38,41 +36,52 @@ contains
 !! @author     Raul L Bernal-Gonzalez
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
+subroutine observable(model, params, type, t_lab, angle, reaction, r_max, dr, obs, d_obs)
     implicit none
-    real(dp), parameter :: r_max = 12.5_dp , dr = 0.01_dp !< integration radius and step in fm
-    real(dp), intent(in) :: t_lab !< laboratory energy
-    real(dp), intent(inout) :: pre_t_lab !< previous value of t_lab
-    real(dp), intent(in) :: angle !< scattering angle in d_egrees
+    procedure(nn_potential) :: model
+    real(dp), intent(in) :: params(:)
     character(len=*), intent(in) :: type !< ind_ex to indicate the type of observable
-    character(len=*), intent(in) :: reac !< reaction channel
+    real(dp), intent(in) :: t_lab !< laboratory energy
+    real(dp), intent(in) :: angle !< scattering angle in d_egrees
+    character(len=*), intent(in) :: reaction !< reaction channel
+    real(dp), intent(in) :: r_max !< 
+    real(dp), intent(in) :: dr !< integration radius and step in fm
     real(dp), intent(out) :: obs !< NN scattering observable
-    real(dp), allocatable, intent(out) :: d_obs(:) !< d_erivitive of observbles
-    real(dp), allocatable :: phases(:,:)
-    real(dp), allocatable :: d_phases(:,:,:)
+    real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
+    real(dp), save :: pre_t_lab = -1._dp
+    real(dp), save, allocatable :: pre_parameters(:)
+    real(dp), save :: k_cm
+    real(dp), save, allocatable :: phases(:,:)
+    real(dp), save, allocatable :: d_phases(:,:,:)
     complex(dp) :: a, b, c, d, e
-    complex(dp), allocatable :: d_a(:), d_b(:), d_c(:), d_d(:), d_e(:) !< saclay parameters
-    integer :: n_parameters !< number of parameters from the mod_el
-    real(dp) :: k, theta, sg, num, denom !< place hold_er values
-    real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) !< place hold_er values
-    save phases, d_phases, k
+    complex(dp), allocatable :: d_a(:), d_b(:), d_c(:), d_d(:), d_e(:)
+    integer :: n_parameters 
+    real(dp) :: theta, sg, num, denom 
+    real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) 
+    integer, parameter :: j_max = 20
 
     ! Set number of parameters
-    n_parameters = size(default_params)
+    n_parameters = size(params)
 
     ! allocate all arrays
     allocate(d_obs(1:n_parameters))
     if(.not. allocated(phases)) allocate(phases(1:5, 1:j_max))
+    if (.not. allocated(pre_parameters)) then
+        allocate(pre_parameters, mold=params)
+        pre_parameters = 0._dp
+    end if
     allocate(d_sg(1:n_parameters))
     allocate(d_num(1:n_parameters))
     allocate(d_denom(1:n_parameters))
 
-    if(t_lab /= pre_t_lab) then
-        call all_phaseshifts(av18_all_partial_waves, default_params, t_lab, reac, r_max, dr, phases, d_phases)
-        k = momentum_cm(t_lab, reac)
+    if(t_lab /= pre_t_lab .or. .not. all(params == pre_parameters)) then
+        call all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_phases)
+        k_cm = momentum_cm(t_lab, reaction)
+        pre_t_lab = t_lab
+        pre_parameters = params
     end if
     theta = angle*pi/180.0_dp ! angle in d_egrees to radians
-    call saclay_amplitudes(k, theta, reac, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
+    call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
 
     ! Initialize values for calculation observable
     obs = 0.0_dp
@@ -272,30 +281,117 @@ subroutine observable(t_lab, pre_t_lab, angle, type, reac, obs, d_obs)
         obs = num/denom
         d_obs = (d_num*denom - num*d_denom)/denom**2
     case ('sgt')
-        obs = 20*pi*(aimag(a + b))/k
-        d_obs = 20*pi*(aimag(d_a + d_b))/k
+        obs = 20*pi*(aimag(a + b))/k_cm
+        d_obs = 20*pi*(aimag(d_a + d_b))/k_cm
     case ('sgtt')
-        obs = -40*pi*(aimag(a - b))/k
-        d_obs = -40*pi*(aimag(d_a - d_b))/k
+        obs = -40*pi*(aimag(a - b))/k_cm
+        d_obs = -40*pi*(aimag(d_a - d_b))/k_cm
     case ('sgtl')
-        obs = -40*pi*(aimag(c - d))/(k)
-        d_obs = -40*pi*(aimag(d_c - d_d))/k
+        obs = -40*pi*(aimag(c - d))/(k_cm)
+        d_obs = -40*pi*(aimag(d_c - d_d))/k_cm
     case default
-        write(*,*) 'INVALID OBSERVABLE', trim(type)
+        stop 'INVALID OBSERVABLE in observable subroutine:'
     end select
 end subroutine observable
 
-subroutine just_phases(t_lab, reac, phases)
-    implicit none
-    real(dp), parameter :: r_max = 12.5_dp , dr = 0.01_dp
-    real(dp), intent(in) :: t_lab
-    character(len=*), intent(in) :: reac
-    real(dp), allocatable, intent(out) :: phases(:,:)
-    real(dp), allocatable :: d_phases(:,:,:)
+! The functions below were written to test the derivatives of observable against numerical calculations
+! and require the av18 module. All analytic calculations of the derivatives match the numerical ones.
+! since the observables module should not depend on a specific module for the NN interaction the functions
+! are commented and left here for reference.
 
-    allocate(phases(1:5, 1:j_max))
+! !!
+! !! @brief      wrapper function for observable
+! !!
+! !! This wrapper function is used to test the derivatives of the observable subroutine.
+! !! The generic data of type context is used to receive all the arguments necessary to call
+! !! observable. The same data of type context is used to receive which parameter will
+! !! be varied by the dfridr subroutine and which type of observable will be calculated.
+! !!
+! !! @returns    A NN scattering observable at an specific lab frame energy and scattering angle
+! !!
+! !! @author     Rodrigo Navarro Perez
+! !!
+! real(dp) function f_observable(x, data) result(r)
+!     use num_recipes, only : context
+!     use av18, only : av18_all_partial_waves
+!     implicit none
+!     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+!     type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
 
-    call all_phaseshifts(av18_all_partial_waves, default_params, t_lab, reac, r_max, dr, phases, d_phases)
+!     real(dp), allocatable :: ap(:)
+!     real(dp) :: t_lab, theta, r_max, dr
+!     integer :: i_target, i_parameter
+!     character(len=2) :: reaction
+!     character(len=4) :: type
+!     real(dp) :: obs
+!     real(dp), allocatable :: d_obs(:)
+!     integer, parameter :: n_observables = 26
+!     character(len=4), dimension(1:n_observables), parameter :: &
+!     obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
+!                  'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
+!                  'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
+!                  'sgt ','sgtt','sgtl']
 
-end subroutine just_phases
+!     allocate(ap, source = data%x)
+!     t_lab = data%a
+!     r_max = data%b
+!     dr = data%c
+!     theta = data%d
+!     reaction = trim(data%string)
+!     i_parameter = data%i
+!     i_target = data%j
+
+!     type = obs_types(i_target)
+!     ap(i_parameter) = x
+!     call observable(av18_all_partial_waves, ap, type, t_lab, theta, reaction, r_max, dr, obs, d_obs)
+!     r = obs
+! end function f_observable
+
+! ! !!
+! ! !> @brief      wrapper function for the derivatives of observable
+! ! !!
+! ! !! This wrapper function is used to test the derivatives of the observable subroutine.
+! ! !! The generic data of type context is used to receive all the arguments necessary to call
+! ! !! observable. The same data of type context is used to receive which parameter will
+! ! !! be varied by the dfridr subroutine and which type of observable will be calculated.
+! ! !!
+! ! !! @returns    derivatives of an observable at an specific lab energy and partial wave
+! ! !!
+! ! !! @author     Rodrigo Navarro Perez
+! ! !!
+! function df_observable(data) result(r)
+!     use num_recipes, only : context
+!     use av18, only : av18_all_partial_waves
+!     implicit none
+!     type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+!     real(dp), allocatable :: r(:)
+    
+!     real(dp), allocatable :: ap(:)
+!     real(dp) :: t_lab, theta, r_max, dr
+!     integer :: i_target, i_parameter
+!     character(len=2) :: reaction
+!     character(len=4) :: type
+!     real(dp) :: obs
+!     real(dp), allocatable :: d_obs(:)
+!     integer, parameter :: n_observables = 26
+!     character(len=4), dimension(1:n_observables), parameter :: &
+!     obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
+!                  'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
+!                  'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
+!                  'sgt ','sgtt','sgtl']
+
+!     allocate(ap, source = data%x)
+!     t_lab = data%a
+!     r_max = data%b
+!     dr = data%c
+!     theta = data%d
+!     reaction = trim(data%string)
+!     i_parameter = data%i
+!     i_target = data%j
+
+!     type = obs_types(i_target)
+!     call observable(av18_all_partial_waves, ap, type, t_lab, theta, reaction, r_max, dr, obs, d_obs)
+!     r = d_obs
+! end function df_observable
+
 end module observables

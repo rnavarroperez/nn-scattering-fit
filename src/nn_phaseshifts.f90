@@ -8,7 +8,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm!, f_all_phaseshifts, df_all_phaseshifts
+public :: all_phaseshifts, eta_prime, momentum_cm, nn_potential!, f_all_phaseshifts, df_all_phaseshifts
 
 interface
     subroutine nn_potential(ap, r, reaction, v_pw, dv_pw)

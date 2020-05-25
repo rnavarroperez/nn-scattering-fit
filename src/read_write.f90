@@ -17,7 +17,7 @@ implicit none
 
 private
 
-public :: print_em_np_amplitudes, print_em_pp_amplitudes, print_observables
+public :: print_em_np_amplitudes, print_em_pp_amplitudes!, print_observables
 
 contains
 
@@ -87,62 +87,62 @@ end subroutine print_em_pp_amplitudes
 !!
 !! @author     Raul L Bernal-Gonzalez
 !!
-subroutine print_observables()
-    implicit none
-    character(len=4), dimension(1:26), parameter :: &
-           obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
-             ,'RT  ','RPT ','AT  ','D0SK','NSKN','NSSN','NNKK','A   '&
-             ,'AXX ','CKP ','RP  ','MSSN','MSKN','AZX ','AP  ','DTRT'&
-             ,'SGT ','SGTT','SGTL'] !< array of possible observable characters
-    !---------------------------------------------------------------------------
-    real(dp) :: momentum, angle, obs
-    real(dp) :: pre = -1
-    real(dp), allocatable :: d_obs(:)
-    character(len=128) type
-    integer :: i, j, k, unit1, unit2, unit3, unit4, unit5, unit6
-    real(dp), allocatable :: phases(:,:)
+! subroutine print_observables()
+!     implicit none
+!     character(len=4), dimension(1:26), parameter :: &
+!            obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
+!              ,'RT  ','RPT ','AT  ','D0SK','NSKN','NSSN','NNKK','A   '&
+!              ,'AXX ','CKP ','RP  ','MSSN','MSKN','AZX ','AP  ','DTRT'&
+!              ,'SGT ','SGTT','SGTL'] !< array of possible observable characters
+!     !---------------------------------------------------------------------------
+!     real(dp) :: momentum, angle, obs
+!     real(dp) :: pre = -1
+!     real(dp), allocatable :: d_obs(:)
+!     character(len=128) type
+!     integer :: i, j, k, unit1, unit2, unit3, unit4, unit5, unit6
+!     real(dp), allocatable :: phases(:,:)
 
-    open(newunit=unit1, file='new_pp_obs.dat', status='unknown')
-    open(newunit=unit2, file='new_pp_d_obs.dat', status='unknown')
-    open(newunit=unit3, file='new_np_obs.dat', status='unknown')
-    open(newunit=unit4, file='new_np_d_obs.dat', status='unknown')
-    open(newunit=unit5, file='new_pp_aps.dat', status='unknown')
-    open(newunit=unit6, file='new_np_aps.dat', status='unknown')
+!     open(newunit=unit1, file='new_pp_obs.dat', status='unknown')
+!     open(newunit=unit2, file='new_pp_d_obs.dat', status='unknown')
+!     open(newunit=unit3, file='new_np_obs.dat', status='unknown')
+!     open(newunit=unit4, file='new_np_d_obs.dat', status='unknown')
+!     open(newunit=unit5, file='new_pp_aps.dat', status='unknown')
+!     open(newunit=unit6, file='new_np_aps.dat', status='unknown')
 
-    ! pp
-    do i = 50, 350, 50
-        momentum = real(i, kind=dp)
-        do j = 10, 180, 10
-            angle = real(j, dp)
-            do k = 1, size(obs_types)
-                type = lower(obs_types(k))
-                call observable(momentum, pre, angle, type, 'pp', obs, d_obs)
-                write(unit1, *) i, j, obs_types(k), obs
-                write(unit2, *) d_obs
-                pre = momentum
-            end do
-        end do
-    end do
+!     ! pp
+!     do i = 50, 350, 50
+!         momentum = real(i, kind=dp)
+!         do j = 10, 180, 10
+!             angle = real(j, dp)
+!             do k = 1, size(obs_types)
+!                 type = lower(obs_types(k))
+!                 call observable(momentum, pre, angle, type, 'pp', obs, d_obs)
+!                 write(unit1, *) i, j, obs_types(k), obs
+!                 write(unit2, *) d_obs
+!                 pre = momentum
+!             end do
+!         end do
+!     end do
 
-    ! np
-    do i = 50, 350, 50
-        momentum = real(i, kind=dp)
-        do j = 10, 180, 10
-            angle = real(j, kind=dp)
-            do k = 1, size(obs_types)
-                type = lower(obs_types(k))
-                call observable(momentum, pre, angle, type, 'np', obs, d_obs)
-                write(unit3, *) i, j, obs_types(k), obs
-                write(unit4, *) d_obs
-                pre = momentum
-            end do
-        end do
-    end do
+!     ! np
+!     do i = 50, 350, 50
+!         momentum = real(i, kind=dp)
+!         do j = 10, 180, 10
+!             angle = real(j, kind=dp)
+!             do k = 1, size(obs_types)
+!                 type = lower(obs_types(k))
+!                 call observable(momentum, pre, angle, type, 'np', obs, d_obs)
+!                 write(unit3, *) i, j, obs_types(k), obs
+!                 write(unit4, *) d_obs
+!                 pre = momentum
+!             end do
+!         end do
+!     end do
 
-    do i = 50, 350, 50
-        momentum = real(i, kind=dp)
-        call just_phases(momentum, 'np', phases)
-        write(unit6, *) phases
-    end do
-end subroutine print_observables
+!     do i = 50, 350, 50
+!         momentum = real(i, kind=dp)
+!         call just_phases(momentum, 'np', phases)
+!         write(unit6, *) phases
+!     end do
+! end subroutine print_observables
 end module read_write
