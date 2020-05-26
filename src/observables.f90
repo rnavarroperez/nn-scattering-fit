@@ -10,8 +10,8 @@ module observables
 
 use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_potential
 use amplitudes, only: saclay_amplitudes
-use precisions
-use constants
+use precisions, only: dp
+use constants, only: pi
 
 implicit none
 
