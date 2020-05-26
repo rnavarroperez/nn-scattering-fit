@@ -34,8 +34,6 @@ end type
 !!
 !> @brief      interface for function callbacks
 !!
-!!
-!!
 !! @author     Rodrigo Navarro Perez
 !!
 interface
@@ -51,10 +49,17 @@ end interface
 
 contains
 
+!!
+!> @brief      Kronecker_delta delta
+!!
+!! The usual Kronecker delta \f$\delta_{i,j} = 1 \; {\rm if } \; i=j, \;  0\; {\rm if} \; i\neq j \f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 integer function kronecker_delta(i, j) result(delta)
     implicit none
-    integer, intent(in) :: i
-    integer, intent(in) :: j
+    integer, intent(in) :: i !< a integer
+    integer, intent(in) :: j !< another integer
     if (i == j) then
         delta = 1
     else
@@ -62,9 +67,18 @@ integer function kronecker_delta(i, j) result(delta)
     endif
 end function kronecker_delta
 
+!!
+!> @brief      Logarithm of gamma function
+!!
+!! Series approximation to the Logarithm of a gamma function for a complex argument.
+!!
+!! \f$ \log \left[ \Gamma (z) \right] \f$, where \f$ z \f$ is complex
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function cmplx_log_gamma(z) result(l_gamma)
     implicit none
-    complex(dp), intent(in) :: z
+    complex(dp), intent(in) :: z !< a complex number
 
     integer, parameter :: n_coeff = 6
     real(dp), parameter :: lanczos_coefficients(0:n_coeff) = [1.000000000190015_dp, &
@@ -86,12 +100,21 @@ complex(dp) function cmplx_log_gamma(z) result(l_gamma)
     l_gamma = (z + 0.5_dp)*log(z + gamma + 0.5_dp) - (z + gamma + 0.5_dp) + log(sqrt(2*pi)*sum/z)
 end function cmplx_log_gamma
 
+!!
+!> @brief      Spherical harmonic function
+!!
+!! Calculates the spherical harmonic
+!! \f$Y_l^m(\theta, \varphi) = (-1)^m \sqrt{\frac{(2l+1)}{4\pi} \frac{(l-m)!}{(l+m)!}} P_{lm}(\cos \theta) e^{im\varphi}\f$,
+!! where \f$ P_{lm}(x) \f$ is the usual Legendre polynomial.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function spherical_harmonic(l, m, theta, phi) result(Ylm)
     implicit none
-    integer, intent(in) :: l
-    integer, intent(in) :: m
-    real(dp), intent(in) :: theta
-    real(dp), intent(in) :: phi
+    integer, intent(in) :: l !< orbital momentum quantum number
+    integer, intent(in) :: m !< magnetic quantum number
+    real(dp), intent(in) :: theta !< polar angle
+    real(dp), intent(in) :: phi !< azimuthal angle
 
     real(dp) :: ratio, factorial, x, Plm
     integer :: lmm, i
@@ -114,10 +137,12 @@ end function spherical_harmonic
 
 
 !!
-!> @brief      Optimized function to calculate legendre polynomials
+!> @brief      Legendre polynomial
 !!
-!! Modifies an algorithm to calculate legendre polynomials to save
-!! the previous values and build up from them. This eliminates the
+!! Uses a recursive relation to calculate the usual Legendre polynomial
+!!
+!! The algorithm has been modified to save
+!! the values from previous calls and build up from them. This eliminates the
 !! need to start from the beginning when using same x and m values 
 !!
 !! @author     Raul L Bernal-Gonzalez
@@ -125,9 +150,9 @@ end function spherical_harmonic
 !!
 real(dp) function legendre_poly(l, m, x) result(r)
     implicit none
-    integer, intent(in) :: l
-    integer, intent(in) :: m
-    real(dp), intent(in) :: x
+    integer, intent(in) :: l !< \f$l\f$ index. Has to be smaller than \f$m\f$ and 2000 
+    integer, intent(in) :: m !< \fm\f$ index. Has to bee positive
+    real(dp), intent(in) :: x !< a real number between \f$-1\f$ and \f$1\f$
     !------- place holder variables--------------------------
     real(dp), save :: x_pre = -1.1
     integer, save :: m_pre = -1, l_largest = -1
@@ -292,7 +317,7 @@ end subroutine dfridr
 !! Modified from Numerical Recipes
 !!
 !! Calculates the spherical Bessel functions \f$ j_n(x) \f$, \f$ y_n(x) \f$, and their derivatives
-!! \f$ j_n'(x) \f$, \f$ y_n'(x) \f$ for an integer \$f n \f$.
+!! \f$ j_n'(x) \f$, \f$ y_n'(x) \f$ for an integer \f$ n \f$.
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -501,9 +526,9 @@ end subroutine bessjy
 !! Chebyshev expansion for \f$ |x| \leq 1/2 \f$. Also returns \f$ 1/\Gamma(1 + x ) \f$ and
 !! \f$ 1/\Gamma(1 − x ) \f$.
 !!
-!! \f$ \Gamma_1(x) = \frac{1}{2x} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
+!! \f$ \Gamma_1(x) = \frac{1}{2x} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right] \f$
 !!
-!! \f$ \Gamma_2(x) = \frac{1}{2} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
+!! \f$ \Gamma_2(x) = \frac{1}{2} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right] \f$
 !!
 !! @author     Rodrigo Navarro Perez
 !!

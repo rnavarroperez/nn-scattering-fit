@@ -1,3 +1,11 @@
+!!
+!> @brief      NN scattering phase shifts
+!!
+!! Module to calculate nn scattering phase shifts given a laboratory energy,
+!! and a local NN potential subroutine 
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 module nn_phaseshifts
 
 use precisions, only : dp
@@ -10,15 +18,20 @@ private
 
 public :: all_phaseshifts, eta_prime, momentum_cm, nn_potential!, f_all_phaseshifts, df_all_phaseshifts
 
+!!
+!> @brief      interface of nn local potentials
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 interface
     subroutine nn_potential(ap, r, reaction, v_pw, dv_pw)
         use precisions, only : dp
         implicit none
-        real(dp), intent(in) :: ap(:)
-        real(dp), intent(in) :: r
-        character(len=2), intent(in) :: reaction
-        real(dp), intent(out) :: v_pw(:, :)
-        real(dp), allocatable, intent(out) :: dv_pw(:, :, :)
+        real(dp), intent(in) :: ap(:) !< potential parameters
+        real(dp), intent(in) :: r !< radius (in fm) at which the potential is evaluated
+        character(len=2), intent(in) :: reaction !< reaction channel. 'pp' or 'np'
+        real(dp), intent(out) :: v_pw(:, :) !< local potential in all partial waves
+        real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of the potential with respect of the parameters
     end subroutine nn_potential
 end interface
 
@@ -585,7 +598,7 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
 end subroutine match_uncoupled_waves
 
 !!
-!! @brief      energy dependent Sommerfeld parameter
+!> @brief      energy dependent Sommerfeld parameter
 !!
 !! Calculates the energy dependent Sommerfeld parameter
 !! \f$\eta' = \alpha M_p / (2 k) \left(\frac{1 + 2 k^2/M_p^2}{\sqrt{1 + k^2/M_p^2}} \right) \f$,

@@ -1,19 +1,23 @@
+!!
+!> @brief      NN scattering observables
+!!
+!! Module to calculate nn scattering observables with a given model (nn local potential),
+!! model parameters and kinematics (lab energy, scattering angle, reaction channel, etc)
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 module observables
+
 use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_potential
 use amplitudes, only: saclay_amplitudes
 use precisions
 use constants
+
 implicit none
-public observable, f_observable, df_observable!, just_phases
+
+public observable!, f_observable, df_observable!, just_phases
 private
 
-
-! Valid observables
-! character(len=4), dimension(1:n_obs), parameter :: &
-!        obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
-!          ,'RT  ','RPT ','AT  ','D0SK','NSKN','NSSN','NNKK','A   '&
-!          ,'AXX ','CKP ','RP  ','MSSN','MSKN','AZX ','AP  ','DTRT'&
-!          ,'SGT ','SGTT','SGTL']
 
 contains
 
@@ -38,14 +42,14 @@ contains
 !!
 subroutine observable(model, params, type, t_lab, angle, reaction, r_max, dr, obs, d_obs)
     implicit none
-    procedure(nn_potential) :: model
-    real(dp), intent(in) :: params(:)
+    procedure(nn_potential) :: model !< model used to calculate the NN nn_potential
+    real(dp), intent(in) :: params(:) !< adjustable parameters
     character(len=*), intent(in) :: type !< ind_ex to indicate the type of observable
     real(dp), intent(in) :: t_lab !< laboratory energy
     real(dp), intent(in) :: angle !< scattering angle in d_egrees
     character(len=*), intent(in) :: reaction !< reaction channel
-    real(dp), intent(in) :: r_max !< 
-    real(dp), intent(in) :: dr !< integration radius and step in fm
+    real(dp), intent(in) :: r_max !< maximum integration radius in fm
+    real(dp), intent(in) :: dr !< integration step in fm
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
     real(dp), save :: pre_t_lab = -1._dp
@@ -347,18 +351,18 @@ end subroutine observable
 !     r = obs
 ! end function f_observable
 
-! ! !!
-! ! !> @brief      wrapper function for the derivatives of observable
-! ! !!
-! ! !! This wrapper function is used to test the derivatives of the observable subroutine.
-! ! !! The generic data of type context is used to receive all the arguments necessary to call
-! ! !! observable. The same data of type context is used to receive which parameter will
-! ! !! be varied by the dfridr subroutine and which type of observable will be calculated.
-! ! !!
-! ! !! @returns    derivatives of an observable at an specific lab energy and partial wave
-! ! !!
-! ! !! @author     Rodrigo Navarro Perez
-! ! !!
+! !!
+! !> @brief      wrapper function for the derivatives of observable
+! !!
+! !! This wrapper function is used to test the derivatives of the observable subroutine.
+! !! The generic data of type context is used to receive all the arguments necessary to call
+! !! observable. The same data of type context is used to receive which parameter will
+! !! be varied by the dfridr subroutine and which type of observable will be calculated.
+! !!
+! !! @returns    derivatives of an observable at an specific lab energy and partial wave
+! !!
+! !! @author     Rodrigo Navarro Perez
+! !!
 ! function df_observable(data) result(r)
 !     use num_recipes, only : context
 !     use av18, only : av18_all_partial_waves

@@ -1,4 +1,14 @@
+!!
+!> @brief      NN scattering amplitudes
+!!
+!! Module to calculate the nucleon-nucleon scattering amplitude given a laboratory
+!! energy, scattering angle and the corresponding NN phase-shifts
+!!
+!! @author     Rodrigo Navarro Perez
+!! @author     Raul L Bernal-Gonzalez
+!!
 module amplitudes
+
 use precisions, only : dp
 use nn_phaseshifts, only : eta_prime
 use constants, only : i_, m_p => proton_mass, hbar_c, alpha, pi, m_e => electron_mass, &
@@ -6,27 +16,34 @@ use constants, only : i_, m_p => proton_mass, hbar_c, alpha, pi, m_e => electron
 use num_recipes, only : cmplx_log_gamma, spherical_harmonic, kronecker_delta, legendre_poly
 implicit none
 
-real(dp), parameter :: f_T = -alpha*mu_p**2/(4*m_p**2), f_ls = -alpha*(8*mu_p - 2)/(4*m_p**2)
+real(dp), parameter :: f_T = -alpha*mu_p**2/(4*m_p**2) !< Tensor factor in magnetic moment amplitude
+real(dp), parameter :: f_ls = -alpha*(8*mu_p - 2)/(4*m_p**2) !< spin-orbit factor in magnetic moment amplitude
 
 private
 
 public :: saclay_amplitudes, em_pp_amplitudes, em_np_amplitudes!, f_amplitudes, df_amplitudes
 
+!!
+!> @brief      interface for S matrix subroutine
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 interface
+
     subroutine s_matrix_elements(l_prime, l, j, s, k_cm, eta, reaction, phases, d_phases, sm, d_sm)
         use precisions, only : dp
         implicit none
-        integer, intent(in) :: l_prime
-        integer, intent(in) :: l
-        integer, intent(in) :: j
-        integer, intent(in) :: s
-        real(dp), intent(in) :: k_cm
-        real(dp), intent(in) :: eta
-        character(len=2), intent(in) :: reaction
-        real(dp), intent(in) :: phases(:,:)
-        real(dp), optional, intent(in) :: d_phases(:, :, :)
-        complex(dp), intent(out) :: sm
-        complex(dp), optional, intent(out), allocatable :: d_sm(:)
+        integer, intent(in) :: l_prime !< orbital angular momentum quantum number \f$ l' \f$
+        integer, intent(in) :: l !< orbital angular momentum quantum number \f$ l\f$
+        integer, intent(in) :: j !< total angular momentum quantum number \f$ j \f$
+        integer, intent(in) :: s !< spin quantum number
+        real(dp), intent(in) :: k_cm !< center of mass momentum, in fm\f$^{-1}\f$
+        real(dp), intent(in) :: eta !< Sommerfeld parameter
+        character(len=2), intent(in) :: reaction !< reaction channel 'pp' or 'np'
+        real(dp), intent(in) :: phases(:,:) !< NN scattering phase-shifts corresponding to the given center of mass momentum
+        real(dp), optional, intent(in) :: d_phases(:, :, :) !< derivatives of phase-shifts with respect to the fitting parameters
+        complex(dp), intent(out) :: sm !< S matrix element for the given quantum numbers
+        complex(dp), optional, intent(out), allocatable :: d_sm(:) !< derivatives of the S matrix element with respect to the fitting parameters
     end subroutine s_matrix_elements
 end interface
 
@@ -96,7 +113,7 @@ subroutine saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d
 end subroutine saclay_amplitudes
 
 !!
-!! @brief      Calculates the pp electromagnetic amplitude
+!> @brief      Calculates the pp electromagnetic amplitude
 !! 
 !! Given the C.M. momentum and scattering angle, calculates the corresponding pp electromagnetic amplitude.
 !! See section III A of PhysRevC.88.064002 for more details.
@@ -146,7 +163,7 @@ subroutine em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
 end subroutine em_pp_amplitudes
 
 !!
-!! @brief      Calculates the np electromagnetic amplitude
+!> @brief      Calculates the np electromagnetic amplitude
 !! 
 !! Given the C.M. momentum and scattering angle, calculates the corresponding np electromagnetic amplitude.
 !! See section 34 of PhysRevC.88.064002 for more details.
@@ -192,7 +209,7 @@ subroutine em_np_amplitudes(k_cm, theta, a, b, c, d, e)
 end subroutine em_np_amplitudes
 
 !!
-!! @brief      Coulomb scattering amplitude
+!> @brief      Coulomb scattering amplitude
 !!
 !! Calculates the scattering amplitude corresponding to the energy dependent Coulomb potential
 !! \f$ f_{C1, k}(\theta) = - \frac{\eta}{k} \frac{e^{-i\eta\ln[(1-\cos\theta)/2]}}{1-\cos\theta} \f$.
@@ -213,7 +230,7 @@ end function f_coulomb
 
 
 !!
-!! @brief      Two photon exchange scattering amplitude
+!> @brief      Two photon exchange scattering amplitude
 !!
 !! Calculates the scattering amplitude corresponding to the energy dependent two photon exchange potential
 !! \f$ f_{C2, k}(\theta) = \frac{1}{2ik} \sum_l (2_l+1) e^{2i(\sigma_l - \sigma_0)} (e^{2i\rho_l}-1) P_l(\theta) \f$,
@@ -274,7 +291,7 @@ complex(dp) function f_coulomb2(k_cm, eta, theta) result(f_c)
 end function f_coulomb2
 
 !!
-!! @brief      Vacuum polarization scattering amplitude
+!> @brief      Vacuum polarization scattering amplitude
 !!
 !! Calculates a series expansion to second leading order of scattering amplitude corresponding to the
 !! energy dependent vacuum polarization potential.
@@ -307,7 +324,7 @@ complex(dp) function f_vacuum_polarization(k_cm, eta, theta) result(f_vp)
 end function f_vacuum_polarization
 
 !!
-!! @brief      pp magnetic moment scattering amplitude
+!> @brief      pp magnetic moment scattering amplitude
 !!
 !! Calculates the pp magnetic moment scattering amplitude for a given center of mass momentum, and scattering angle
 !!
@@ -348,7 +365,7 @@ subroutine mm_amplitudes(k_cm, eta, theta, m_00, m_11, m_10, m_01, m_1m1)
 end subroutine mm_amplitudes
 
 !!
-!! @brief      Spin-Orbit contribution to the pp magnetic moment phase-shifts
+!> @brief      Spin-Orbit contribution to the pp magnetic moment phase-shifts
 !!
 !! Calculates only the spin orbit contribution to the pp magnetic moment phase-shifts
 !!
@@ -381,7 +398,7 @@ subroutine mm_phases_ls_term(k_cm, mm_phases)
 end subroutine mm_phases_ls_term
 
 !!
-!! @brief     Spin-Orbit contribution to the \f$ M^1_{01} \f$ pp magnetic moment amplitude
+!> @brief     Spin-Orbit contribution to the \f$ M^1_{01} \f$ pp magnetic moment amplitude
 !!
 !! Calculate only the spin orbit contribution to the \f$ M^1_{01} \f$ pp magnetic moment amplitude
 !!
@@ -414,7 +431,7 @@ subroutine m01_ls_contribution(k_cm, eta, theta, mm_phases, m_01)
 end subroutine m01_ls_contribution
 
 !!
-!! @brief     S matrix approximation for pp magnetic moment amplitude 
+!> @brief     S matrix approximation for pp magnetic moment amplitude 
 !!
 !! Gives the \f$ S_{\rm MM, pp} - 1 \approx 2 i K_{\rm MM, pp} \f$
 !! 
@@ -648,7 +665,7 @@ end function clebsch_gordan
 !> @brief      S mastrix elements
 !!
 !! Given a set of quantum number \f$l'\f$, \f$l\f$, \f$j\f$, \f$s\f$ extracts the corresponding element from the NN
-!! scattering matrix \f$S - \detla_{l, l'}\f$
+!! scattering matrix \f$S - \delta_{l, l'}\f$
 !!
 !! @author     Rodrigo Navarro Perez
 !!
