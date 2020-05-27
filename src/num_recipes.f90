@@ -167,7 +167,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
     if (l < m) stop 'legendre_poly is only valid for l >= m'
     if (l > L_MAX) stop 'legendre_poly limit of 2000 reached'
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
-
+    p_ml=0
     if (x==x_pre .and. m==m_pre) then
         !Same arguments were used last time, we can use previous calculations
         if (l <= l_largest) then
