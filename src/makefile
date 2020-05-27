@@ -47,7 +47,7 @@ read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshift
 exp_data.o: exp_data.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-main.o: main.f90 precisions.o
+main.o: main.f90 precisions.o exp_data.o
 	$(COMPILER) $(FLAGS) -c $<
 
 clean:
