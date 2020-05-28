@@ -10,7 +10,7 @@ module read_write
 use precisions, only: dp
 use amplitudes, only: em_np_amplitudes, em_pp_amplitudes
 use nn_phaseshifts, only: momentum_cm
-use observables
+! use observables
 use String_Functions, only: lower
 use constants, only: pi
 implicit none

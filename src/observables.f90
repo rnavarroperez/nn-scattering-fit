@@ -10,8 +10,8 @@ module observables
 
 use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_potential
 use amplitudes, only: saclay_amplitudes
-use precisions
-use constants
+use precisions, only: dp
+use constants, only: pi
 
 implicit none
 
@@ -40,7 +40,7 @@ contains
 !! @author     Raul L Bernal-Gonzalez
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine observable(model, params, type, t_lab, angle, reaction, r_max, dr, obs, d_obs)
+subroutine observable(model, params, type, t_lab, angle, reaction, em_amplitude, r_max, dr, obs, d_obs)
     implicit none
     procedure(nn_potential) :: model !< model used to calculate the NN nn_potential
     real(dp), intent(in) :: params(:) !< adjustable parameters
@@ -48,6 +48,7 @@ subroutine observable(model, params, type, t_lab, angle, reaction, r_max, dr, ob
     real(dp), intent(in) :: t_lab !< laboratory energy
     real(dp), intent(in) :: angle !< scattering angle in d_egrees
     character(len=*), intent(in) :: reaction !< reaction channel
+    complex(dp), intent(in), dimension(:) :: em_amplitude !< electromagnetic amplitude in saclay parametrization
     real(dp), intent(in) :: r_max !< maximum integration radius in fm
     real(dp), intent(in) :: dr !< integration step in fm
     real(dp), intent(out) :: obs !< NN scattering observable
@@ -86,7 +87,11 @@ subroutine observable(model, params, type, t_lab, angle, reaction, r_max, dr, ob
     end if
     theta = angle*pi/180.0_dp ! angle in d_egrees to radians
     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
-
+    a = a + em_amplitude(1)
+    b = b + em_amplitude(2)
+    c = c + em_amplitude(3)
+    d = d + em_amplitude(4)
+    e = e + em_amplitude(5)
     ! Initialize values for calculation observable
     obs = 0.0_dp
     d_obs = 0.0_dp

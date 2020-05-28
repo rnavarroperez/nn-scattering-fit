@@ -15,7 +15,7 @@ implicit none
 private
 
 public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
-    kronecker_delta
+    kronecker_delta, int_to_logical
 
 !!
 !> @brief      generic type for data in function callbacks
@@ -48,6 +48,24 @@ end interface
 
 
 contains
+
+!!
+!> @brief      converts an integer to a logical
+!!
+!! Converts an integer to a logical. If the integer is zero,
+!! false is returned; true is returned for any other value
+!!
+!! @return     a logical representation of an integer
+!!
+logical function int_to_logical(i) result(r)
+    implicit none
+    integer, intent(in) :: i
+    if (i == 0) then
+        r = .false.
+    else
+        r = .true.
+    endif    
+end function int_to_logical
 
 !!
 !> @brief      Kronecker_delta delta
@@ -167,7 +185,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
     if (l < m) stop 'legendre_poly is only valid for l >= m'
     if (l > L_MAX) stop 'legendre_poly limit of 2000 reached'
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
-
+    p_ml=0
     if (x==x_pre .and. m==m_pre) then
         !Same arguments were used last time, we can use previous calculations
         if (l <= l_largest) then

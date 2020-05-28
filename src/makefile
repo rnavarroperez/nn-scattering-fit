@@ -23,28 +23,31 @@ string_functions.o: string_functions.f90
 num_recipes.o: num_recipes.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o av18.o
+test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o num_recipes.o
+av18.o: av18.f90 precisions.o constants.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o av18.o
+nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o
 	$(COMPILER) $(FLAGS) -c $<
 
-amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o
+amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
 observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshifts.o string_functions.o observables.o
+read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshifts.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-main.o: main.f90 precisions.o
+exp_data.o: exp_data.f90 precisions.o string_functions.o num_recipes.o
+	$(COMPILER) $(FLAGS) -c $<
+
+main.o: main.f90 precisions.o exp_data.o
 	$(COMPILER) $(FLAGS) -c $<
 
 clean:
