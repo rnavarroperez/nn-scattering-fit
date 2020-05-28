@@ -3,146 +3,147 @@
 !!
 !! These subroutines will deal with reading in data and outputting results
 !!
-!! @author Raul L Bernal-Gonzalez
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
 !!
 module read_write
 
 use precisions, only: dp
-use amplitudes, only: em_np_amplitudes, em_pp_amplitudes
-use nn_phaseshifts, only: momentum_cm
-! use observables
-use String_Functions, only: lower
+use amplitudes, only: em_amplitudes
+use observables, only: observable, kinematics
+use nn_phaseshifts, only: all_phaseshifts, nn_local_model
 use constants, only: pi
 implicit none
 
 private
 
-public :: print_em_np_amplitudes, print_em_pp_amplitudes!, print_observables
+public :: print_em_amplitudes, print_observables, write_phases
 
 contains
 
-    !!
-    !> @brief      Subroutines to test the output of em_np_amplitudes
-    !!
-    !! Makes a grid of t_lab from 1-350 in steps of 50 and theta from
-    !! 10pi/180 - 180pi/180 in steps of 10
-    !!
-    !! @author     Raul L Bernal-Gonzalez
-    !!
-subroutine print_em_np_amplitudes()
+!!
+!> @brief      Test the output of em_amplitudes
+!!
+!! Makes a grid of t_lab from 1-350 in steps of 50 and angle from
+!! 10pi/180 - 180pi/180 in steps of 10
+!!
+!! This subroutine is for benchmarking purposes only and should not be 
+!! used in production runs!
+!!
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine print_em_amplitudes(channel)
     implicit none
-    real(dp) :: momentum, angle, r
-    complex(dp) :: a_s, b_s, c_s, d_s, e_s
+    character(len=2), intent(in) :: channel !< reaction channel (pp or np)
+    real(dp) :: angle, t_lab, theta
+    complex(dp), dimension(1:5) :: em_amplitude
     integer :: i, j, unit
     character(len=128) :: fmt ! format specifier
 
+    if (channel/='pp' .and. channel/='np') then
+        print*, channel
+        stop 'invalid reaction channel in print_em_amplitudes'
+    endif
     ! open file for output
-    open(newunit=unit, file='new_out_np.dat', status='unknown')
+    open(newunit=unit, file='new_out_'//channel//'.dat', status='unknown')
     ! format
     fmt = '(I3, 4x, F21.15, 5(5x, E21.15,SP, E21.15, "j"))'
     ! file header
     write(unit, '(2(A,4x), 5(40x, A))') 't_lab', 'theta', 'a', 'b', 'c', 'd', 'e'
 
     do i = 50, 350, 50
-        r = real(i, kind=dp)
-        momentum = momentum_cm(r, 'np')
+        t_lab = real(i, kind=dp)
         do j = 10, 180, 10
-            angle =  j*pi/180.0_dp
-            call em_np_amplitudes(momentum, angle, a_s, b_s, c_s, d_s, e_s)
-            write(unit, fmt) i, angle, a_s, b_s, c_s, d_s, e_s
+            angle = real(j, kind=dp)
+            theta = angle*pi/180.0_dp
+            em_amplitude = em_amplitudes(t_lab, angle, channel)
+            write(unit, fmt) i, theta, em_amplitude
         end do
     end do
-end subroutine print_em_np_amplitudes
-
-subroutine print_em_pp_amplitudes()
-        implicit none
-        real(dp) :: momentum, angle, r
-        complex(dp) :: a_s, b_s, c_s, d_s, e_s
-        integer :: i, j, unit
-        character(len=128) :: fmt ! format specifier
-
-        ! open file for output
-        open(newunit=unit, file='new_out_pp.dat', status='unknown')
-        ! format
-        fmt = '(I3, 4x, F21.15, 5(5x, E21.15,SP, E21.15, "j"))'
-        ! file header
-        write(unit, '(2(A,4x), 5(40x, A))') 't_lab', 'theta', 'a', 'b', 'c', 'd', 'e'
-
-        do i = 50, 350, 50
-            r = real(i, kind=dp)
-            momentum = momentum_cm(r, 'pp')
-            do j = 10, 180, 10
-                angle =  j*pi/180.0_dp
-                call em_pp_amplitudes(momentum, angle, a_s, b_s, c_s, d_s, e_s)
-                write(unit, fmt) i, angle, a_s, b_s, c_s, d_s, e_s
-            end do
-        end do
-end subroutine print_em_pp_amplitudes
+end subroutine print_em_amplitudes
 
 !!
-!> @brief      Subroutine to test the output of observables
+!> @brief      Test the output of observables
 !!
-!! Makes a grid of t_lab from 1-350 in steps of 50 and theta from
+!! Makes a grid of t_lab from 1-350 in steps of 50 and angle from
 !! 10pi/180 - 180pi/180 in steps of 10
 !!
-!! @author     Raul L Bernal-Gonzalez
+!! This subroutine is for benchmarking purposes only and should not be 
+!! used in production runs!
 !!
-! subroutine print_observables()
-!     implicit none
-!     character(len=4), dimension(1:26), parameter :: &
-!            obs_types = ['DSG ','DT  ','AYY ','D   ','P   ','AZZ ','R   '&
-!              ,'RT  ','RPT ','AT  ','D0SK','NSKN','NSSN','NNKK','A   '&
-!              ,'AXX ','CKP ','RP  ','MSSN','MSKN','AZX ','AP  ','DTRT'&
-!              ,'SGT ','SGTT','SGTL'] !< array of possible observable characters
-!     !---------------------------------------------------------------------------
-!     real(dp) :: momentum, angle, obs
-!     real(dp) :: pre = -1
-!     real(dp), allocatable :: d_obs(:)
-!     character(len=128) type
-!     integer :: i, j, k, unit1, unit2, unit3, unit4, unit5, unit6
-!     real(dp), allocatable :: phases(:,:)
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine print_observables(parameters, model, channel)
+    implicit none
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    type(nn_local_model), intent(in) :: model !< nn scattering model
+    character(len=2), intent(in) :: channel !< reaction channel (pp or np)
 
-!     open(newunit=unit1, file='new_pp_obs.dat', status='unknown')
-!     open(newunit=unit2, file='new_pp_d_obs.dat', status='unknown')
-!     open(newunit=unit3, file='new_np_obs.dat', status='unknown')
-!     open(newunit=unit4, file='new_np_d_obs.dat', status='unknown')
-!     open(newunit=unit5, file='new_pp_aps.dat', status='unknown')
-!     open(newunit=unit6, file='new_np_aps.dat', status='unknown')
+    integer, parameter :: n_observables = 26
+    character(len=4), dimension(1:n_observables), parameter :: &
+           obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   '&
+             ,'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   '&
+             ,'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt'&
+             ,'sgt ','sgtt','sgtl'] 
+    !---------------------------------------------------------------------------
+    type(kinematics) :: kinematic
+    real(dp) :: obs
+    real(dp), allocatable :: d_obs(:)
+    integer :: i, j, k, unit1, unit2
 
-!     ! pp
-!     do i = 50, 350, 50
-!         momentum = real(i, kind=dp)
-!         do j = 10, 180, 10
-!             angle = real(j, dp)
-!             do k = 1, size(obs_types)
-!                 type = lower(obs_types(k))
-!                 call observable(momentum, pre, angle, type, 'pp', obs, d_obs)
-!                 write(unit1, *) i, j, obs_types(k), obs
-!                 write(unit2, *) d_obs
-!                 pre = momentum
-!             end do
-!         end do
-!     end do
+    open(newunit=unit1, file='new_'//channel//'_obs.dat', status='unknown')
+    open(newunit=unit2, file='new_'//channel//'_d_obs.dat', status='unknown')
+    kinematic%em_amplitude = 0
+    kinematic%channel = channel
+    do i = 50, 350, 50
+        kinematic%t_lab = real(i, kind=dp)
+        do j = 10, 180, 10
+            kinematic%angle = real(j, kind=dp)
+            do k = 1, size(obs_types)
+                kinematic%type = obs_types(k)
+                call observable(kinematic, parameters, model, obs, d_obs)
+                write(unit1, *) i, j, obs_types(k), obs
+                write(unit2, *) d_obs
+            end do
+        end do
+    end do
+    close(unit1)
+    close(unit2)
+end subroutine print_observables
 
-!     ! np
-!     do i = 50, 350, 50
-!         momentum = real(i, kind=dp)
-!         do j = 10, 180, 10
-!             angle = real(j, kind=dp)
-!             do k = 1, size(obs_types)
-!                 type = lower(obs_types(k))
-!                 call observable(momentum, pre, angle, type, 'np', obs, d_obs)
-!                 write(unit3, *) i, j, obs_types(k), obs
-!                 write(unit4, *) d_obs
-!                 pre = momentum
-!             end do
-!         end do
-!     end do
+!!
+!> @brief      Test the output of observables
+!!
+!! Makes a grid of t_lab from 1-350 in steps of 50
+!!
+!! This subroutine is for benchmarking purposes only and should not be 
+!! used in production runs!
+!!
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine write_phases(parameters, model, channel)
+    implicit none
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    type(nn_local_model), intent(in) :: model !< nn scattering model
+    character(len=2), intent(in) :: channel !< reaction channel (pp or np)
 
-!     do i = 50, 350, 50
-!         momentum = real(i, kind=dp)
-!         call just_phases(momentum, 'np', phases)
-!         write(unit6, *) phases
-!     end do
-! end subroutine print_observables
+    integer, parameter :: jmax = 20
+    
+    integer :: unit, i
+    real(dp) :: t_lab
+    real(dp), dimension(1:5, 1:jmax) :: phases
+    real(dp), allocatable, dimension(:, :, :) :: d_phases
+    
+    open(newunit=unit, file='new_'//channel//'_aps.dat', status='unknown')
+    do i = 50, 350, 50
+        t_lab = real(i, kind=dp)
+        call all_phaseshifts(model, parameters, t_lab, channel, phases, d_phases)
+        write(unit, *) phases
+    end do
+    close(unit)  
+end subroutine write_phases
+
 end module read_write
