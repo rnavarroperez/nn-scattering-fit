@@ -20,15 +20,24 @@ public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly,
 !!
 !> @brief      generic type for data in function callbacks
 !!
+!! The idea is for this type to be generic enough to be used by
+!! different functions
+!!
 !! @author     Rodrigo Navarro Perez
 !!
 type context
-    real(dp) :: a, b, c, d
-    integer :: i, j, k, l
-    real(dp), allocatable :: x(:)
-    integer, allocatable :: i_x(:)
-    character(len=1024) :: string
-    logical :: log
+    real(dp) :: a !< a real number
+    real(dp) :: b !< a real number
+    real(dp) :: c !< a real number
+    real(dp) :: d !< a real number
+    integer :: i !< an integer
+    integer :: j !< an integer
+    integer :: k !< an integer
+    integer :: l !< an integer
+    real(dp), allocatable :: x(:) !< an array of reals
+    integer, allocatable :: i_x(:) !< an array of integers
+    character(len=1024) :: string !< a string
+    logical :: log !< a logical variable
 end type
 
 !!
@@ -59,7 +68,7 @@ contains
 !!
 logical function int_to_logical(i) result(r)
     implicit none
-    integer, intent(in) :: i
+    integer, intent(in) :: i !< an integer
     if (i == 0) then
         r = .false.
     else

@@ -10,7 +10,7 @@
 module amplitudes
 
 use precisions, only : dp
-use nn_phaseshifts, only : eta_prime
+use nn_phaseshifts, only : eta_prime, momentum_cm
 use constants, only : i_, m_p => proton_mass, hbar_c, alpha, pi, m_e => electron_mass, &
     mu_p => mu_proton, m_n => neutron_mass, mu_n => mu_neutron
 use num_recipes, only : cmplx_log_gamma, spherical_harmonic, kronecker_delta, legendre_poly
@@ -21,7 +21,7 @@ real(dp), parameter :: f_ls = -alpha*(8*mu_p - 2)/(4*m_p**2) !< spin-orbit facto
 
 private
 
-public :: saclay_amplitudes, em_pp_amplitudes, em_np_amplitudes!, f_amplitudes, df_amplitudes
+public :: saclay_amplitudes, em_amplitudes!, f_amplitudes, df_amplitudes
 
 !!
 !> @brief      interface for S matrix subroutine
@@ -48,6 +48,37 @@ interface
 end interface
 
 contains
+
+!!
+!> @brief      Calculate electromagnetic amplitudes
+!!
+!! Wrapper function to calculate either pp or np electromagnetic
+!! amplitudes for a given laboratory energy and scattering angle
+!!
+!! @return     electromagnetic amplitude
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+function em_amplitudes(t_lab, angle, channel) result(r)
+    implicit none
+    real(dp), intent(in) :: t_lab !< Laboratory energy in MeV
+    real(dp), intent(in) :: angle !< Scattering angle in degrees
+    character(len=*), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    complex(dp), dimension(1:5) :: r
+    real(dp) :: k_cm, theta
+    complex(dp) :: a, b, c, d, e
+    k_cm = momentum_cm(t_lab, channel)
+    theta = angle*pi/180
+    select case(trim(channel))
+    case ('pp')
+        call em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
+    case ('np')
+        call em_np_amplitudes(k_cm, theta, a, b, c, d, e)
+    case default
+        stop 'invalid reacttion channel in em_amplitudes'
+    end select
+    r = [a, b, c, d, e]
+end function em_amplitudes
 
 !!
 !> @brief      calculate Saclay amplitudes

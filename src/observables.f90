@@ -8,56 +8,69 @@
 !!
 module observables
 
-use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_potential
+use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model
 use amplitudes, only: saclay_amplitudes
 use precisions, only: dp
 use constants, only: pi
 
 implicit none
 
-public observable!, f_observable, df_observable!, just_phases
+public observable, kinematics!, f_observable, df_observable!, just_phases
 private
 
+!!
+!> @brief      kinematic variables for observables
+!!
+!! This can be considered the independent variables, which 
+!! change from one observable to the next in a \f$ \chi^2 \f$ calculation/optimization
+!!
+!! Although the electromagnetic amplitudes are technically not "independent varibles"
+!! we include them here since they do not dependent on the fitting parameters and do
+!! chage from one observable to the next when calculating a \f$ \chi^2 \f$.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+type :: kinematics
+    real(dp) :: t_lab !< Laboratory energy in MeV
+    real(dp) :: angle !< scattering angles in degrees
+    character(len=2) :: channel !< reaction channel, either 'pp' or 'np'
+    character(len=4) :: type !< the type of observable ('dsg', 'sgt', ...)
+    complex(dp), dimension(1:5) :: em_amplitude !< electromagnetic amplitude
+end type kinematics
 
 contains
 
 !!
-!> @brief Calculates a NN scattering observable for a given laboratory energy
-!! in MeV and scattering angle in d_egrees.
+!> @brief Calculates a NN scattering observable
 !!
-!! The observable to be calculated is d_etermined by the type integer
-!! and corresponds to the list of observable labels in the strObs
-!! array.
+!! The type of observable is determined by the kinematic%type argument 
 !!
 !! To avoid recalculating phase-shifts (the more time consuming part
-!! of the calculation) the phases are only calculated if t and tprev
-!! are different. At the end of the subroutine tprev is upd_ated to
-!! the value of t
+!! of the calculation) the phases are only calculated if: kinematic%t_lab
+!! is different from the previous call, any of the fitting parameters is 
+!! different from the previews call, or the kinematic%channel is different 
+!! from the previous call.
 !!
-!! The d_erivative of the observable with respect of the parameters is stored
-!! on the ap array
+!! The derivative of the observable with respect of the parameters is stored
+!! on the d_obs array
 !!
 !! @author     Raul L Bernal-Gonzalez
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine observable(model, params, type, t_lab, angle, reaction, em_amplitude, r_max, dr, obs, d_obs)
+subroutine observable(kinematic, params, model, obs, d_obs)
     implicit none
-    procedure(nn_potential) :: model !< model used to calculate the NN nn_potential
+    type(kinematics), intent(in) :: kinematic !< kinematic variables
     real(dp), intent(in) :: params(:) !< adjustable parameters
-    character(len=*), intent(in) :: type !< ind_ex to indicate the type of observable
-    real(dp), intent(in) :: t_lab !< laboratory energy
-    real(dp), intent(in) :: angle !< scattering angle in d_egrees
-    character(len=*), intent(in) :: reaction !< reaction channel
-    complex(dp), intent(in), dimension(:) :: em_amplitude !< electromagnetic amplitude in saclay parametrization
-    real(dp), intent(in) :: r_max !< maximum integration radius in fm
-    real(dp), intent(in) :: dr !< integration step in fm
+    type(nn_local_model), intent(in) :: model !< nn scattering model
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
+    
     real(dp), save :: pre_t_lab = -1._dp
     real(dp), save, allocatable :: pre_parameters(:)
     real(dp), save :: k_cm
     real(dp), save, allocatable :: phases(:,:)
     real(dp), save, allocatable :: d_phases(:,:,:)
+    character(len=2), save :: pre_channel = '  '
     complex(dp) :: a, b, c, d, e
     complex(dp), allocatable :: d_a(:), d_b(:), d_c(:), d_d(:), d_e(:)
     integer :: n_parameters 
@@ -79,19 +92,21 @@ subroutine observable(model, params, type, t_lab, angle, reaction, em_amplitude,
     allocate(d_num(1:n_parameters))
     allocate(d_denom(1:n_parameters))
 
-    if(t_lab /= pre_t_lab .or. .not. all(params == pre_parameters)) then
-        call all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_phases)
-        k_cm = momentum_cm(t_lab, reaction)
-        pre_t_lab = t_lab
+    if(kinematic%t_lab/=pre_t_lab .or. (.not. all(params==pre_parameters)) .or. &
+       kinematic%channel/=pre_channel) then
+        call all_phaseshifts(model, params, kinematic%t_lab, kinematic%channel, phases, d_phases)
+        k_cm = momentum_cm(kinematic%t_lab, kinematic%channel)
+        pre_t_lab = kinematic%t_lab
         pre_parameters = params
+        pre_channel = kinematic%channel
     end if
-    theta = angle*pi/180.0_dp ! angle in d_egrees to radians
-    call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
-    a = a + em_amplitude(1)
-    b = b + em_amplitude(2)
-    c = c + em_amplitude(3)
-    d = d + em_amplitude(4)
-    e = e + em_amplitude(5)
+    theta = kinematic%angle*pi/180.0_dp ! angle in d_egrees to radians
+    call saclay_amplitudes(k_cm, theta, kinematic%channel, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
+    a = a + kinematic%em_amplitude(1)
+    b = b + kinematic%em_amplitude(2)
+    c = c + kinematic%em_amplitude(3)
+    d = d + kinematic%em_amplitude(4)
+    e = e + kinematic%em_amplitude(5)
     ! Initialize values for calculation observable
     obs = 0.0_dp
     d_obs = 0.0_dp
@@ -103,7 +118,7 @@ subroutine observable(model, params, type, t_lab, angle, reaction, em_amplitude,
          + real(e)*real(d_e) + aimag(e)*aimag(d_e)
 
     ! switch case for all observable
-    select case (trim(type))
+    select case (trim(kinematic%type))
     case ('dsg')
         obs = sg*10.0_dp
         d_obs = d_sg*10.0_dp

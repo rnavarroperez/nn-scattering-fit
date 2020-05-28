@@ -14,7 +14,7 @@
 !!
 module precisions
 
-use iso_fortran_env
+use iso_fortran_env, only : REAL32, REAL64, REAL128
 
 implicit none
 

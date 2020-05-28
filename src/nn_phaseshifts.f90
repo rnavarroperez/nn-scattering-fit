@@ -16,7 +16,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm, nn_potential!, f_all_phaseshifts, df_all_phaseshifts
+public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model!, f_all_phaseshifts, df_all_phaseshifts
 
 !!
 !> @brief      interface of nn local potentials
@@ -24,7 +24,7 @@ public :: all_phaseshifts, eta_prime, momentum_cm, nn_potential!, f_all_phaseshi
 !! @author     Rodrigo Navarro Perez
 !!
 interface
-    subroutine nn_potential(ap, r, reaction, v_pw, dv_pw)
+    subroutine local_potential(ap, r, reaction, v_pw, dv_pw)
         use precisions, only : dp
         implicit none
         real(dp), intent(in) :: ap(:) !< potential parameters
@@ -32,8 +32,21 @@ interface
         character(len=2), intent(in) :: reaction !< reaction channel. 'pp' or 'np'
         real(dp), intent(out) :: v_pw(:, :) !< local potential in all partial waves
         real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of the potential with respect of the parameters
-    end subroutine nn_potential
+    end subroutine local_potential
 end interface
+
+!!
+!> @brief      nn model for local interactions
+!!
+!! potential and fixed parameters to calculate all nuclear phase shifts
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+type :: nn_local_model
+    procedure(local_potential), pointer, nopass :: potential !< local NN potential
+    real(dp) :: r_max !< maximum intetgration radius
+    real(dp) :: dr !< radial integration step
+end type nn_local_model
 
 contains
 
@@ -46,18 +59,16 @@ contains
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_phases)
+subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     implicit none
-    procedure(nn_potential) :: model !< local NN potential (subroutine)
+    type(nn_local_model), intent(in) :: model !< local potential and integration parameters
     real(dp), intent(in) :: params(:) !< phenomenological parameters for the local potential
     real(dp), intent(in) :: t_lab !< laboratory energy of the scattering in MeV
     character(len=2), intent(in) :: reaction !< reaction channel (pp, np or nn)
-    real(dp), intent(in) :: r_max !< maximum radius of integration
-    real(dp), intent(in) :: dr !< integration step
     real(dp), intent(out) :: phases(:, :) !< phaseshifts in all partial waves
     real(dp), allocatable, intent(out) :: d_phases(:, :, :) !< derivatives of the partial waves with respect to the potential parameters
-
-    real(dp) :: k_cm !< exchange momentum in center of mass frame. In units of fm \f$^{-1}\f$
+    real(dp) :: dr
+    real(dp) :: k_cm 
     integer :: n_params, n_waves, j_max
     integer :: ij, j
     real(dp) :: r, mu, alfa_1, alfa_2, ps_eigen(1:3)
@@ -67,6 +78,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     real(dp), allocatable, dimension(:, :) :: d_a1, d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, d_ps_eigen
     real(dp), allocatable, dimension(:) :: d_alfa_1, d_alfa_2
 
+
     n_params = size(params)
     n_waves = size(phases, 1)
     j_max = size(phases, 2)
@@ -74,7 +86,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     phases = 0
 
     if (n_waves /= 5) stop 'incorrect number of waves for v_pw in all_phaseshifts'
-
+    dr = model%dr
     allocate(d_phases(1:n_params, 1:n_waves, 1:j_max))
     d_phases = 0
     allocate(v_pw(1:n_waves, 1:j_max))
@@ -114,8 +126,8 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
     k_cm = momentum_cm(t_lab, reaction)
     r = dr/2
     do
-        if( r > r_max) exit
-        call model(params, r, reaction, v_pw, dv_pw)
+        if( r > model%r_max) exit
+        call model%potential(params, r, reaction, v_pw, dv_pw)
         if (reaction == 'pp') then
             call add_coulomb(r, k_cm, v_pw)
         endif
@@ -145,7 +157,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, r_max, dr, phases, d_
         r = r + dr
     enddo
     if (reaction == 'pp') then
-        call model(params, r, reaction, v_pw, dv_pw)
+        call model%potential(params, r, reaction, v_pw, dv_pw)
         call add_coulomb(r, k_cm, v_pw)
         v_pw = v_pw*mu*dr/(hbar_c**2)
         dv_pw = dv_pw*mu*dr/(hbar_c**2)
