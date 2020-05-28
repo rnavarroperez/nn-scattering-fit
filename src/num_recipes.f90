@@ -15,7 +15,7 @@ implicit none
 private
 
 public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
-    kronecker_delta
+    kronecker_delta, int_to_logical
 
 !!
 !> @brief      generic type for data in function callbacks
@@ -48,6 +48,24 @@ end interface
 
 
 contains
+
+!!
+!> @brief      converts an integer to a logical
+!!
+!! Converts an integer to a logical. If the integer is zero,
+!! false is returned; true is returned for any other value
+!!
+!! @return     a logical representation of an integer
+!!
+logical function int_to_logical(i) result(r)
+    implicit none
+    integer, intent(in) :: i
+    if (i == 0) then
+        r = .false.
+    else
+        r = .true.
+    endif    
+end function int_to_logical
 
 !!
 !> @brief      Kronecker_delta delta

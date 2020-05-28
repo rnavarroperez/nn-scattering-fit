@@ -44,7 +44,7 @@ observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisi
 read_write.o: read_write.f90 amplitudes.o precisions.o constants.o nn_phaseshifts.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-exp_data.o: exp_data.f90 precisions.o
+exp_data.o: exp_data.f90 precisions.o string_functions.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 precisions.o exp_data.o
