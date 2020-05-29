@@ -193,7 +193,7 @@ subroutine read_old_data_base(data_file, reaction, experiments)
     counter = 0
     allocate(experiments(1:1))
     open(newunit=unit, file=trim(data_file), status='OLD')
-    open(newunit=rejec_unit, file='rejected.dat', status='OLD')
+    open(newunit=rejec_unit, file='database/old_format/rejected.dat', status='OLD')
     do
         read(unit,102) t_lab, n_data, sys_error, normalization, n_keep, keepN, keepL, keepS, &
             a_string, rejecA, rejecN, rejecL, rejecS, rejecB, reac, &
