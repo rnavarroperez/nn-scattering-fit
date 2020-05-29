@@ -26,7 +26,7 @@ public :: n_parameters, default_params, av18_all_partial_waves, f_av18, df_av18,
 integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
 integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
-integer, parameter :: n_em_terms = 14 !; Number of terms in the EM potentialb
+integer, parameter :: n_em_terms = 14 !< Number of terms in the EM potential
 
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
     [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp, 1811.57100_dp,    1.07985_dp, &

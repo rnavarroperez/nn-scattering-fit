@@ -15,26 +15,33 @@ implicit none
 private
 
 public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
-    kronecker_delta
+    kronecker_delta, int_to_logical
 
 !!
 !> @brief      generic type for data in function callbacks
 !!
+!! The idea is for this type to be generic enough to be used by
+!! different functions
+!!
 !! @author     Rodrigo Navarro Perez
 !!
 type context
-    real(dp) :: a, b, c, d
-    integer :: i, j, k, l
-    real(dp), allocatable :: x(:)
-    integer, allocatable :: i_x(:)
-    character(len=1024) :: string
-    logical :: log
+    real(dp) :: a !< a real number
+    real(dp) :: b !< a real number
+    real(dp) :: c !< a real number
+    real(dp) :: d !< a real number
+    integer :: i !< an integer
+    integer :: j !< an integer
+    integer :: k !< an integer
+    integer :: l !< an integer
+    real(dp), allocatable :: x(:) !< an array of reals
+    integer, allocatable :: i_x(:) !< an array of integers
+    character(len=1024) :: string !< a string
+    logical :: log !< a logical variable
 end type
 
 !!
 !> @brief      interface for function callbacks
-!!
-!! 
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -51,10 +58,35 @@ end interface
 
 contains
 
+!!
+!> @brief      converts an integer to a logical
+!!
+!! Converts an integer to a logical. If the integer is zero,
+!! false is returned; true is returned for any other value
+!!
+!! @return     a logical representation of an integer
+!!
+logical function int_to_logical(i) result(r)
+    implicit none
+    integer, intent(in) :: i !< an integer
+    if (i == 0) then
+        r = .false.
+    else
+        r = .true.
+    endif    
+end function int_to_logical
+
+!!
+!> @brief      Kronecker_delta delta
+!!
+!! The usual Kronecker delta \f$\delta_{i,j} = 1 \; {\rm if } \; i=j, \;  0\; {\rm if} \; i\neq j \f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 integer function kronecker_delta(i, j) result(delta)
     implicit none
-    integer, intent(in) :: i
-    integer, intent(in) :: j
+    integer, intent(in) :: i !< a integer
+    integer, intent(in) :: j !< another integer
     if (i == j) then
         delta = 1
     else
@@ -62,9 +94,18 @@ integer function kronecker_delta(i, j) result(delta)
     endif
 end function kronecker_delta
 
+!!
+!> @brief      Logarithm of gamma function
+!!
+!! Series approximation to the Logarithm of a gamma function for a complex argument.
+!!
+!! \f$ \log \left[ \Gamma (z) \right] \f$, where \f$ z \f$ is complex
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function cmplx_log_gamma(z) result(l_gamma)
     implicit none
-    complex(dp), intent(in) :: z
+    complex(dp), intent(in) :: z !< a complex number
 
     integer, parameter :: n_coeff = 6
     real(dp), parameter :: lanczos_coefficients(0:n_coeff) = [1.000000000190015_dp, &
@@ -86,12 +127,21 @@ complex(dp) function cmplx_log_gamma(z) result(l_gamma)
     l_gamma = (z + 0.5_dp)*log(z + gamma + 0.5_dp) - (z + gamma + 0.5_dp) + log(sqrt(2*pi)*sum/z)
 end function cmplx_log_gamma
 
+!!
+!> @brief      Spherical harmonic function
+!!
+!! Calculates the spherical harmonic
+!! \f$Y_l^m(\theta, \varphi) = (-1)^m \sqrt{\frac{(2l+1)}{4\pi} \frac{(l-m)!}{(l+m)!}} P_{lm}(\cos \theta) e^{im\varphi}\f$,
+!! where \f$ P_{lm}(x) \f$ is the usual Legendre polynomial.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 complex(dp) function spherical_harmonic(l, m, theta, phi) result(Ylm)
     implicit none
-    integer, intent(in) :: l
-    integer, intent(in) :: m
-    real(dp), intent(in) :: theta
-    real(dp), intent(in) :: phi
+    integer, intent(in) :: l !< orbital momentum quantum number
+    integer, intent(in) :: m !< magnetic quantum number
+    real(dp), intent(in) :: theta !< polar angle
+    real(dp), intent(in) :: phi !< azimuthal angle
 
     real(dp) :: ratio, factorial, x, Plm
     integer :: lmm, i
@@ -112,45 +162,128 @@ complex(dp) function spherical_harmonic(l, m, theta, phi) result(Ylm)
     if (m < 0) Ylm = (-1)**m*Ylm
 end function spherical_harmonic
 
+
+!!
+!> @brief      Legendre polynomial
+!!
+!! Uses a recursive relation to calculate the usual Legendre polynomial
+!!
+!! The algorithm has been modified to save
+!! the values from previous calls and build up from them. This eliminates the
+!! need to start from the beginning when using same x and m values 
+!!
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function legendre_poly(l, m, x) result(r)
     implicit none
-    integer, intent(in) :: l
-    integer, intent(in) :: m
-    real(dp), intent(in) :: x
-
+    integer, intent(in) :: l !< \f$l\f$ index. Has to be smaller than \f$m\f$ and 2000 
+    integer, intent(in) :: m !< \fm\f$ index. Has to bee positive
+    real(dp), intent(in) :: x !< a real number between \f$-1\f$ and \f$1\f$
+    !------- place holder variables--------------------------
+    real(dp), save :: x_pre = -1.1
+    integer, save :: m_pre = -1, l_largest = -1
+    integer, parameter :: L_MAX = 2000 ! max number of polynomial iterations
+    real(dp), save, dimension(0:L_MAX) :: pl_array = 0 ! initialize to 0
+    !-------------------------------------------------------
+    integer ::  i
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
-    integer :: i
 
+    ! set
     if (m < 0) stop 'legendre_poly is only valid for m >= 0'
-    if (l < m) stop 'legendre_poly is only valid for m >= l'
+    if (l < m) stop 'legendre_poly is only valid for l >= m'
+    if (l > L_MAX) stop 'legendre_poly limit of 2000 reached'
     if (abs(x) > 1) stop 'legendre_poly is only valid for -1 <= x <= 1'
-
-    p_mm = 1._dp
-    if (m > 0) then
-        factor = sqrt(1 - x**2)
-        odd_factorial = 1
-        do i = 1, m
-            p_mm = -p_mm*odd_factorial*factor
-            odd_factorial = odd_factorial + 2
-        enddo
-    endif
-    if (l == m) then
-        r = p_mm
-    else
-        p_mmp1 = x*(2*m + 1)*p_mm
-        if (l == m + 1) then
-            r = p_mmp1
+    p_ml=0
+    if (x==x_pre .and. m==m_pre) then
+        !Same arguments were used last time, we can use previous calculations
+        if (l <= l_largest) then
+            !The polynomial for this l has been calculated, use it
+            r = pl_array(l)
         else
-            p_ml = p_mmp1
-            do i = m + 2, l
-                p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m)
-                p_mm = p_mmp1
-                p_mmp1 = p_ml
-            enddo
-            r = p_ml
+            ! The The polynomial for this l has NOT been calculated
+            if (l == m+1) then
+                ! There's only one previous calculation
+                p_mm = pl_array(l-1)
+                p_ml = x*(2*m + 1)*p_mm
+                pl_array(l) = p_ml
+            else
+                ! build up from previous values
+                do i = l_largest + 1, l
+                    p_mm = pl_array(i-2)
+                    p_mmp1 = pl_array(i-1)
+                    p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+                    pl_array(i) = p_ml ! save value for future use
+                enddo
+            endif
+            r = p_ml ! set final l
+            l_largest = l
         endif
+    else
+        !Arguments are different, we need to start from scracth
+        pl_array = 0
+        p_mm = 1._dp
+        if (m > 0) then
+            factor = sqrt(1 - x**2)
+            odd_factorial = 1
+            do i = 1, m
+                p_mm = -p_mm*odd_factorial*factor
+                odd_factorial = odd_factorial + 2
+            enddo
+        endif
+        if (l == m) then
+            r = p_mm
+            ! save result
+            pl_array(l) = p_mm
+        else
+            p_mmp1 = x*(2*m + 1)*p_mm
+            if (l == m + 1) then
+                r = p_mmp1
+                ! save result
+                pl_array(l) = p_mmp1
+            else
+                p_ml = p_mmp1
+                do i = m + 2, l
+                    p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+                    pl_array(i) = p_ml ! save value for future use
+                    p_mm = p_mmp1 ! set l-2 to l-1
+                    p_mmp1 = p_ml ! set l-1 to l+1
+                    ! repeat until you reach l
+                enddo
+                r = p_ml ! set final l
+            endif
+        endif
+        l_largest = l
+        x_pre = x
+        m_pre = m
     endif
-    
+    ! THIS IS THE ORIGINAL UNMODIFIED ALGORITHM
+    ! p_mm = 1._dp
+    ! if (m > 0) then
+    !     factor = sqrt(1 - x**2)
+    !     odd_factorial = 1
+    !     do i = 1, m
+    !         p_mm = -p_mm*odd_factorial*factor
+    !         odd_factorial = odd_factorial + 2
+    !     enddo
+    ! endif
+    ! if (l == m) then
+    !     r = p_mm ! set l-2
+    ! else
+    !     p_mmp1 = x*(2*m + 1)*p_mm
+    !     if (l == m + 1) then
+    !         r = p_mmp1 ! set l-1
+    !     else
+    !         p_ml = p_mmp1 ! set current to l-1
+    !         do i = m + 2, l
+    !             p_ml = (x*(2*i - 1)*p_mmp1 - (i + m - 1)*p_mm)/(i-m) ! build l+1 using l-2 and l-1
+    !             p_mm = p_mmp1 ! set l-2 to l-1
+    !             p_mmp1 = p_ml ! set l-1 to l+1
+    !             ! repeat until you reach l
+    !         enddo
+    !         r = p_ml ! set final l
+    !     endif
+    ! endif
 end function legendre_poly
 
 !!
@@ -171,7 +304,7 @@ subroutine dfridr(f, data, x, h, df_dx, err)
     real(dp), intent(in) :: h !< estimated initial step-size. should be an increment in x over which f changes substantially
     real(dp), intent(out) :: df_dx !< derivative of f at x
     real(dp), intent(out) :: err !< estimate of the error in the derivative
-    
+
     integer, parameter  :: ntab = 10
     real(dp), parameter :: con = 1.4_dp, con2 = con**2, big = 1.e+30_dp, safe = 2._dp
     integer :: i, j
@@ -210,8 +343,8 @@ end subroutine dfridr
 !!
 !! Modified from Numerical Recipes
 !!
-!! Calculates the spherical Bessel functions \f$ j_n(x) \f$, \f$ y_n(x) \f$, and their derivatives 
-!! \f$ j_n'(x) \f$, \f$ y_n'(x) \f$ for an integer \$f n \f$.
+!! Calculates the spherical Bessel functions \f$ j_n(x) \f$, \f$ y_n(x) \f$, and their derivatives
+!! \f$ j_n'(x) \f$, \f$ y_n'(x) \f$ for an integer \f$ n \f$.
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -263,7 +396,7 @@ subroutine bessjy(x, nu, rj, ry, rjp, ryp)
     real(dp) :: a, b, br, bi, c, cr, ci, d, del, del1, den, di, dlr, dli, dr, e, f, fact, fact2, &
         fact3, ff, gam, gam1, gam2, gammi, gampl, h, p, pimu, pimu2, q, r, rjl, rjl1, rjmu, rjp1, &
         rjpl, rjtemp, ry1, rymu, rymup, rytemp, sum, sum1, temp, w, x2, xi, xi2, xmu, xmu2
-    
+
     if (x <=0 .or. nu <= 0) stop 'bad arguments in bessjy'
     if (x <= xmin ) then
         nl = int(nu + 0.5_dp)
@@ -417,12 +550,12 @@ end subroutine bessjy
 !! Modified from Numerical Recipes
 !!
 !! Evaluates the \f$ \Gamma_1(x) \f$ and \f$ \Gamma_2(x) \f$ terms for the bessjy calculation by
-!! Chebyshev expansion for \f$ |x| \leq 1/2 \f$. Also returns \f$ 1/\Gamma(1 + x ) \f$ and 
+!! Chebyshev expansion for \f$ |x| \leq 1/2 \f$. Also returns \f$ 1/\Gamma(1 + x ) \f$ and
 !! \f$ 1/\Gamma(1 − x ) \f$.
 !!
-!! \f$ \Gamma_1(x) = \frac{1}{2x} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
+!! \f$ \Gamma_1(x) = \frac{1}{2x} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right] \f$
 !!
-!! \f$ \Gamma_2(x) = \frac{1}{2} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right]
+!! \f$ \Gamma_2(x) = \frac{1}{2} \left[\frac{1}{\Gamma(1-x)} - \frac{1}{\Gamma(1+x)} \right] \f$
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -453,7 +586,7 @@ end subroutine beschb
 !! Modified from Numerical Recipes
 !!
 !! c(:) is an array of Chebyshev coefficients, usually the output from chebft (which must have been
-!! called with the same a and b ). The Chebyshev polynomial 
+!! called with the same a and b ). The Chebyshev polynomial
 !!
 !! \f$  \sum_{k=1}^m = c_k T_{k-1}(y) - c_1/2 \f$
 !!
@@ -469,7 +602,7 @@ real(dp) function chebev(a, b, c, x) result(r)
     real(dp), intent(in) :: x !< point where the polynomial es evaluated
     integer :: m, j
     real(dp) :: d, dd, sv, y, y2
-    
+
     m = size(c)
     if ((x - a)*(x - b) > 0) stop 'x not in range in chebev'
     d = 0
@@ -483,5 +616,5 @@ real(dp) function chebev(a, b, c, x) result(r)
     enddo
     r = y*d - dd + c(1)/2
 end function chebev
-     
+
 end module num_recipes

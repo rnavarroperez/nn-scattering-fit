@@ -1,6 +1,6 @@
 !!
 !> @brief fits a NN potential to scattering data
-!! 
+!!
 !! Uses the Levenberg Marquardt algorithm to adjust the parameters of a NN interaction and
 !! reproduce experimental data collected since 1954.
 !!
@@ -8,7 +8,6 @@
 !!
 program nn_fit
 
-use precisions, only : dp
 
 implicit none
 
