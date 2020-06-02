@@ -8,14 +8,14 @@
 !!
 module observables
 
-use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model
+use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model, add_coulomb
 use amplitudes, only: saclay_amplitudes
 use precisions, only: dp
 use constants, only: pi, hbar_c, m_p=>proton_mass, m_n=>neutron_mass
 
 implicit none
 
-public observable, kinematics, scattering_length!, f_observable, df_observable!, just_phases
+public observable, kinematics, scattering_length
 private
 
 !!
@@ -40,6 +40,19 @@ end type kinematics
 
 contains
 
+!!
+!> @brief Calculates a NN observable
+!!
+!! The type of observable is determined by the kinematic%type argument 
+!!
+!! This is a wrapper subroutine that base on the type of observable
+!! calls the appropriate subroutine. Either the \f$ ^1S_0 \f$ np 
+!! scattering, the dueteron binding energy, or one of the 26 observables
+!! types that require to calculate all phase-shifts and scattering 
+!! amplitudes parameters
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine observable(kinematic, params, model, obs, d_obs)
     implicit none
     type(kinematics), intent(in) :: kinematic !< kinematic variables
@@ -50,7 +63,7 @@ subroutine observable(kinematic, params, model, obs, d_obs)
 
     select case (trim(kinematic%type))
     case('asl')
-        call scattering_length(model, params, obs, d_obs)
+        call scattering_length(model, params, kinematic%channel, obs, d_obs)
     case default
         call scattering_obs(kinematic, params, model, obs, d_obs)
     end select
@@ -334,12 +347,22 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     end select
 end subroutine scattering_obs
 
-subroutine scattering_length(model, parameters, a_length, da_length)
+!!
+!> @brief     Calulate the 1S0 scattering length
+!!
+!! Uses a delta shell representation and the variable phase equation
+!! of the effective range expansion to calculate the \f$ ^1S_0 \f$ np 
+!! scattering lenght
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine scattering_length(model, parameters, channel, a_length, da_length)
     implicit none
-    type(nn_local_model), intent(in) :: model
-    real(dp), intent(in), dimension(:) :: parameters
-    real(dp), intent(out) :: a_length
-    real(dp), intent(out), allocatable, dimension(:) :: da_length
+    type(nn_local_model), intent(in) :: model !< nn scattering model
+    real(dp), intent(in), dimension(:) :: parameters !< potetial parameters
+    character(len=2), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    real(dp), intent(out) :: a_length !< \f$ ^1S_0 \f$ scattering_length
+    real(dp), intent(out), allocatable, dimension(:) :: da_length !< derivatives of the \f$ ^1S_0 \f$ scattering_length
 
     integer, parameter :: n_waves = 5, j_max = 1
     real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
@@ -357,7 +380,8 @@ subroutine scattering_length(model, parameters, a_length, da_length)
     da_length = 0
     do
         if(r > model%r_max) exit
-        call model%potential(parameters, r, 'np', v_pw, dv_pw)
+        call model%potential(parameters, r, channel, v_pw, dv_pw)
+        if (channel == 'pp') call , add_coulomb(r, 0._dp, v_pw)
         lambda = v_pw(1, 1)*mu*model%dr/(hbar_c**2)
         d_lambda = dv_pw(:, 1, 1)*mu*model%dr/(hbar_c**2)
         diff = r - a_length
@@ -369,6 +393,7 @@ subroutine scattering_length(model, parameters, a_length, da_length)
         da_length = (d_numerator*denominator - numerator*d_denominator)/denominator**2
         r = r + model%dr
     enddo
+    ! matching to Low energy expansion of coulomb wave functions is missing
 
     
 end subroutine scattering_length

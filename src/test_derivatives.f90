@@ -66,7 +66,7 @@ subroutine test_all_derivatives(f, df, data, n_targets, n_parameters)
     real(dp) :: x, h, df_dx, err, diff
     integer :: i, j, counter
 
-    h = 0.1_dp
+    h = 0.01_dp
     counter = 0
     do j = 1, n_targets
         data%j = j
@@ -76,10 +76,10 @@ subroutine test_all_derivatives(f, df, data, n_targets, n_parameters)
             x = data%x(i)
             call dfridr(f, data, x, h, df_dx, err)
             diff = abs(d_analytic(i) - df_dx)
-            if (diff > small .or. err > small) then
+            ! if (diff > small .or. err > small) then
                 print'(2i5, 4f18.11)', j, i, d_analytic(i), df_dx, diff, err
                 counter = counter + 1
-            endif
+            ! endif
         enddo
         if (counter == 0) then
             print*, 'all analytic derivatives match numerical calculation in target', j

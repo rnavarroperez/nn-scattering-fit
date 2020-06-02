@@ -16,15 +16,28 @@ public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw,
 
 contains
 
+!!
+!! @brief      wrapper function for scattering_length
+!!
+!! This wrapper function is used to test the derivatives of the scattering_length subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! scattering_length. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which reaction channel will be used.
+!!
+!! @returns    \f$ ^1S_0 \f$ scattering lenght 
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function f_scattering_length(x, data) result(r)
     use observables, only : scattering_length
     implicit none
-    real(dp), intent(in) :: x
-    type(context), intent(in) :: data
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
 
     real(dp), allocatable, dimension(:) :: parameters
     type(nn_local_model) :: model
-    integer :: i_target
+    integer :: i_target, i_parameter
+    character(len=2), parameter, dimension(1:3) :: channels = ['np', 'nn', 'pp']
     real(dp) :: a_length
     real(dp), allocatable, dimension(:) :: da_length
 
@@ -33,23 +46,38 @@ real(dp) function f_scattering_length(x, data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
-    i_target = data%i
+    i_parameter = data%i
+    i_target = data%j
 
-    parameters(i_target) = x
+    parameters(i_parameter) = x
 
-    call scattering_length(model, parameters, a_length, da_length)
+    call scattering_length(model, parameters, channels(i_target), a_length, da_length)
     r = a_length
 
 end function f_scattering_length
 
+!!
+!> @brief      wrapper function for the derivatives of scattering_length
+!!
+!! This wrapper function is used to test the derivatives of the scattering_length subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! scattering_length. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which reaction channel will be used.
+!!
+!! @returns    derivatives of the \f$^1S_0\f$ scattering length 
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 function df_scattering_length(data) result(r)
     use observables, only : scattering_length
     implicit none
-    type(context), intent(in) :: data
+    type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
     real(dp), allocatable, dimension(:) :: r
 
     real(dp), allocatable, dimension(:) :: parameters
     type(nn_local_model) :: model
+    integer :: i_target
+    character(len=2), parameter, dimension(1:3) :: channels = ['np', 'nn', 'pp']
     real(dp) :: a_length
     real(dp), allocatable, dimension(:) :: da_length
 
@@ -58,8 +86,9 @@ function df_scattering_length(data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    i_target = data%j
 
-    call scattering_length(model, parameters, a_length, da_length)
+    call scattering_length(model, parameters, channels(i_target), a_length, da_length)
     r = da_length
     
 end function df_scattering_length
@@ -80,7 +109,7 @@ real(dp) function f_observable(x, data) result(r)
     use observables, only : observable
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    type(context), intent(in) :: data !< data structure with all the arguments for observable
 
     real(dp), allocatable :: ap(:)
     type(nn_local_model) :: model
@@ -127,7 +156,7 @@ end function f_observable
 function df_observable(data) result(r)
     use observables, only : observable
     implicit none
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    type(context), intent(in) :: data !< data structure with all the arguments for observable
     real(dp), allocatable :: r(:)
     
     real(dp), allocatable :: ap(:)
@@ -316,7 +345,7 @@ real(dp) function f_all_phaseshifts(x, data) result(r)
     use nn_phaseshifts, only : nn_local_model, all_phaseshifts
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
 
     real(dp), allocatable :: ap(:)
     type(nn_local_model) :: model
@@ -359,7 +388,7 @@ end function f_all_phaseshifts
 function df_all_phaseshifts(data) result(r)
     use nn_phaseshifts, only : nn_local_model, all_phaseshifts
     implicit none
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
     real(dp), allocatable :: r(:)
 
     real(dp), allocatable :: ap(:)
@@ -476,7 +505,7 @@ end function df_av18
 real(dp) function f_av18_pw(x, data) result(r)
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_all_partial_waves
 
     real(dp), allocatable, dimension(:) :: ap
     real(dp) :: radius
@@ -520,7 +549,7 @@ end function f_av18_pw
 !!
 function df_av18_pw(data) result(r)
     implicit none
-    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_all_partial_waves
     real(dp), allocatable :: r(:)
 
     real(dp), allocatable, dimension(:) :: ap

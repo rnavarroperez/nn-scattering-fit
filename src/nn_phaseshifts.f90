@@ -16,7 +16,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model!, f_all_phaseshifts, df_all_phaseshifts
+public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model, add_coulomb!, f_all_phaseshifts, df_all_phaseshifts
 
 !!
 !> @brief      interface of nn local potentials
