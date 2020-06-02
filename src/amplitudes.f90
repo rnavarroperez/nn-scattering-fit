@@ -74,6 +74,12 @@ function em_amplitudes(t_lab, angle, channel) result(r)
         call em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
     case ('np')
         call em_np_amplitudes(k_cm, theta, a, b, c, d, e)
+    case ('nn')
+        a = 0
+        b = 0
+        c = 0
+        d = 0
+        e = 0
     case default
         stop 'invalid reacttion channel in em_amplitudes'
     end select

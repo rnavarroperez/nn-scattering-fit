@@ -381,7 +381,7 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
     do
         if(r > model%r_max) exit
         call model%potential(parameters, r, channel, v_pw, dv_pw)
-        if (channel == 'pp') call , add_coulomb(r, 0._dp, v_pw)
+        if (channel == 'pp') call add_coulomb(r, 0._dp, v_pw)
         lambda = v_pw(1, 1)*mu*model%dr/(hbar_c**2)
         d_lambda = dv_pw(:, 1, 1)*mu*model%dr/(hbar_c**2)
         diff = r - a_length
