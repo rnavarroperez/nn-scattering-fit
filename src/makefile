@@ -47,6 +47,9 @@ read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshi
 exp_data.o: exp_data.f90 precisions.o string_functions.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
+derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o
+	$(COMPILER) $(FLAGS) -c $<
+
 main.o: main.f90 
 	$(COMPILER) $(FLAGS) -c $<
 

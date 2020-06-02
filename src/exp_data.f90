@@ -208,7 +208,7 @@ subroutine read_old_data_base(data_file, reaction, experiments)
             in_data_base = (RejecB.ne.'c '.and.RejecB.ne.'U ') .and. any(all_types == string_obs)
             ireject = 2
         case default
-            stop 'incorrect reaction channel in all_phaseshifts'
+            stop 'incorrect reaction channel in read_old_data_base'
         end select
         if (allocated(tlabs)) deallocate(tlabs, angles, values, deltas)
         allocate(tlabs(1:n_data))
