@@ -375,13 +375,16 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
 
     allocate(da_length, d_lambda, d_denominator, d_numerator, mold=parameters)
     
+    if (channel == 'pp') then
+        stop 'scattering length for pp channel is not implemented yet'
+    endif
+
     r = model%dr/2._dp
     a_length = 0
     da_length = 0
     do
         if(r > model%r_max) exit
         call model%potential(parameters, r, channel, v_pw, dv_pw)
-        if (channel == 'pp') call add_coulomb(r, 0._dp, v_pw)
         lambda = v_pw(1, 1)*mu*model%dr/(hbar_c**2)
         d_lambda = dv_pw(:, 1, 1)*mu*model%dr/(hbar_c**2)
         diff = r - a_length
@@ -393,8 +396,6 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
         da_length = (d_numerator*denominator - numerator*d_denominator)/denominator**2
         r = r + model%dr
     enddo
-    ! matching to Low energy expansion of coulomb wave functions is missing
-
     
 end subroutine scattering_length
 
