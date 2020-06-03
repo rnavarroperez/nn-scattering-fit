@@ -8,14 +8,14 @@
 !!
 module observables
 
-use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model
+use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model, add_coulomb
 use amplitudes, only: saclay_amplitudes
 use precisions, only: dp
-use constants, only: pi
+use constants, only: pi, hbar_c, m_p=>proton_mass, m_n=>neutron_mass
 
 implicit none
 
-public observable, kinematics!, f_observable, df_observable!, just_phases
+public observable, kinematics, scattering_length
 private
 
 !!
@@ -41,6 +41,35 @@ end type kinematics
 contains
 
 !!
+!> @brief Calculates a NN observable
+!!
+!! The type of observable is determined by the kinematic%type argument 
+!!
+!! This is a wrapper subroutine that base on the type of observable
+!! calls the appropriate subroutine. Either the \f$ ^1S_0 \f$ np 
+!! scattering, the dueteron binding energy, or one of the 26 observables
+!! types that require to calculate all phase-shifts and scattering 
+!! amplitudes parameters
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine observable(kinematic, params, model, obs, d_obs)
+    implicit none
+    type(kinematics), intent(in) :: kinematic !< kinematic variables
+    real(dp), intent(in) :: params(:) !< adjustable parameters
+    type(nn_local_model), intent(in) :: model !< nn scattering model
+    real(dp), intent(out) :: obs !< NN scattering observable
+    real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
+
+    select case (trim(kinematic%type))
+    case('asl')
+        call scattering_length(model, params, kinematic%channel, obs, d_obs)
+    case default
+        call scattering_obs(kinematic, params, model, obs, d_obs)
+    end select
+end subroutine observable
+
+!!
 !> @brief Calculates a NN scattering observable
 !!
 !! The type of observable is determined by the kinematic%type argument 
@@ -57,7 +86,7 @@ contains
 !! @author     Raul L Bernal-Gonzalez
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine observable(kinematic, params, model, obs, d_obs)
+subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     implicit none
     type(kinematics), intent(in) :: kinematic !< kinematic variables
     real(dp), intent(in) :: params(:) !< adjustable parameters
@@ -316,106 +345,59 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     case default
         stop 'INVALID OBSERVABLE in observable subroutine:'
     end select
-end subroutine observable
+end subroutine scattering_obs
 
-! The functions below were written to test the derivatives of observable against numerical calculations
-! and require the av18 module. All analytic calculations of the derivatives match the numerical ones.
-! since the observables module should not depend on a specific module for the NN interaction the functions
-! are commented and left here for reference.
+!!
+!> @brief     Calulate the 1S0 scattering length
+!!
+!! Uses a delta shell representation and the variable phase equation
+!! of the effective range expansion to calculate the \f$ ^1S_0 \f$ np 
+!! scattering lenght
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine scattering_length(model, parameters, channel, a_length, da_length)
+    implicit none
+    type(nn_local_model), intent(in) :: model !< nn scattering model
+    real(dp), intent(in), dimension(:) :: parameters !< potetial parameters
+    character(len=2), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    real(dp), intent(out) :: a_length !< \f$ ^1S_0 \f$ scattering_length
+    real(dp), intent(out), allocatable, dimension(:) :: da_length !< derivatives of the \f$ ^1S_0 \f$ scattering_length
 
-! !!
-! !! @brief      wrapper function for observable
-! !!
-! !! This wrapper function is used to test the derivatives of the observable subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call
-! !! observable. The same data of type context is used to receive which parameter will
-! !! be varied by the dfridr subroutine and which type of observable will be calculated.
-! !!
-! !! @returns    A NN scattering observable at an specific lab frame energy and scattering angle
-! !!
-! !! @author     Rodrigo Navarro Perez
-! !!
-! real(dp) function f_observable(x, data) result(r)
-!     use num_recipes, only : context
-!     use av18, only : av18_all_partial_waves
-!     implicit none
-!     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-!     type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    integer, parameter :: n_waves = 5, j_max = 1
+    real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
+    real(dp) :: r, lambda
+    real(dp), dimension(1:n_waves, 1:j_max) :: v_pw
+    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), allocatable, dimension(:) :: d_lambda
+    real(dp) :: diff, denominator, numerator
+    real(dp), allocatable, dimension(:) :: d_denominator, d_numerator
 
-!     real(dp), allocatable :: ap(:)
-!     real(dp) :: t_lab, theta, r_max, dr
-!     integer :: i_target, i_parameter
-!     character(len=2) :: reaction
-!     character(len=4) :: type
-!     real(dp) :: obs
-!     real(dp), allocatable :: d_obs(:)
-!     integer, parameter :: n_observables = 26
-!     character(len=4), dimension(1:n_observables), parameter :: &
-!     obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
-!                  'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
-!                  'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
-!                  'sgt ','sgtt','sgtl']
-
-!     allocate(ap, source = data%x)
-!     t_lab = data%a
-!     r_max = data%b
-!     dr = data%c
-!     theta = data%d
-!     reaction = trim(data%string)
-!     i_parameter = data%i
-!     i_target = data%j
-
-!     type = obs_types(i_target)
-!     ap(i_parameter) = x
-!     call observable(av18_all_partial_waves, ap, type, t_lab, theta, reaction, r_max, dr, obs, d_obs)
-!     r = obs
-! end function f_observable
-
-! !!
-! !> @brief      wrapper function for the derivatives of observable
-! !!
-! !! This wrapper function is used to test the derivatives of the observable subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call
-! !! observable. The same data of type context is used to receive which parameter will
-! !! be varied by the dfridr subroutine and which type of observable will be calculated.
-! !!
-! !! @returns    derivatives of an observable at an specific lab energy and partial wave
-! !!
-! !! @author     Rodrigo Navarro Perez
-! !!
-! function df_observable(data) result(r)
-!     use num_recipes, only : context
-!     use av18, only : av18_all_partial_waves
-!     implicit none
-!     type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
-!     real(dp), allocatable :: r(:)
+    allocate(da_length, d_lambda, d_denominator, d_numerator, mold=parameters)
     
-!     real(dp), allocatable :: ap(:)
-!     real(dp) :: t_lab, theta, r_max, dr
-!     integer :: i_target, i_parameter
-!     character(len=2) :: reaction
-!     character(len=4) :: type
-!     real(dp) :: obs
-!     real(dp), allocatable :: d_obs(:)
-!     integer, parameter :: n_observables = 26
-!     character(len=4), dimension(1:n_observables), parameter :: &
-!     obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
-!                  'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
-!                  'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
-!                  'sgt ','sgtt','sgtl']
+    if (channel == 'pp') then
+        stop 'scattering length for pp channel is not implemented yet'
+    endif
 
-!     allocate(ap, source = data%x)
-!     t_lab = data%a
-!     r_max = data%b
-!     dr = data%c
-!     theta = data%d
-!     reaction = trim(data%string)
-!     i_parameter = data%i
-!     i_target = data%j
+    r = model%dr/2._dp
+    a_length = 0
+    da_length = 0
+    do
+        if(r > model%r_max) exit
+        call model%potential(parameters, r, channel, v_pw, dv_pw)
+        lambda = v_pw(1, 1)*mu*model%dr/(hbar_c**2)
+        d_lambda = dv_pw(:, 1, 1)*mu*model%dr/(hbar_c**2)
+        diff = r - a_length
+        numerator = a_length + r*lambda*diff
+        denominator = 1 + lambda*diff
+        d_numerator = da_length + r*(d_lambda*diff - lambda*da_length)
+        d_denominator = d_lambda*diff - lambda*da_length
+        a_length = numerator/denominator
+        da_length = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        r = r + model%dr
+    enddo
+    
+end subroutine scattering_length
 
-!     type = obs_types(i_target)
-!     call observable(av18_all_partial_waves, ap, type, t_lab, theta, reaction, r_max, dr, obs, d_obs)
-!     r = d_obs
-! end function df_observable
 
 end module observables

@@ -16,7 +16,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model!, f_all_phaseshifts, df_all_phaseshifts
+public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model, add_coulomb!, f_all_phaseshifts, df_all_phaseshifts
 
 !!
 !> @brief      interface of nn local potentials
@@ -771,92 +771,6 @@ end subroutine add_coulomb
 ! since the nn_phaseshifts module should not depend on a specific module for the NN interaction the functions
 ! are commented and left here for reference.
 
-! !!
-! !> @brief      wrapper function for all_phaseshifts
-! !!
-! !! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call
-! !! all_phaseshifts. The same data of type context is used to receive which parameter will
-! !! be varied by the dfridr subroutine and which partial wave will be returned.
-! !!
-! !! @returns    NN phase-shift at an specific lab energy and partial wave
-! !!
-! !! @author     Rodrigo Navarro Perez
-! !!
-! real(dp) function f_all_phaseshifts(x, data) result(r)
-!     use num_recipes, only : context
-!     use av18, only : av18_all_partial_waves
-!     implicit none
-!     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-!     type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
 
-!     real(dp), allocatable :: ap(:)
-!     real(dp) :: t_lab, r_max, dr
-!     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
-!     integer :: i_target, i_parameter, ic, ij
-!     character(len=2) :: reaction
-
-!     allocate(ap, source = data%x)
-!     t_lab = data%a
-!     r_max = data%b
-!     dr = data%c
-!     reaction = trim(data%string)
-!     i_parameter = data%i
-!     i_target = data%j
-
-!     ap(i_parameter) = x
-
-!     ic = mod(i_target - 1, 5) + 1
-!     ij = 1 + (i_target - 1)/5
-
-!     allocate(phases(1:5, ij))
-
-!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
-
-!     r = phases(ic, ij)
-! end function f_all_phaseshifts
-
-! !!
-! !> @brief      wrapper function for the derivatives of all_phaseshifts
-! !!
-! !! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call
-! !! all_phaseshifts. The same data of type context is used to receive which parameter will
-! !! be varied by the dfridr subroutine and which partial wave will be returned.
-! !!
-! !! @returns    derivatives of a NN phase-shift at an specific lab energy and partial wave
-! !!
-! !! @author     Rodrigo Navarro Perez
-! !!
-! function df_all_phaseshifts(data) result(r)
-!     use num_recipes, only : context
-!     use av18, only : av18_all_partial_waves
-!     implicit none
-!     type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
-!     real(dp), allocatable :: r(:)
-
-!     real(dp), allocatable :: ap(:)
-!     real(dp) :: t_lab, r_max, dr
-!     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
-!     integer :: i_target, i_parameter, ic, ij
-!     character(len=2) :: reaction
-
-!     allocate(ap, source = data%x)
-!     t_lab = data%a
-!     r_max = data%b
-!     dr = data%c
-!     reaction = trim(data%string)
-!     i_parameter = data%i
-!     i_target = data%j
-
-!     ic = mod(i_target - 1, 5) + 1
-!     ij = 1 + (i_target - 1)/5
-
-!     allocate(phases(1:5, ij))
-
-!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
-
-!     r = d_phases(:, ic, ij)
-! end function df_all_phaseshifts
 
 end module nn_phaseshifts

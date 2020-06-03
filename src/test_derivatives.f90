@@ -66,7 +66,7 @@ subroutine test_all_derivatives(f, df, data, n_targets, n_parameters)
     real(dp) :: x, h, df_dx, err, diff
     integer :: i, j, counter
 
-    h = 0.1_dp
+    h = 0.01_dp
     counter = 0
     do j = 1, n_targets
         data%j = j

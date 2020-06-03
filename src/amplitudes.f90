@@ -74,6 +74,12 @@ function em_amplitudes(t_lab, angle, channel) result(r)
         call em_pp_amplitudes(k_cm, theta, a, b, c, d, e)
     case ('np')
         call em_np_amplitudes(k_cm, theta, a, b, c, d, e)
+    case ('nn')
+        a = 0
+        b = 0
+        c = 0
+        d = 0
+        e = 0
     case default
         stop 'invalid reacttion channel in em_amplitudes'
     end select
@@ -946,142 +952,6 @@ end function coulomb_sigma_l
 ! are commented and left here for reference.
 
 
-! !!
-! !> @brief      wrapper function for saclay_amplitudes
-! !!
-! !! This wrapper function is used to test the derivatives of the saclay_amplitudes subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call
-! !! saclay_amplitudes. The same data of type context is used to receive which parameter will
-! !! be varied by the dfridr subroutine and which partial wave will be returned.
-! !!
-! !! @returns    NN phase-shift at an specific lab energy and partial wave
-! !!
-! !! @author     Rodrigo Navarro Perez
-! !!
-! real(dp) function f_amplitudes(x, data) result(r)
-!     use num_recipes, only : context
-!     use av18, only : av18_all_partial_waves
-!     use nn_phaseshifts, only : all_phaseshifts, momentum_cm
-!     implicit none
-!     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-!     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
-
-!     real(dp), allocatable :: ap(:)
-!     real(dp) :: t_lab, r_max, dr, theta, k_cm, phases(1:5,1:20)
-!     real(dp), allocatable :: d_phases(:, :, :)
-!     integer :: i_target, i_parameter
-!     character(len=2) :: reaction
-!     complex(dp) :: a, b, c, d, e
-!     complex(dp), allocatable, dimension(:) :: d_a, d_b, d_c, d_d, d_e
-
-!     allocate(ap, source = data%x)
-!     t_lab = data%a
-!     r_max = data%b
-!     dr = data%c
-!     theta = data%d
-!     reaction = trim(data%string)
-!     i_parameter = data%i
-!     i_target = data%j
-
-!     ap(i_parameter) = x
-!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
-!     k_cm = momentum_cm(t_lab, reaction)
-!     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
-
-!     select case (i_target)
-!     case (1)
-!         r = real(a)
-!     case (2)
-!         r = aimag(a)
-!     case (3)
-!         r = real(b)
-!     case (4)
-!         r = aimag(b)
-!     case (5)
-!         r = real(c)
-!     case (6)
-!         r = aimag(c)
-!     case (7)
-!         r = real(d)
-!     case (8)
-!         r = aimag(d)
-!     case (9)
-!         r = real(e)
-!     case (10)
-!         r = aimag(e)
-!     case default
-!         r = 0
-!     end select
-! end function f_amplitudes
-
-! !!
-! !> @brief      wrapper function for the derivatives of saclay_amplitudes
-! !!
-! !! This wrapper function is used to test the derivatives of the saclay_amplitudes subroutine.
-! !! The generic data of type context is used to receive all the arguments necessary to call
-! !! saclay_amplitudes. The same data of type context is used to receive which parameter will
-! !! be varied by the dfridr subroutine and which partial wave will be returned.
-! !!
-! !! @returns    derivatives of a NN phase-shift at an specific lab energy and partial wave
-! !!
-! !! @author     Rodrigo Navarro Perez
-! !!
-! function df_amplitudes(data) result(r)
-!     use num_recipes, only : context
-!     use av18, only : av18_all_partial_waves
-!     use nn_phaseshifts, only : all_phaseshifts, momentum_cm
-!     implicit none
-!     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
-!     real(dp), allocatable :: r(:)
-
-!     real(dp), allocatable :: ap(:)
-!     real(dp) :: t_lab, r_max, dr, theta, k_cm, phases(1:5, 1:20)
-!     real(dp), allocatable :: d_phases(:, :, :)
-!     integer :: i_target, i_parameter
-!     character(len=2) :: reaction
-!     complex(dp) :: a, b, c, d, e
-!     complex(dp), allocatable, dimension(:) :: d_a, d_b, d_c, d_d, d_e
-
-!     allocate(ap, source = data%x)
-!     t_lab = data%a
-!     r_max = data%b
-!     dr = data%c
-!     theta = data%d
-!     reaction = trim(data%string)
-!     i_parameter = data%i
-!     i_target = data%j
-
-!     call all_phaseshifts(av18_all_partial_waves, ap, t_lab, reaction, r_max, dr, phases, d_phases)
-!     k_cm = momentum_cm(t_lab, reaction)
-!     call saclay_amplitudes(k_cm, theta, reaction, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
-
-!     allocate(r, mold = ap)
-
-!     select case (i_target)
-!     case (1)
-!         r = real(d_a)
-!     case (2)
-!         r = aimag(d_a)
-!     case (3)
-!         r = real(d_b)
-!     case (4)
-!         r = aimag(d_b)
-!     case (5)
-!         r = real(d_c)
-!     case (6)
-!         r = aimag(d_c)
-!     case (7)
-!         r = real(d_d)
-!     case (8)
-!         r = aimag(d_d)
-!     case (9)
-!         r = real(d_e)
-!     case (10)
-!         r = aimag(d_e)
-!     case default
-!         r = 0
-!     end select
-! end function df_amplitudes
 
 
 end module amplitudes
