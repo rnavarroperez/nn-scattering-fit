@@ -17,6 +17,12 @@ private
 public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
     kronecker_delta, int_to_logical
 
+! interface
+!     subroutine subr
+!     end subroutine subr
+! end interface
+
+
 !!
 !> @brief      generic type for data in function callbacks
 !!
@@ -38,6 +44,7 @@ type context
     integer, allocatable :: i_x(:) !< an array of integers
     character(len=1024) :: string !< a string
     logical :: log !< a logical variable
+    procedure(), pointer, nopass :: proc
 end type
 
 !!
@@ -54,6 +61,7 @@ interface
         type(context), intent(in) :: data !< contains data for function evaluation
     end function
 end interface
+
 
 
 contains
