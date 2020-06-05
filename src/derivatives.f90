@@ -37,7 +37,7 @@ real(dp) function f_scattering_length(x, data) result(r)
     real(dp), allocatable, dimension(:) :: parameters
     type(nn_local_model) :: model
     integer :: i_target, i_parameter
-    character(len=2), parameter, dimension(1:3) :: channels = ['np', 'nn']
+    character(len=2), parameter, dimension(1:2) :: channels = ['np', 'nn']
     real(dp) :: a_length
     real(dp), allocatable, dimension(:) :: da_length
 
@@ -77,7 +77,7 @@ function df_scattering_length(data) result(r)
     real(dp), allocatable, dimension(:) :: parameters
     type(nn_local_model) :: model
     integer :: i_target
-    character(len=2), parameter, dimension(1:3) :: channels = ['np', 'nn']
+    character(len=2), parameter, dimension(1:2) :: channels = ['np', 'nn']
     real(dp) :: a_length
     real(dp), allocatable, dimension(:) :: da_length
 
