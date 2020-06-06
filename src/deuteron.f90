@@ -4,56 +4,119 @@ use nn_phaseshifts, only : nn_local_model
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 implicit none
 
-
+type :: ds_wave_function
+    integer :: n_radii
+    real(dp), allocatable, dimension(:) :: a_s
+    real(dp), allocatable, dimension(:) :: b_s
+    real(dp), allocatable, dimension(:) :: a_d
+    real(dp), allocatable, dimension(:) :: b_d
+    real(dp), allocatable, dimension(:) :: radii
+end type ds_wave_function
 
 contains
 
+real(dp) function wave_number(model, parameters) result(r)
+    implicit none
+    type(nn_local_model), intent(in) :: model
+    real(dp), intent(in), dimension(:) :: parameters
 
-subroutine deuteron_binding(k, model, parameters, be, dbe)
+    real(dp) :: k_low = 0.20_dp
+    real(dp) :: k_high = 0.24_dp
+    real(dp) :: bs_low, bs_high, k_0, bs_0, slope, dk
+
+    bs_low = irregularity(k_low, model, parameters)
+    bs_high = irregularity(k_high, model, parameters)
+    if (sign(1._dp, bs_low) == sign(1._dp, bs_high)) then
+        stop 'deuteron wave function irregularity is not bracketed in wave_number function'
+    endif
+    do
+        slope = (bs_low - bs_high)/(k_low - k_high)
+        dk = -bs_low/slope
+        k_0 = -(bs_low - slope*k_low)/slope
+        bs_0 = irregularity(k_0, model, parameters)
+        print*, k_0, bs_0
+        if ((abs(k_low-k_0) < 1.e-10_dp) .or. (abs(k_high-k_0) < 1.e-10_dp)) exit
+        if (sign(1._dp, bs_low) == sign(1._dp, bs_0)) then
+            k_low = k_0
+            bs_low = bs_0
+        else
+            k_high = k_0
+            bs_high = bs_0
+        endif
+    enddo
+    r = k_0
+        
+end function wave_number
+
+real(dp) function irregularity(k, model, parameters) result(r)
     implicit none
     real(dp), intent(in) :: k
     type(nn_local_model), intent(in) :: model
     real(dp), intent(in), dimension(:) :: parameters
-    real(dp), intent(out) :: be
-    real(dp), intent(out), allocatable, dimension(:) :: dbe
 
-    real(dp) ::  r
+    type(ds_wave_function) :: deuteron_wf
+
+    deuteron_wf = wave_function(k, model, parameters)
+    r = deuteron_wf%b_s(0)
+    
+end function irregularity
+
+type(ds_wave_function) function wave_function(k, model, parameters) result(r)
+    implicit none
+    real(dp), intent(in) :: k
+    type(nn_local_model), intent(in) :: model
+    real(dp), intent(in), dimension(:) :: parameters
+    
+    real(dp) ::  r_i
     real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
     real(dp), dimension(1:5, 1:2) :: v_pw
     real(dp), allocatable, dimension(:, :, :) :: dv_pw
-    real(dp) :: a_alpha, b_alpha, c_alpha, d_alpha
-    real(dp) :: a_beta, b_beta, c_beta, d_beta
+    real(dp), allocatable, dimension(:) :: a_alpha, b_alpha, c_alpha, d_alpha
+    real(dp), allocatable, dimension(:) :: a_beta, b_beta, c_beta, d_beta
+    integer :: i
     real(dp) :: beta
-    integer :: counter
 
-    a_alpha = -1._dp
-    b_alpha = -1._dp
-    c_alpha = 0._dp
-    d_alpha = 0._dp
+    r%n_radii = int(model%r_max/model%dr)
+    allocate(r%radii(1:r%n_radii))
+    allocate(r%a_s(0:r%n_radii))
+    allocate(r%b_s, r%a_d, r%b_d, a_alpha, b_alpha, c_alpha, d_alpha, a_beta, b_beta, c_beta, d_beta, mold=r%a_s)
 
-    a_beta = 0._dp
-    b_beta = 0._dp
-    c_beta = -1._dp
-    d_beta = -1._dp
+    a_alpha(r%n_radii) = -1._dp
+    b_alpha(r%n_radii) = -1._dp
+    c_alpha(r%n_radii) = 0._dp
+    d_alpha(r%n_radii) = 0._dp
 
-    counter = 0
-    r = model%r_max + model%dr/2._dp
-    do
-       if(r < 0._dp) exit
-       call model%potential(parameters, r, 'np', v_pw, dv_pw)
-       v_pw = v_pw*mu*model%dr/(hbar_c**2)
-       counter = counter + 1
-       call reverse_variable_wave(k, r, v_pw(3:5, 2), a_alpha, b_alpha, c_alpha, d_alpha)
-       call reverse_variable_wave(k, r, v_pw(3:5, 2), a_beta, b_beta, c_beta, d_beta)
-       r = r - model%dr 
+    a_beta(r%n_radii) = 0._dp
+    b_beta(r%n_radii) = 0._dp
+    c_beta(r%n_radii) = -1._dp
+    d_beta(r%n_radii) = -1._dp
+
+    do i = r%n_radii , 1, -1
+        a_alpha(i-1) = a_alpha(i)
+        b_alpha(i-1) = b_alpha(i)
+        c_alpha(i-1) = c_alpha(i)
+        d_alpha(i-1) = d_alpha(i)
+
+        a_beta(i-1) = a_beta(i)
+        b_beta(i-1) = b_beta(i)
+        c_beta(i-1) = c_beta(i)
+        d_beta(i-1) = d_beta(i)
+
+        r_i = model%dr*(i - 0.5_dp)
+        call model%potential(parameters, r_i, 'np', v_pw, dv_pw)
+        v_pw = v_pw*mu*model%dr/(hbar_c**2)
+        call reverse_variable_wave(k, r_i, v_pw(3:5, 2), a_alpha(i-1), b_alpha(i-1), c_alpha(i-1), d_alpha(i-1))
+        call reverse_variable_wave(k, r_i, v_pw(3:5, 2), a_beta(i-1), b_beta(i-1), c_beta(i-1), d_beta(i-1))
+        r%radii(i) = r_i
     enddo
 
-    beta = -d_alpha/d_beta
-    be = (b_alpha + beta*b_beta)
-    ! print*, k, d_alpha, d_beta, beta, be**2, counter, int(model%r_max/model%dr)+1  
-    allocate(dbe, mold=parameters)
-    dbe = 0
-end subroutine deuteron_binding
+    beta = -d_alpha(0)/d_beta(0)
+    r%a_s = (a_alpha + beta*a_beta)
+    r%b_s = (b_alpha + beta*b_beta)
+    r%a_d = (c_alpha + beta*c_beta)
+    r%b_d = (d_alpha + beta*d_beta)
+    
+end function wave_function
 
 subroutine reverse_variable_wave(k, r, lambdas, a, b, c, d)
     implicit none
