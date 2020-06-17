@@ -38,7 +38,7 @@ nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul
 amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o
+observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o
 	$(COMPILER) $(FLAGS) -c $<
 
 read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o 
@@ -50,10 +50,10 @@ exp_data.o: exp_data.f90 precisions.o string_functions.o num_recipes.o
 deuteron.o: deuteron.f90 precisions.o nn_phaseshifts.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o
+derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o
 	$(COMPILER) $(FLAGS) -c $<
 
-main.o: main.f90 
+main.o: main.f90
 	$(COMPILER) $(FLAGS) -c $<
 
 clean:

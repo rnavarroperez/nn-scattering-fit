@@ -12,9 +12,58 @@ implicit none
 private
 
 public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw, &
-    df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable
+    df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable, &
+    f_deuteron_binding_energy, df_deuteron_binding_energy
 
 contains
+
+real(dp) function f_deuteron_binding_energy(x, data) result(r)
+    use deuteron, only : binding_energy
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
+
+    real(dp), allocatable, dimension(:) :: parameters
+    type(nn_local_model) :: model
+    integer :: i_parameter
+    real(dp) :: be
+    real(dp), allocatable, dimension(:) :: dbe
+
+    allocate(parameters, source = data%x)
+
+    model%potential => av18_all_partial_waves
+    model%dr = data%a
+    model%r_max = data%b
+    i_parameter = data%i
+
+    parameters(i_parameter) = x
+
+    call binding_energy(model, parameters, be, dbe)
+    r = be
+
+end function f_deuteron_binding_energy
+
+function df_deuteron_binding_energy(data) result(r)
+    use deuteron, only : binding_energy
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
+    real(dp), allocatable, dimension(:) :: r
+
+    real(dp), allocatable, dimension(:) :: parameters
+    type(nn_local_model) :: model
+    real(dp) :: be
+    real(dp), allocatable, dimension(:) :: dbe
+
+    allocate(parameters, source = data%x)
+    allocate(r, mold=data%x)
+    model%potential => av18_all_partial_waves
+    model%dr = data%a
+    model%r_max = data%b
+    
+    call binding_energy(model, parameters, be, dbe)
+    r = dbe
+    
+end function df_deuteron_binding_energy
 
 !!
 !! @brief      wrapper function for scattering_length

@@ -12,6 +12,7 @@ use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model, add_coul
 use amplitudes, only: saclay_amplitudes
 use precisions, only: dp
 use constants, only: pi, hbar_c, m_p=>proton_mass, m_n=>neutron_mass
+use deuteron, only: binding_energy
 
 implicit none
 
@@ -33,7 +34,7 @@ private
 type :: kinematics
     real(dp) :: t_lab !< Laboratory energy in MeV
     real(dp) :: angle !< scattering angles in degrees
-    character(len=2) :: channel !< reaction channel, either 'pp' or 'np'
+    character(len=2) :: channel !< reaction channel, either 'pp', 'np', or 'nn'
     character(len=4) :: type !< the type of observable ('dsg', 'sgt', ...)
     complex(dp), dimension(1:5) :: em_amplitude !< electromagnetic amplitude
 end type kinematics
@@ -64,6 +65,8 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     select case (trim(kinematic%type))
     case('asl')
         call scattering_length(model, params, kinematic%channel, obs, d_obs)
+    case('dbe')
+        call binding_energy(model, params, obs, d_obs)
     case default
         call scattering_obs(kinematic, params, model, obs, d_obs)
     end select
