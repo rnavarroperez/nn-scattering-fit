@@ -1,3 +1,18 @@
+!!
+!> @brief      Wrapper functions to test derivatives
+!!
+!! Set of wrapper functions that are used in conjuction with the
+!! test_derivatives module to benchmark the analytic calculations 
+!! of derivatives of dependent variablies with respect of the 
+!! potential parameters (independent variables)
+!!
+!! What these function do is to take the arguments of the 
+!! generic type context and use the contents of that argument
+!! to call on the corresponding subroutine to return either 
+!! the dependent variable or the dependent variables derivatives
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 module derivatives
 
 use precisions, only : dp
@@ -17,11 +32,23 @@ public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw,
 
 contains
 
+!!
+!> @brief      wrapper function for dueteron binding energy
+!!
+!! This wrapper function is used to test the derivatives of the binding_energy subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! binding_energy. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine.
+!!
+!! @returns    deuteron binding energy
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function f_deuteron_binding_energy(x, data) result(r)
     use deuteron, only : binding_energy
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-    type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
+    type(context), intent(in) :: data !< data structure with all the arguments for binding_energy
 
     real(dp), allocatable, dimension(:) :: parameters
     type(nn_local_model) :: model
@@ -43,10 +70,21 @@ real(dp) function f_deuteron_binding_energy(x, data) result(r)
 
 end function f_deuteron_binding_energy
 
+!!
+!> @brief      wrapper function for the derivatives of binding_energy
+!!
+!! This wrapper function is used to test the derivatives of the binding_energy subroutine.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! binding_energy.
+!!
+!! @returns    derivatives of the dueteron binding energy
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 function df_deuteron_binding_energy(data) result(r)
     use deuteron, only : binding_energy
     implicit none
-    type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
+    type(context), intent(in) :: data !< data structure with all the arguments for binding_energy
     real(dp), allocatable, dimension(:) :: r
 
     real(dp), allocatable, dimension(:) :: parameters
@@ -66,7 +104,7 @@ function df_deuteron_binding_energy(data) result(r)
 end function df_deuteron_binding_energy
 
 !!
-!! @brief      wrapper function for scattering_length
+!> @brief      wrapper function for scattering_length
 !!
 !! This wrapper function is used to test the derivatives of the scattering_length subroutine.
 !! The generic data of type context is used to receive all the arguments necessary to call
@@ -110,8 +148,7 @@ end function f_scattering_length
 !!
 !! This wrapper function is used to test the derivatives of the scattering_length subroutine.
 !! The generic data of type context is used to receive all the arguments necessary to call
-!! scattering_length. The same data of type context is used to receive which parameter will
-!! be varied by the dfridr subroutine and which reaction channel will be used.
+!! scattering_length. The same data of type context is used to receive which reaction channel will be used.
 !!
 !! @returns    derivatives of the \f$^1S_0\f$ scattering length 
 !!
@@ -143,7 +180,7 @@ function df_scattering_length(data) result(r)
 end function df_scattering_length
 
 !!
-!! @brief      wrapper function for observable
+!> @brief      wrapper function for observable
 !!
 !! This wrapper function is used to test the derivatives of the observable subroutine.
 !! The generic data of type context is used to receive all the arguments necessary to call
