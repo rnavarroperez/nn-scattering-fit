@@ -29,7 +29,7 @@ test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o constants.o
+av18.o: av18.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
 nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o
