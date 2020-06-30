@@ -32,25 +32,28 @@ constants.o: constants.f90 precisions.o
 av18.o: av18.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o
+delta_shell.o: delta_shell.f90 precisions.o constants.o
+	$(COMPILER) $(FLAGS) -c $<
+
+nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o
+observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o 
+read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 exp_data.o: exp_data.f90 precisions.o string_functions.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-deuteron.o: deuteron.f90 precisions.o nn_phaseshifts.o constants.o
+deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o
+derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90

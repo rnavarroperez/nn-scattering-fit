@@ -10,7 +10,7 @@ program nn_fit
 
 use precisions, only : dp
 use av18, only : default_params, av18_all_partial_waves, n_parameters
-use nn_phaseshifts, only : nn_local_model
+use delta_shell, only : nn_local_model
 use exp_data, only : nn_experiment, read_database
 use observables, only : kinematics, observable
 use amplitudes, only : em_amplitudes

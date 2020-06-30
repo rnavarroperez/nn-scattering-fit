@@ -11,7 +11,8 @@ module read_write
 use precisions, only: dp
 use amplitudes, only: em_amplitudes
 use observables, only: observable, kinematics
-use nn_phaseshifts, only: all_phaseshifts, nn_local_model
+use nn_phaseshifts, only: all_phaseshifts
+use delta_shell, only: nn_local_model
 use constants, only: pi
 implicit none
 

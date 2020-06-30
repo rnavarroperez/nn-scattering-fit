@@ -11,13 +11,17 @@
 !!
 module deuteron
 use precisions, only : dp
-use nn_phaseshifts, only : nn_local_model
+use delta_shell, only : nn_local_model, all_delta_shells
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 implicit none
 
 private
 
 public :: binding_energy
+
+character(len=2), parameter :: channel = 'np'
+real(dp), parameter :: k_cm = 0._dp
+integer, parameter :: j_max = 2
 
 !!
 !> @brief      Piece wise deuteron wave function
@@ -81,9 +85,9 @@ subroutine binding_energy(model, parameters, be, dbe)
     real(dp) :: k, r, v, w
     type(ds_wave_function) :: wavefunc
     integer :: i
-    real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
-    real(dp), dimension(1:5, 1:2) :: v_pw
-    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), allocatable, dimension(:) :: radii
+    real(dp), allocatable, dimension(:, :, :) :: v_pw
+    real(dp), allocatable, dimension(:, :, :, :) :: dv_pw
 
     k = wave_number(model, parameters)
     be = m_p + m_n - sqrt(m_p**2 - (k*hbar_c)**2) - sqrt(m_n**2 - (k*hbar_c)**2)
@@ -91,15 +95,14 @@ subroutine binding_energy(model, parameters, be, dbe)
     call normalize(wavefunc)
     allocate(dbe, mold=parameters)
     dbe = 0._dp
+    call all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
     ! Feynman-Hellman theorem to get the derivative of -k**2 with
     ! respect of the potential parameters
     do i = 1, wavefunc%n_radii
         r = wavefunc%radii(i)
-        call model%potential(parameters, r, 'np', v_pw, dv_pw)
-        dv_pw = dv_pw*mu*model%dr/(hbar_c**2)
         v = s_wave_function(wavefunc, i)
         w = d_wave_function(wavefunc, i)
-        dbe = dbe + dv_pw(:, 3, 2)*v**2 + 2*dv_pw(:, 4, 2)*v*w + dv_pw(:, 5, 2)*w**2
+        dbe = dbe + dv_pw(:, 3, 2, i)*v**2 + 2*dv_pw(:, 4, 2, i)*v*w + dv_pw(:, 5, 2, i)*w**2
     enddo
     ! Going from derivative of -k**2 to derivative of the binding energy
     dbe = -0.5_dp*(1/sqrt(m_p**2 - (k*hbar_c)**2) + 1/sqrt(m_p**2 - (k*hbar_c)**2))*hbar_c**2*dbe
@@ -385,15 +388,17 @@ type(ds_wave_function) function wave_function(k, model, parameters) result(r)
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
     
     real(dp) ::  r_i
-    real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
-    real(dp), dimension(1:5, 1:2) :: v_pw
-    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), allocatable, dimension(:) :: radii
+    real(dp), allocatable, dimension(:, :, :) :: v_pw
+    real(dp), allocatable, dimension(:, :, :, :) :: dv_pw
     real(dp), allocatable, dimension(:) :: a_alpha, b_alpha, c_alpha, d_alpha
     real(dp), allocatable, dimension(:) :: a_beta, b_beta, c_beta, d_beta
     integer :: i
     real(dp) :: beta
 
-    r%n_radii = int(model%r_max/model%dr)
+    call all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
+
+    r%n_radii = size(radii)
     r%gamma = k
     allocate(r%radii(1:r%n_radii))
     allocate(r%a_s(0:r%n_radii))
@@ -420,11 +425,9 @@ type(ds_wave_function) function wave_function(k, model, parameters) result(r)
         c_beta(i-1) = c_beta(i)
         d_beta(i-1) = d_beta(i)
 
-        r_i = model%dr*(i - 0.5_dp)
-        call model%potential(parameters, r_i, 'np', v_pw, dv_pw)
-        v_pw = v_pw*mu*model%dr/(hbar_c**2)
-        call reverse_variable_wave(k, r_i, v_pw(3:5, 2), a_alpha(i-1), b_alpha(i-1), c_alpha(i-1), d_alpha(i-1))
-        call reverse_variable_wave(k, r_i, v_pw(3:5, 2),  a_beta(i-1),  b_beta(i-1),  c_beta(i-1),  d_beta(i-1))
+        r_i = radii(i)
+        call reverse_variable_wave(k, r_i, v_pw(3:5, 2, i), a_alpha(i-1), b_alpha(i-1), c_alpha(i-1), d_alpha(i-1))
+        call reverse_variable_wave(k, r_i, v_pw(3:5, 2, i),  a_beta(i-1),  b_beta(i-1),  c_beta(i-1),  d_beta(i-1))
         r%radii(i) = r_i
     enddo
 

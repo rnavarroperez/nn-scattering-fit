@@ -18,7 +18,7 @@ module derivatives
 use precisions, only : dp
 use num_recipes, only : context
 use av18, only : av18_all_partial_waves
-use nn_phaseshifts, only : nn_local_model
+use delta_shell, only : nn_local_model
 use observables, only : kinematics
 
 
@@ -428,7 +428,8 @@ end function df_amplitudes
 !! @author     Rodrigo Navarro Perez
 !!
 real(dp) function f_all_phaseshifts(x, data) result(r)
-    use nn_phaseshifts, only : nn_local_model, all_phaseshifts
+    use delta_shell, only: nn_local_model
+    use nn_phaseshifts, only : all_phaseshifts
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
     type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
@@ -472,7 +473,8 @@ end function f_all_phaseshifts
 !! @author     Rodrigo Navarro Perez
 !!
 function df_all_phaseshifts(data) result(r)
-    use nn_phaseshifts, only : nn_local_model, all_phaseshifts
+    use delta_shell, only : nn_local_model
+    use nn_phaseshifts, only : all_phaseshifts
     implicit none
     type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
     real(dp), allocatable :: r(:)

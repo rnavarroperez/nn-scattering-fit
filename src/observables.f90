@@ -8,7 +8,8 @@
 !!
 module observables
 
-use nn_phaseshifts, only: all_phaseshifts, momentum_cm, nn_local_model, add_coulomb
+use nn_phaseshifts, only: all_phaseshifts, momentum_cm
+use delta_shell, only : nn_local_model, all_delta_shells
 use amplitudes, only: saclay_amplitudes
 use precisions, only: dp
 use constants, only: pi, hbar_c, m_p=>proton_mass, m_n=>neutron_mass
@@ -367,14 +368,17 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
     real(dp), intent(out) :: a_length !< \f$ ^1S_0 \f$ scattering_length
     real(dp), intent(out), allocatable, dimension(:) :: da_length !< derivatives of the \f$ ^1S_0 \f$ scattering_length
 
-    integer, parameter :: n_waves = 5, j_max = 1
-    real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
+    integer, parameter :: j_max = 1
+    real(dp), parameter :: k_cm = 0._dp
     real(dp) :: r, lambda
-    real(dp), dimension(1:n_waves, 1:j_max) :: v_pw
-    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), allocatable, dimension(:) :: radii
+    real(dp), allocatable, dimension(:, :, :) :: v_pw
+    real(dp), allocatable, dimension(:, :, :, :) :: dv_pw
     real(dp), allocatable, dimension(:) :: d_lambda
     real(dp) :: diff, denominator, numerator
     real(dp), allocatable, dimension(:) :: d_denominator, d_numerator
+    integer :: i
+
 
     allocate(da_length, d_lambda, d_denominator, d_numerator, mold=parameters)
     
@@ -382,14 +386,13 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
         stop 'scattering length for pp channel is not implemented yet'
     endif
 
-    r = model%dr/2._dp
     a_length = 0
     da_length = 0
-    do
-        if(r > model%r_max) exit
-        call model%potential(parameters, r, channel, v_pw, dv_pw)
-        lambda = v_pw(1, 1)*mu*model%dr/(hbar_c**2)
-        d_lambda = dv_pw(:, 1, 1)*mu*model%dr/(hbar_c**2)
+    call all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
+    do i = 1, size(radii)
+        r = radii(i)
+        lambda = v_pw(1, 1, i)
+        d_lambda = dv_pw(:, 1, 1, i)
         diff = r - a_length
         numerator = a_length + r*lambda*diff
         denominator = 1 + lambda*diff
@@ -397,7 +400,6 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
         d_denominator = d_lambda*diff - lambda*da_length
         a_length = numerator/denominator
         da_length = (d_numerator*denominator - numerator*d_denominator)/denominator**2
-        r = r + model%dr
     enddo
     
 end subroutine scattering_length

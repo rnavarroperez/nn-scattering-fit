@@ -12,41 +12,12 @@ use precisions, only : dp
 use num_recipes, only : sphbes
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use coulombwf, only : coul90
+use delta_shell, only : nn_local_model, all_delta_shells
 implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model, add_coulomb!, f_all_phaseshifts, df_all_phaseshifts
-
-!!
-!> @brief      interface of nn local potentials
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-interface
-    subroutine local_potential(ap, r, reaction, v_pw, dv_pw)
-        use precisions, only : dp
-        implicit none
-        real(dp), intent(in) :: ap(:) !< potential parameters
-        real(dp), intent(in) :: r !< radius (in fm) at which the potential is evaluated
-        character(len=2), intent(in) :: reaction !< reaction channel. 'pp' or 'np'
-        real(dp), intent(out) :: v_pw(:, :) !< local potential in all partial waves
-        real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of the potential with respect of the parameters
-    end subroutine local_potential
-end interface
-
-!!
-!> @brief      nn model for local interactions
-!!
-!! potential and fixed parameters to calculate all nuclear phase shifts
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-type :: nn_local_model
-    procedure(local_potential), pointer, nopass :: potential !< local NN potential
-    real(dp) :: r_max !< maximum intetgration radius
-    real(dp) :: dr !< radial integration step
-end type nn_local_model
+public :: all_phaseshifts, eta_prime, momentum_cm
 
 contains
 
@@ -67,12 +38,11 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     character(len=2), intent(in) :: reaction !< reaction channel (pp, np or nn)
     real(dp), intent(out) :: phases(:, :) !< phaseshifts in all partial waves
     real(dp), allocatable, intent(out) :: d_phases(:, :, :) !< derivatives of the partial waves with respect to the potential parameters
-    real(dp) :: dr
     real(dp) :: k_cm 
-    integer :: n_params, n_waves, j_max
-    integer :: ij, j
-    real(dp) :: r, mu, alfa_1, alfa_2, ps_eigen(1:3)
-    real(dp), allocatable :: v_pw(:, :), dv_pw(:, :, :)
+    integer :: n_params, n_waves, j_max, i_max, n_radii
+    integer :: ij, j, i
+    real(dp) :: r, alfa_1, alfa_2, ps_eigen(1:3)
+    real(dp), allocatable :: radii(:), v_pw(:, :, :), dv_pw(:, :, :, :)
     real(dp), allocatable :: singlets(:), triplets(:), d_singlets(:, :), d_triplets(:, :)
     real(dp), allocatable :: a1(:), a2(:), b1(:), b2(:), c1(:), c2(:), d1(:), d2(:)
     real(dp), allocatable, dimension(:, :) :: d_a1, d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, d_ps_eigen
@@ -86,10 +56,8 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     phases = 0
 
     if (n_waves /= 5) stop 'incorrect number of waves for v_pw in all_phaseshifts'
-    dr = model%dr
     allocate(d_phases(1:n_params, 1:n_waves, 1:j_max))
     d_phases = 0
-    allocate(v_pw(1:n_waves, 1:j_max))
     allocate(singlets(1:j_max))
     singlets = 0
     allocate(triplets, source = singlets)
@@ -113,60 +81,43 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     allocate(d_ps_eigen(1:n_params, 1:3))
     d_ps_eigen = 0
 
-    select case (reaction)
-    case ('pp')
-        mu = m_p
-    case ('np')
-        mu = 2*m_p*m_n/(m_p + m_n)
-    case ('nn')
-        mu = m_n
-    case default
-        stop 'incorrect reaction channel in all_phaseshifts'
-    end select
     k_cm = momentum_cm(t_lab, reaction)
-    r = dr/2
-    do
-        if( r > model%r_max) exit
-        call model%potential(params, r, reaction, v_pw, dv_pw)
-        if (reaction == 'pp') then
-            call add_coulomb(r, k_cm, v_pw)
-        endif
-        v_pw = v_pw*mu*dr/(hbar_c**2)
-        dv_pw = dv_pw*mu*dr/(hbar_c**2)
-        call uncoupled_variable_phase(0, k_cm, r, v_pw(1, 1), dv_pw(:, 1, 1), singlets(1), d_singlets(:,1))
-        call uncoupled_variable_phase(1, k_cm, r, v_pw(5, 1), dv_pw(:, 5, 1), triplets(1), d_triplets(:,1))
+    call all_delta_shells(model, params, reaction, k_cm, j_max, radii, v_pw, dv_pw)
+    n_radii = size(radii)
+    i_max = n_radii
+    if (reaction == 'pp') i_max = i_max - 1
+    do i = 1, i_max
+        r = radii(i)
+        call uncoupled_variable_phase(0, k_cm, r, v_pw(1, 1, i), dv_pw(:, 1, 1, i), singlets(1), d_singlets(:,1))
+        call uncoupled_variable_phase(1, k_cm, r, v_pw(5, 1, i), dv_pw(:, 5, 1, i), triplets(1), d_triplets(:,1))
         do ij = 2, j_max
             j = ij - 1
             if (reaction == 'np') then
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a1(j), b1(j), &
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij, i), dv_pw(:, 1, ij, i), singlets(ij), d_singlets(:,ij))
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij, i), dv_pw(:, 2, ij, i), triplets(ij), d_triplets(:,ij))
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a1(j), b1(j), &
                     c1(j), d1(j), d_a1(:, j), d_b1(:, j), d_c1(:, j), d_d1(:, j))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a2(j), b2(j), &
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a2(j), b2(j), &
                     c2(j), d2(j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j))
             elseif (mod(j, 2) == 1) then
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij, i), dv_pw(:, 2, ij, i), triplets(ij), d_triplets(:,ij))
             else
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a1(j), b1(j), &
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij, i), dv_pw(:, 1, ij, i), singlets(ij), d_singlets(:,ij))
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a1(j), b1(j), &
                     c1(j), d1(j), d_a1(:, j), d_b1(:, j), d_c1(:, j), d_d1(:, j))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a2(j), b2(j), &
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a2(j), b2(j), &
                     c2(j), d2(j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j))
             endif
         enddo
-        r = r + dr
     enddo
     if (reaction == 'pp') then
-        call model%potential(params, r, reaction, v_pw, dv_pw)
-        call add_coulomb(r, k_cm, v_pw)
-        v_pw = v_pw*mu*dr/(hbar_c**2)
-        dv_pw = dv_pw*mu*dr/(hbar_c**2)
-        v_pw(2, 1) = v_pw(5, 1)
-        dv_pw(:, 2 , 1) = dv_pw(:, 5, 1)
-        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :), dv_pw(:, 1, :), singlets, d_singlets)
-        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :), dv_pw(:, 2, :), triplets, d_triplets)
-        call match_coupled_waves(k_cm, r, v_pw(3:5, :), dv_pw(:, 3:5, :), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
-        call match_coupled_waves(k_cm, r, v_pw(3:5, :), dv_pw(:, 3:5, :), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        r = radii(n_radii)
+        v_pw(2, 1, n_radii) = v_pw(5, 1, n_radii)
+        dv_pw(:, 2 , 1, n_radii) = dv_pw(:, 5, 1, n_radii)
+        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :, n_radii), dv_pw(:, 1, :, n_radii), singlets, d_singlets)
+        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :, n_radii), dv_pw(:, 2, :, n_radii), triplets, d_triplets)
+        call match_coupled_waves(k_cm, r, v_pw(3:5, :, n_radii), dv_pw(:, 3:5, :, n_radii), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
+        call match_coupled_waves(k_cm, r, v_pw(3:5, :, n_radii), dv_pw(:, 3:5, :, n_radii), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
     endif
     phases(1, 1) = atan(singlets(1))
     phases(5, 1) = atan(triplets(1))
@@ -733,43 +684,6 @@ subroutine match_coupled_waves(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d
     enddo
 
 end subroutine match_coupled_waves
-
-!!
-!> @brief      Adds energy dependent Coulomb term to pp potential
-!!
-!! Adds an energy dependent Coulomb term to the pp potential in all partial waves
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-subroutine add_coulomb(r, k, v_pw)
-    implicit none
-    real(dp), intent(in) :: r !< potential radius in fm
-    real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
-    real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
-    integer :: i
-    real(dp) :: v_coul, fcoulr, br, kmev, alphap
-    real(dp), parameter :: b=4.27_dp, small=0.e-5_dp
-    kmev = k*hbar_c
-    alphap = alpha*(1+2*kmev**2/m_p**2)/sqrt(1+kmev**2/m_p**2)
-    br = b*r
-    if (r < small) then
-       fcoulr = 5*b/16
-    else
-        fcoulr = (1 - (1 +   11*br/16   + 3*br**2/16 + br**3/48)*exp(-br))/r
-    end if
-
-    v_coul = alphap*hbar_c*fcoulr
-
-    do i = 1, size(v_pw, 2)
-        v_pw(1:3, i) = v_pw(1:3, i) + v_coul
-        v_pw(5, i) = v_pw(5, i) + v_coul
-    enddo
-end subroutine add_coulomb
-
-! The functions below were written to test the derivatives of all_phaseshifts against numerical calculations
-! and require the av18 module. All analytic calculations of the derivatives match the numerical ones.
-! since the nn_phaseshifts module should not depend on a specific module for the NN interaction the functions
-! are commented and left here for reference.
 
 
 
