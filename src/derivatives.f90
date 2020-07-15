@@ -18,7 +18,7 @@ module derivatives
 use precisions, only : dp
 use num_recipes, only : context
 use av18, only : av18_all_partial_waves
-use delta_shell, only : nn_local_model
+use delta_shell, only : nn_model
 use observables, only : kinematics
 
 
@@ -51,7 +51,7 @@ real(dp) function f_deuteron_binding_energy(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for binding_energy
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     integer :: i_parameter
     real(dp) :: be
     real(dp), allocatable, dimension(:) :: dbe
@@ -88,7 +88,7 @@ function df_deuteron_binding_energy(data) result(r)
     real(dp), allocatable, dimension(:) :: r
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: be
     real(dp), allocatable, dimension(:) :: dbe
 
@@ -122,7 +122,7 @@ real(dp) function f_scattering_length(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     integer :: i_target, i_parameter
     character(len=2), parameter, dimension(1:2) :: channels = ['np', 'nn']
     real(dp) :: a_length
@@ -161,7 +161,7 @@ function df_scattering_length(data) result(r)
     real(dp), allocatable, dimension(:) :: r
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     integer :: i_target
     character(len=2), parameter, dimension(1:2) :: channels = ['np', 'nn']
     real(dp) :: a_length
@@ -198,7 +198,7 @@ real(dp) function f_observable(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for observable
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     type(kinematics) :: kinematic
     integer :: i_target, i_parameter
     real(dp) :: obs
@@ -246,7 +246,7 @@ function df_observable(data) result(r)
     real(dp), allocatable :: r(:)
     
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     type(kinematics) :: kinematic
     integer :: i_target, i_parameter
     real(dp) :: obs
@@ -295,7 +295,7 @@ real(dp) function f_amplitudes(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab, theta, k_cm, phases(1:5,1:20)
     real(dp), allocatable :: d_phases(:, :, :)
     integer :: i_target, i_parameter
@@ -364,7 +364,7 @@ function df_amplitudes(data) result(r)
     real(dp), allocatable :: r(:)
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab, theta, k_cm, phases(1:5, 1:20)
     real(dp), allocatable :: d_phases(:, :, :)
     integer :: i_target, i_parameter
@@ -428,14 +428,14 @@ end function df_amplitudes
 !! @author     Rodrigo Navarro Perez
 !!
 real(dp) function f_all_phaseshifts(x, data) result(r)
-    use delta_shell, only: nn_local_model
+    use delta_shell, only: nn_model
     use nn_phaseshifts, only : all_phaseshifts
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
     type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab
     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
     integer :: i_target, i_parameter, ic, ij
@@ -473,14 +473,14 @@ end function f_all_phaseshifts
 !! @author     Rodrigo Navarro Perez
 !!
 function df_all_phaseshifts(data) result(r)
-    use delta_shell, only : nn_local_model
+    use delta_shell, only : nn_model
     use nn_phaseshifts, only : all_phaseshifts
     implicit none
     type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
     real(dp), allocatable :: r(:)
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab
     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
     integer :: i_target, i_parameter, ic, ij

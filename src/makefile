@@ -32,7 +32,10 @@ constants.o: constants.f90 precisions.o
 av18.o: av18.f90 precisions.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-delta_shell.o: delta_shell.f90 precisions.o constants.o
+pion_exchange.o : pion_exchange.f90 precisions.o
+	$(COMPILER) $(FLAGS) -c $<
+
+delta_shell.o: delta_shell.f90 precisions.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
 nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o

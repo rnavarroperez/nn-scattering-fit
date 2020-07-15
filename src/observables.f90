@@ -9,7 +9,7 @@
 module observables
 
 use nn_phaseshifts, only: all_phaseshifts, momentum_cm
-use delta_shell, only : nn_local_model, all_delta_shells
+use delta_shell, only : nn_model, all_delta_shells
 use amplitudes, only: saclay_amplitudes
 use precisions, only: dp
 use constants, only: pi, hbar_c, m_p=>proton_mass, m_n=>neutron_mass
@@ -59,7 +59,7 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     implicit none
     type(kinematics), intent(in) :: kinematic !< kinematic variables
     real(dp), intent(in) :: params(:) !< adjustable parameters
-    type(nn_local_model), intent(in) :: model !< nn scattering model
+    type(nn_model), intent(in) :: model !< nn scattering model
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
 
@@ -94,7 +94,7 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     implicit none
     type(kinematics), intent(in) :: kinematic !< kinematic variables
     real(dp), intent(in) :: params(:) !< adjustable parameters
-    type(nn_local_model), intent(in) :: model !< nn scattering model
+    type(nn_model), intent(in) :: model !< nn scattering model
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
     
@@ -362,7 +362,7 @@ end subroutine scattering_obs
 !!
 subroutine scattering_length(model, parameters, channel, a_length, da_length)
     implicit none
-    type(nn_local_model), intent(in) :: model !< nn scattering model
+    type(nn_model), intent(in) :: model !< nn scattering model
     real(dp), intent(in), dimension(:) :: parameters !< potetial parameters
     character(len=2), intent(in) :: channel !< reaction channel ('pp' or 'np')
     real(dp), intent(out) :: a_length !< \f$ ^1S_0 \f$ scattering_length

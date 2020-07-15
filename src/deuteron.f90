@@ -11,7 +11,7 @@
 !!
 module deuteron
 use precisions, only : dp
-use delta_shell, only : nn_local_model, all_delta_shells
+use delta_shell, only : nn_model, all_delta_shells
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 implicit none
 
@@ -77,7 +77,7 @@ contains
 !!
 subroutine binding_energy(model, parameters, be, dbe)
     implicit none
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) ::  parameters !< parameters of the nn interaction
     real(dp), intent(out) :: be !< deuteron binding energy. In MeV
     real(dp), intent(out), allocatable, dimension(:) :: dbe !< derivatives of the deuteron binding energy with respect of the potential parameters
@@ -258,7 +258,7 @@ end function d_wave_function
 !!
 real(dp) function wave_number(model, parameters, tolerance) result(r)
     implicit none
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
     real(dp), intent(in), optional :: tolerance !< tolerance in the secant method
 
@@ -320,7 +320,7 @@ end function wave_number
 real(dp) function irregularity(k, model, parameters) result(r)
     implicit none
     real(dp), intent(in) :: k !< deuteron wave number. In fm\f$^{-1}\f$ 
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
 
 
@@ -333,7 +333,7 @@ end function irregularity
 !!
 !> @brief      Piecewise integration of the deuteron with a local potential
 !!
-!! Given an object of type nn_local_model (a local potential,
+!! Given an object of type nn_model (a local potential,
 !! a maximum radius of integration and an integration step), determines
 !! the deuteron wave function for an specific wave number \f$k\f$
 !!
@@ -384,7 +384,7 @@ end function irregularity
 type(ds_wave_function) function wave_function(k, model, parameters) result(r)
     implicit none
     real(dp), intent(in) :: k !< deuteron wave number. In fm\f$^{-1}\f$ 
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
     
     real(dp) ::  r_i

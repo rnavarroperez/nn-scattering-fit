@@ -12,7 +12,7 @@ use precisions, only : dp
 use num_recipes, only : sphbes
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use coulombwf, only : coul90
-use delta_shell, only : nn_local_model, all_delta_shells
+use delta_shell, only : nn_model, all_delta_shells
 implicit none
 
 private
@@ -32,7 +32,7 @@ contains
 !!
 subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     implicit none
-    type(nn_local_model), intent(in) :: model !< local potential and integration parameters
+    type(nn_model), intent(in) :: model !< local potential and integration parameters
     real(dp), intent(in) :: params(:) !< phenomenological parameters for the local potential
     real(dp), intent(in) :: t_lab !< laboratory energy of the scattering in MeV
     character(len=2), intent(in) :: reaction !< reaction channel (pp, np or nn)
