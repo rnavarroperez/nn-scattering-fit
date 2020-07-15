@@ -28,7 +28,7 @@ private
 
 public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw, &
     df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable, &
-    f_deuteron_binding_energy, df_deuteron_binding_energy
+    f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds
 
 contains
 
@@ -61,6 +61,7 @@ real(dp) function f_deuteron_binding_energy(x, data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     i_parameter = data%i
 
     parameters(i_parameter) = x
@@ -97,6 +98,7 @@ function df_deuteron_binding_energy(data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     
     call binding_energy(model, parameters, be, dbe)
     r = dbe
@@ -133,6 +135,7 @@ real(dp) function f_scattering_length(x, data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     i_parameter = data%i
     i_target = data%j
 
@@ -172,6 +175,7 @@ function df_scattering_length(data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     i_target = data%j
 
     call scattering_length(model, parameters, channels(i_target), a_length, da_length)
@@ -215,6 +219,7 @@ real(dp) function f_observable(x, data) result(r)
     kinematic%t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     kinematic%angle = data%d
     kinematic%channel = trim(data%string)
     kinematic%em_amplitude = 0._dp
@@ -263,6 +268,7 @@ function df_observable(data) result(r)
     kinematic%t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     kinematic%angle = data%d
     kinematic%channel = trim(data%string)
     kinematic%em_amplitude = 0._dp
@@ -308,6 +314,7 @@ real(dp) function f_amplitudes(x, data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     theta = data%d
     reaction = trim(data%string)
     i_parameter = data%i
@@ -377,6 +384,7 @@ function df_amplitudes(data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     theta = data%d
     reaction = trim(data%string)
     i_parameter = data%i
@@ -446,6 +454,7 @@ real(dp) function f_all_phaseshifts(x, data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     reaction = trim(data%string)
     i_parameter = data%i
     i_target = data%j
@@ -459,6 +468,41 @@ real(dp) function f_all_phaseshifts(x, data) result(r)
     call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
     r = phases(ic, ij)
 end function f_all_phaseshifts
+
+
+real(dp) function f_all_phaseshifts_ds(x, data) result(r)
+    use delta_shell, only: nn_model
+    use nn_phaseshifts, only : all_phaseshifts
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    real(dp) :: t_lab
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter, ic, ij
+    character(len=2) :: reaction
+
+    allocate(ap, source = data%x)
+    model%potential => av18_all_partial_waves
+    t_lab = data%a
+    model%r_max = data%b
+    model%dr = data%c
+    model%potential_type = 'local'
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    ap(i_parameter) = x
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
+    call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
+    r = phases(ic, ij)
+end function f_all_phaseshifts_ds
 
 !!
 !> @brief      wrapper function for the derivatives of all_phaseshifts
@@ -491,6 +535,7 @@ function df_all_phaseshifts(data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     reaction = trim(data%string)
     i_parameter = data%i
     i_target = data%j

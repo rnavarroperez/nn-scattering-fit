@@ -281,7 +281,7 @@ real(dp) function momentum_cm(t_lab, reaction) result(k)
     case ('nn')
         k = sqrt(m_n/2*t_lab)/hbar_c
     case default
-        stop 'incorrect reaction channel in av18_all_partial_waves'
+        stop 'incorrect reaction channel in momentum_cm'
     end select
 end function momentum_cm
 
