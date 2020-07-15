@@ -34,7 +34,7 @@ real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30_params = &
       0.00000000_dp,  0.00000000_dp,  0.11350103_dp,  0.09267627_dp,  0.00000000_dp, & !1F3
       0.00000000_dp,  0.53601375_dp,  0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !3D3
       0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !c1, c3, c4
-      0.00000000_dp,  0.00000000_dp, -0.00000000_dp  & !fc fp fn
+      sqrt(0.075_dp), sqrt(0.075_dp), -sqrt(0.075_dp)  & !fc fp fn
     ]
 
     real(dp), parameter, dimension(1:6) :: l_coulomb6 = [0.02566424_dp, 0.01374824_dp, 0.01351364_dp, &

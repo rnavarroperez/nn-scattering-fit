@@ -28,7 +28,7 @@ private
 
 public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw, &
     df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable, &
-    f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds
+    f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds, df_all_phaseshifts_ds
 
 contains
 
@@ -469,41 +469,6 @@ real(dp) function f_all_phaseshifts(x, data) result(r)
     r = phases(ic, ij)
 end function f_all_phaseshifts
 
-
-real(dp) function f_all_phaseshifts_ds(x, data) result(r)
-    use delta_shell, only: nn_model
-    use nn_phaseshifts, only : all_phaseshifts
-    implicit none
-    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
-    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
-
-    real(dp), allocatable :: ap(:)
-    type(nn_model) :: model
-    real(dp) :: t_lab
-    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
-    integer :: i_target, i_parameter, ic, ij
-    character(len=2) :: reaction
-
-    allocate(ap, source = data%x)
-    model%potential => av18_all_partial_waves
-    t_lab = data%a
-    model%r_max = data%b
-    model%dr = data%c
-    model%potential_type = 'local'
-    reaction = trim(data%string)
-    i_parameter = data%i
-    i_target = data%j
-
-    ap(i_parameter) = x
-
-    ic = mod(i_target - 1, 5) + 1
-    ij = 1 + (i_target - 1)/5
-
-    allocate(phases(1:5, ij))
-    call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
-    r = phases(ic, ij)
-end function f_all_phaseshifts_ds
-
 !!
 !> @brief      wrapper function for the derivatives of all_phaseshifts
 !!
@@ -547,6 +512,78 @@ function df_all_phaseshifts(data) result(r)
     call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
     r = d_phases(:, ic, ij)
 end function df_all_phaseshifts
+
+real(dp) function f_all_phaseshifts_ds(x, data) result(r)
+    use delta_shell, only: nn_model
+    use nn_phaseshifts, only : all_phaseshifts
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    real(dp) :: t_lab
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter, ic, ij
+    character(len=2) :: reaction
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%n_lambdas = data%k
+    model%potential_type = 'delta_shell'
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    ap(i_parameter) = x
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
+    call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
+    r = phases(ic, ij)
+end function f_all_phaseshifts_ds
+
+function df_all_phaseshifts_ds(data) result(r)
+    use delta_shell, only : nn_model
+    use nn_phaseshifts, only : all_phaseshifts
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
+    real(dp), allocatable :: r(:)
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    real(dp) :: t_lab
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter, ic, ij
+    character(len=2) :: reaction
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%n_lambdas = data%k
+    model%potential_type = 'delta_shell'
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
+    call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
+    r = d_phases(:, ic, ij)
+end function df_all_phaseshifts_ds
 
 !!
 !> @brief      wrapper function for the av18 potential
