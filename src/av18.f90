@@ -12,9 +12,9 @@ module av18
 
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, f2=>f_pi_n_2, &
-    pi, mu_p=>mu_proton, mu_n=>mu_neutron, alpha, m_e=>electron_mass, m_p=>proton_mass, &
-    m_n=>neutron_mass, gamma=>euler_mascheroni
-
+    pi
+use em_nn_potential, only : n_em_terms, em_potential, add_em_potential
+use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot
 
 implicit none
 
@@ -24,8 +24,7 @@ public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n
 
 integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
-integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
-integer, parameter :: n_em_terms = 14 !< Number of terms in the EM potential
+! integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
 
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
     [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp, 1811.57100_dp,    1.07985_dp, &
@@ -59,10 +58,10 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     real(dp), intent(out) :: v_pw(:, :) !< AV18 potential in all partial waves, units of MeV
     real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of v_nn with respect to the parameters in ap
 
-    real(dp) :: v_nn(1:n_operators), dv_nn(1:n_parameters, 1:n_operators)
+    real(dp) :: v_nn(1:n_operators), dv_nn(1:n_operators, 1:n_parameters)
     real(dp) :: v_00(1:n_st_terms), v_01(1:n_st_terms), v_10(1:n_st_terms), v_11(1:n_st_terms)
-    real(dp) :: dv_00(1:n_parameters, 1:n_st_terms), dv_01(1:n_parameters, 1:n_st_terms), &
-                dv_10(1:n_parameters, 1:n_st_terms), dv_11(1:n_parameters, 1:n_st_terms), &
+    real(dp) :: dv_00(1:n_st_terms, 1:n_parameters), dv_01(1:n_st_terms, 1:n_parameters), &
+                dv_10(1:n_st_terms, 1:n_parameters), dv_11(1:n_st_terms, 1:n_parameters), &
                 v_01_p_em(1:n_st_terms), v_10_p_em(1:n_st_terms)
     real(dp) :: v_em(1:n_em_terms)
     integer :: n_jwaves, n_waves
@@ -98,19 +97,15 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
 
     v_01 = operator_2_st_basis(tz1, tz2, 0, 1, v_nn)
     v_01_p_em = v_01
-    ! call add_em_potential(reaction, 0, v_em, v_01)
     call add_em_potential(reaction, 0, v_em, v_01_p_em)
     v_11 = operator_2_st_basis(tz1, tz2, 1, 1, v_nn)
-    ! call add_em_potential(reaction, 1, v_em, v_11)
     dv_01 = d_operator_2_st_basis(tz1, tz2, 0, 1, dv_nn)
     dv_11 = d_operator_2_st_basis(tz1, tz2, 1, 1, dv_nn)
 
     if (tz1*tz2 == -1) then
         v_00 = operator_2_st_basis(tz1, tz2, 0, 0, v_nn)
-        ! call add_em_potential(reaction, 0, v_em, v_00)
         v_10 = operator_2_st_basis(tz1, tz2, 1, 0, v_nn)
         v_10_p_em = v_10
-        ! call add_em_potential(reaction, 1, v_em, v_10)
         call add_em_potential(reaction, 1, v_em, v_10_p_em)
         dv_00 = d_operator_2_st_basis(tz1, tz2, 0, 0, dv_nn)
         dv_10 = d_operator_2_st_basis(tz1, tz2, 1, 0, dv_nn)
@@ -122,7 +117,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     j = 0
     v_pw(1, 1) = uncoupled_pot(l, s, j, v_01_p_em)
     do ip = 1, n_parameters
-        dv_pw(ip, 1, 1) = uncoupled_pot(l, s, j, dv_01(ip,:))
+        dv_pw(ip, 1, 1) = uncoupled_pot(l, s, j, dv_01(:, ip))
     enddo
     ! 3p0
     l = 1
@@ -130,7 +125,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     j = 0
     v_pw(5, 1) = uncoupled_pot(l, s, j, v_11)
     do ip = 1, n_parameters
-        dv_pw(ip, 5, 1) = uncoupled_pot(l, s, j, dv_11(ip,:))
+        dv_pw(ip, 5, 1) = uncoupled_pot(l, s, j, dv_11(:, ip))
     enddo
     ! everything with j >= 1
     do ij = 2, n_jwaves
@@ -143,12 +138,12 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
         if (t == 1) then
             v_pw(1, ij) = uncoupled_pot(l, s, j, v_01)
             do ip = 1, n_parameters
-                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_01(ip,:))
+                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_01(:, ip))
             enddo
         elseif (tz1*tz2 == -1) then ! only present in np
             v_pw(1, ij) = uncoupled_pot(l, s, j, v_00)
             do ip = 1, n_parameters
-                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_00(ip,:))
+                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_00(:, ip))
             enddo
         endif
 
@@ -158,12 +153,12 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
         if (t == 1) then
             v_pw(2, ij) = uncoupled_pot(l, s, j, v_11)
             do ip = 1, n_parameters
-                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_11(ip,:))
+                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_11(:, ip))
             enddo
         elseif (tz1*tz2 == -1) then !only present in np
             v_pw(2, ij) = uncoupled_pot(l, s, j, v_10)
             do ip = 1, n_parameters
-                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_10(ip,:))
+                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_10(:, ip))
             enddo
         endif
 
@@ -172,7 +167,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
         if (t == 1) then
             v_pw(3:5, ij) = coupled_pot(j, v_11)
             do ip = 1, n_parameters
-                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_11(ip,:))
+                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_11(:, ip))
             enddo
         elseif (tz1*tz2 == -1) then !only present in np
             if (j == 1 ) then
@@ -181,170 +176,12 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
                 v_pw(3:5, ij) = coupled_pot(j, v_10)
             endif
             do ip = 1, n_parameters
-                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_10(ip,:))
+                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_10(:, ip))
             enddo
         endif
     enddo
    
 end subroutine av18_all_partial_waves
-
-!!
-!> @brief      Adds EM potential to strong potential in basis
-!!
-!! Given an already calculated EM potential, reaction channel and spin quantum number, adds the 
-!! EM potential to the strong potential in the spin-isospin channel
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-subroutine add_em_potential(reaction, s, v_em, v_st)
-    implicit none
-    character(len=2), intent(in) :: reaction !< reaction channel, 'pp', 'np' or 'nn'
-    integer, intent(in) :: s !< spin quantum number
-    real(dp), intent(in) :: v_em(1:n_em_terms) !< EM potential as defined in AV18 paper
-    real(dp), intent(inout) :: v_st(1:n_st_terms) !< Strong potential in spin-isospin basis
-
-    integer :: s1ds2
-
-    s1ds2 = 4*s - 3
-    select case (trim(reaction))
-    case ('pp')
-        v_st(1) = v_st(1) + v_em(1)*0 + v_em(2) + v_em(3) + v_em(4) + s1ds2*v_em(6)
-        v_st(2) = v_st(2) + v_em(9)
-        v_st(3) = v_st(3) + v_em(12)
-    case ('np')
-        v_st(1) = v_st(1) + v_em(5) + s1ds2*v_em(8)
-        v_st(2) = v_st(2) + v_em(11)
-        v_st(3) = v_st(3) + v_em(14)
-    case ('nn')
-        v_st(1) = v_st(1) + s1ds2*v_em(7)
-        v_st(2) = v_st(2) + v_em(10)
-    case default
-        stop 'incorrect reaction channel in add_em_potential'
-    end select
-
-end subroutine add_em_potential
-
-!!
-!> @brief      electromagnetic potential in NN scattering
-!!
-!! EM potential in NN scattering as calculated in the AV18 potential
-!!
-!!
-!! For details see Phys.Rev. C51 (1995) 38-51
-!!
-!! @return     electromagnetic potential 
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-function em_potential(r) result(v_em)
-    implicit none
-    real(dp), intent(in) :: r !< radius at which the potential is evaluated
-    real(dp) :: v_em(1:n_em_terms) !< electromagnetic potential
-
-    real(dp), parameter :: b=4.27_dp, beta=0.0189_dp, small=0.e-5_dp
-    real(dp) :: br, mr, fcoulr, ftr3, flsr3, kr, fivp, fdelta, fnpr
-
-    v_em = 0
-    br = b*r
-    mr = m_p*m_n/(m_p + m_n)
-    if (r < small) then
-       fcoulr = 5*b/16
-       ftr3 = b**3*br**2/720
-       flsr3 = b**3/48
-       kr = m_e*small/hbar_c
-    else
-        fcoulr = (1 - (1 +   11*br/16   + 3*br**2/16 + br**3/48)*exp(-br))/r
-        ftr3 =   (1 - (1 + br + br**2/2 +   br**3/6  + br**4/24 + br**5/144)*exp(-br))/r**3
-        flsr3 =  (1-  (1 + br + br**2/2 + 7*br**3/48 + br**4/48)*exp(-br))/r**3
-        kr = m_e*r/hbar_c
-    end if
-    fivp = -gamma - 5/6._dp + abs(log(kr)) + 6*pi*kr/8
-    fdelta = b**3*(1 + br + br**2/3)*exp(-br)/16
-    fnpr = b**3*(15 + 15*br + 6*br**2 + br**3)*exp(-br)/384
-    v_em(1) =  alpha*hbar_c*fcoulr
-    v_em(2) = -alpha*hbar_c**3*fdelta/(4*m_p**2)
-    v_em(3) = -v_em(1)**2/m_p
-    v_em(4) = 2*alpha*v_em(1)*fivp/(3*pi)
-    v_em(5) = alpha*hbar_c*beta*fnpr
-    v_em(6) = -alpha*hbar_c**3*mu_p**2*fdelta/(6*m_p**2)
-    v_em(7) = -alpha*hbar_c**3*mu_n**2*fdelta/(6*m_n**2)
-    v_em(8) = -alpha*hbar_c**3*mu_p*mu_n*fdelta/(6*m_n*m_p)
-    v_em(9) = -alpha*hbar_c**3*mu_p**2*ftr3/(4*m_p**2)
-    v_em(10) = -alpha*hbar_c**3*mu_n**2*ftr3/(4*m_n**2)
-    v_em(11) = -alpha*hbar_c**3*mu_p*mu_n*ftr3/(4*m_p*m_n)
-    v_em(12) = -alpha*hbar_c**3*(4*mu_p - 1)*flsr3/(2*m_p**2)
-    v_em(13) = 0
-    v_em(14) = -alpha*hbar_c**3*mu_n*flsr3/(2*m_n*mr)
-end function em_potential
-
-!!
-!> @brief      potential in uncoupled partial wave
-!!
-!! Given a potential in spin-isospin basis and a set of
-!! angular momentum quantum numbers (l, s, j), calculates
-!! the uncoupled potential in the corresponding partial wave
-!!
-!! @return     uncoupled potential in the given partial wave
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-function uncoupled_pot(l, s, j, v_st) result(v_pw)
-    implicit none
-    integer, intent(in) :: l !< orbital angular momentum quantum number
-    integer, intent(in) :: s !< spin quantum number
-    integer, intent(in) :: j !< total angular momentum quantum number
-    real(dp), intent(in) :: v_st(1:n_st_terms) !< potential in spin-isospin basis
-    real(dp) :: v_pw !< uncoupled potential in the given partial wave
-    integer :: ls, l2, s_12
-
-
-    if (s == 0 .and. l == j) then ! singlets
-        s_12 = 0
-    elseif (s == 1 .and. l == j) then !triplet
-        s_12 = 2
-    elseif (s == 1 .and. l == 1 .and. j == 0) then !3p0
-        s_12 = -4
-    else
-        stop 'incorrect quantum numbers in uncoupled_pot'
-    endif
-
-    ls = (j*(j + 1) - l*(l + 1) - s*(s + 1))/2 !numerator is always even, no need to worry about integer division
-    l2 = l*(l + 1)
-    v_pw =v_st(1) + s_12*v_st(2) + ls*v_st(3) + l2*v_st(4) + ls**2*v_st(5)
-end function uncoupled_pot
-
-!!
-!> @brief      potential in uncoupled partial wave
-!!
-!! Given a potential in spin-isospin basis and the total angular momentum j, calculates the
-!! coupled potential in the corresponding channel
-!!
-!! @return     coupled potential in the given j channel
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-function coupled_pot(j, v_st) result(v_pw)
-    implicit none
-    integer, intent(in) :: j !< total angular momentum quantum number
-    real(dp), intent(in) :: v_st(1:n_st_terms) !< potential in spin-isospin basis
-    real(dp) :: v_pw(1:3) !< coupled potential in the j channel
-    real(dp) :: s_12m, s_12, s_12p
-    integer :: lm, lp, lm2, lp2, lsm, lsp
-
-    lm = j - 1
-    lp = j + 1
-    lm2 = lm*(lm + 1)
-    lp2 = lp*(lp + 1)
-    lsm = j - 1    ! (j*(j + 1) - l*(l + 1) - s*(s + 1))/2 with l = j - 1 and s = 1
-    lsp = -(j + 2) ! (j*(j + 1) - l*(l + 1) - s*(s + 1))/2 with l = j + 1 and s = 1
-    s_12m = -2*(j - 1)/(2*j + 1._dp)
-    s_12  = sqrt(36._dp*j*(j+1))/(2*j + 1)
-    s_12p = -2*(j + 2)/(2*j + 1._dp)
-    v_pw(1) = v_st(1) + s_12m*v_st(2) + lsm*v_st(3) + lm2*v_st(4) + lsm**2*v_st(5)
-    v_pw(2) = s_12*v_st(2)
-    v_pw(3) = v_st(1) + s_12p*v_st(2) + lsp*v_st(3) + lp2*v_st(4) + lsp**2*v_st(5)
-
-end function coupled_pot
 
 !!
 !> @brief      transform potential from operator to st basis
@@ -405,12 +242,12 @@ function d_operator_2_st_basis(tz1, tz2, s, t, dv_op) result(dv_st)
     real(dp), intent(in) :: dv_op(:, :) !< derivatives of the potential in the AV18 operator basis
     real(dp), allocatable :: dv_st(:, :) !< derivatives of the potential in the spin-isospin basis
     integer :: n_p, n_o, i
-    n_p = size(dv_op,1)
-    n_o = size(dv_op,2)
+    n_p = size(dv_op,2)
+    n_o = size(dv_op,1)
     if (n_o /= n_operators) stop 'incorrect number of operators in d_operator_2_st_basis'
-    allocate(dv_st(1:n_p, 1:n_st_terms))
+    allocate(dv_st(1:n_st_terms, 1:n_p))
     do i = 1, n_p
-        dv_st(i, :) = operator_2_st_basis(tz1, tz2, s, t, dv_op(i, :))
+        dv_st(:, i) = operator_2_st_basis(tz1, tz2, s, t, dv_op(:, i))
     enddo
 
 end function d_operator_2_st_basis
@@ -433,7 +270,7 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     real(dp), intent(in)  :: ap(1:n_parameters) !< Phenomenological parameters
     real(dp), intent(in)  :: r !< radius in units of fm
     real(dp), intent(out) :: v_nn(1:n_operators) !< AV18 potential in operator basis, units of MeV
-    real(dp), intent(out) :: dv_nn(1:n_parameters, 1:n_operators) !< derivatives of v_nn with respect to the parameters in ap
+    real(dp), intent(out) :: dv_nn(1:n_operators, 1:n_parameters) !< derivatives of v_nn with respect to the parameters in ap
 
     real(dp), parameter :: &
         mu0 = mpi0/hbar_c, &
@@ -454,6 +291,8 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
         d_pls1, d_pl211, d_pls21, d_p10, d_pt0, d_pls0, d_pl210, d_pls20, d_p01pp, d_p01np, &
         d_p01nn, d_pl201, d_p00, d_pl200, d_p11, d_p11cd, d_p11cs, d_pt1, d_pt1cd, d_pt1cs, &
         d_p01, d_p01cd, d_p01cs
+
+    integer :: ip
 
     v_nn = 0
     dv_nn = 0
@@ -678,24 +517,26 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     v_nn(17) = pt1cd
     v_nn(18) = p01cs
 
-    dv_nn(:,  1) = (9*d_p11 + 3*d_p10 + 3*d_p01 + d_p00)/16
-    dv_nn(:,  2) = (3*d_p11 - 3*d_p10 +   d_p01 - d_p00)/16
-    dv_nn(:,  3) = (3*d_p11 +   d_p10 - 3*d_p01 - d_p00)/16
-    dv_nn(:,  4) = (  d_p11 -   d_p10 -   d_p01 + d_p00)/16
-    dv_nn(:,  5) = (3*d_pt1  + d_pt0 )/4
-    dv_nn(:,  6) = (  d_pt1  - d_pt0 )/4
-    dv_nn(:,  7) = (3*d_pls1 + d_pls0)/4
-    dv_nn(:,  8) = (  d_pls1 - d_pls0)/4
-    dv_nn(:,  9) = (9*d_pl211 + 3*d_pl210 + 3*d_pl201 + d_pl200)/16
-    dv_nn(:, 10) = (3*d_pl211 - 3*d_pl210 +   d_pl201 - d_pl200)/16
-    dv_nn(:, 11) = (3*d_pl211 +   d_pl210 - 3*d_pl201 - d_pl200)/16
-    dv_nn(:, 12) = (  d_pl211 -   d_pl210 -   d_pl201 + d_pl200)/16
-    dv_nn(:, 13) = (3*d_pls21 + d_pls20)/4
-    dv_nn(:, 14) = (  d_pls21 - d_pls20)/4
-    dv_nn(:, 15) = (3*d_p11cd + d_p01cd)/4
-    dv_nn(:, 16) = (  d_p11cd - d_p01cd)/4
-    dv_nn(:, 17) = d_pt1cd
-    dv_nn(:, 18) = d_p01cs
+    do ip = 1, size(dv_nn,2)
+        dv_nn( 1, ip) = (9*d_p11(ip) + 3*d_p10(ip) + 3*d_p01(ip) + d_p00(ip))/16
+        dv_nn( 2, ip) = (3*d_p11(ip) - 3*d_p10(ip) +   d_p01(ip) - d_p00(ip))/16
+        dv_nn( 3, ip) = (3*d_p11(ip) +   d_p10(ip) - 3*d_p01(ip) - d_p00(ip))/16
+        dv_nn( 4, ip) = (  d_p11(ip) -   d_p10(ip) -   d_p01(ip) + d_p00(ip))/16
+        dv_nn( 5, ip) = (3*d_pt1(ip)  + d_pt0(ip) )/4
+        dv_nn( 6, ip) = (  d_pt1(ip)  - d_pt0(ip) )/4
+        dv_nn( 7, ip) = (3*d_pls1(ip) + d_pls0(ip))/4
+        dv_nn( 8, ip) = (  d_pls1(ip) - d_pls0(ip))/4
+        dv_nn( 9, ip) = (9*d_pl211(ip) + 3*d_pl210(ip) + 3*d_pl201(ip) + d_pl200(ip))/16
+        dv_nn(10, ip) = (3*d_pl211(ip) - 3*d_pl210(ip) +   d_pl201(ip) - d_pl200(ip))/16
+        dv_nn(11, ip) = (3*d_pl211(ip) +   d_pl210(ip) - 3*d_pl201(ip) - d_pl200(ip))/16
+        dv_nn(12, ip) = (  d_pl211(ip) -   d_pl210(ip) -   d_pl201(ip) + d_pl200(ip))/16
+        dv_nn(13, ip) = (3*d_pls21(ip) + d_pls20(ip))/4
+        dv_nn(14, ip) = (  d_pls21(ip) - d_pls20(ip))/4
+        dv_nn(15, ip) = (3*d_p11cd(ip) + d_p01cd(ip))/4
+        dv_nn(16, ip) = (  d_p11cd(ip) - d_p01cd(ip))/4
+        dv_nn(17, ip) = d_pt1cd(ip)
+        dv_nn(18, ip) = d_p01cs(ip)
+    enddo
 
 end subroutine av18_operator
 

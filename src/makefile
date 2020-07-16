@@ -29,10 +29,16 @@ test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o
+st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-pion_exchange.o : pion_exchange.f90 precisions.o
+em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o
+	$(COMPILER) $(FLAGS) -c $<
+
+av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
+	$(COMPILER) $(FLAGS) -c $<
+
+pion_exchange.o : pion_exchange.f90 precisions.o em_nn_potential.o
 	$(COMPILER) $(FLAGS) -c $<
 
 delta_shell.o: delta_shell.f90 precisions.o constants.o num_recipes.o
