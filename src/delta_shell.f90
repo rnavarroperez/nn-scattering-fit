@@ -460,7 +460,7 @@ subroutine sample_local_potential(model, parameters, channel, k_cm, j_max, radii
     
     
     integer :: n_radii, n_parameters, i, n_lambdas
-    real(dp) :: mu, r, dr, my_kcm
+    real(dp) :: mu, r, dr
     real(dp), allocatable, dimension(:, :, :) :: my_dv_pw
 
     mu = reduced_mass(channel)
@@ -476,11 +476,9 @@ subroutine sample_local_potential(model, parameters, channel, k_cm, j_max, radii
     case ('local')
         n_lambdas = 0
         dr = model%dr
-        my_kcm = k_cm
     case ('delta_shell')
         n_lambdas = model%n_lambdas
         dr = model%dr_tail
-        my_kcm = 0._dp
     case default
         stop 'Incorrect potential_type in sample_local_potential'
     end select
@@ -489,8 +487,8 @@ subroutine sample_local_potential(model, parameters, channel, k_cm, j_max, radii
         r = radii(i)
         call model%potential(parameters, r, channel, v_pw(:, :, i), my_dv_pw)
         dv_pw(:, :, :, i) = my_dv_pw
-        if (channel == 'pp') then
-            call add_coulomb(r, my_kcm, v_pw(:, :, i))
+        if (trim(channel) == 'pp' .and. trim(model%potential_type) == 'local') then
+            call add_coulomb(r, k_cm, v_pw(:, :, i))
         endif
     enddo
     v_pw = v_pw*mu*dr/(hbar_c**2)

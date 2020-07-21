@@ -92,7 +92,15 @@ subroutine binding_energy(model, parameters, be, dbe)
     k = wave_number(model, parameters)
     be = m_p + m_n - sqrt(m_p**2 - (k*hbar_c)**2) - sqrt(m_n**2 - (k*hbar_c)**2)
     wavefunc = wave_function(k, model, parameters)
-    call normalize(wavefunc)
+    select case(trim(model%potential_type))
+    case('local')
+        call normalize_local(wavefunc)
+    case('delta_shell')
+        call normalize_ds(wavefunc)
+    case default
+        stop 'unrecognized potential type in binding_energy'
+    end select
+    
     allocate(dbe, mold=parameters)
     dbe = 0._dp
     call all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
@@ -109,7 +117,7 @@ subroutine binding_energy(model, parameters, be, dbe)
 end subroutine binding_energy
 
 !!
-!> @brief      Normalize a piecewise wave function
+!> @brief      Normalize a piecewise wave function from a local potentialm
 !!
 !! Given a piecewise solution of the deuteron wave function, 
 !! uses a simple trapezoid rue to integrate the probability
@@ -133,7 +141,7 @@ end subroutine binding_energy
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine normalize(wavefunc)
+subroutine normalize_local(wavefunc)
     implicit none
     type(ds_wave_function), intent(inout) :: wavefunc !< piecewise deuteron wave function
 
@@ -162,7 +170,76 @@ subroutine normalize(wavefunc)
     wavefunc%b_s = a_norm*wavefunc%b_s
     wavefunc%a_d = a_norm*wavefunc%a_d
     wavefunc%b_d = a_norm*wavefunc%b_d
-end subroutine normalize
+end subroutine normalize_local
+
+subroutine normalize_ds(wavefunc)
+    implicit none
+    type(ds_wave_function), intent(inout) :: wavefunc !< piecewise deuteron wave function
+
+    real(dp) :: s, a_s, a_d, r, k, a_norm
+    integer :: i, n_points
+
+    n_points = wavefunc%n_radii
+    s = 0._dp
+    do i = 1, n_points
+        s = s + definite_density_integral(wavefunc, i)
+    enddo
+    a_s = wavefunc%a_s(n_points)
+    a_d = wavefunc%a_d(n_points)
+    r = wavefunc%radii(n_points)
+    k = wavefunc%gamma
+    ! Integral from last grid point to infinity where the wave function has exponential decay
+    s = s + exp(-2*k*r)*(a_s**2/(2*k) + a_d**2*(6 + k*r*(12 + k*r*(6 + k*r)))/(2*k**4*r**3))
+    a_norm = sqrt(1._dp/s)
+    wavefunc%a_s = a_norm*wavefunc%a_s
+    wavefunc%b_s = a_norm*wavefunc%b_s
+    wavefunc%a_d = a_norm*wavefunc%a_d
+    wavefunc%b_d = a_norm*wavefunc%b_d
+end subroutine normalize_ds
+
+real(dp) function definite_density_integral(wavefunc, i) result(s)
+    implicit none
+    type(ds_wave_function), intent(in) :: wavefunc !< Piecewise deuteron solution
+    integer, intent(in) :: i !< integration radius index
+
+    real(dp) :: k, a_s, b_s, a_d, b_d, r_i, r_f
+
+    if (i <= 0 .or. i > wavefunc%n_radii) then
+        print*, i, wavefunc%n_radii
+        stop 'index i in probability_density is incompatible with wavefunc grid'
+    endif
+    k = wavefunc%gamma
+    r_f = wavefunc%radii(i)
+    a_s = wavefunc%a_s(i - 1)
+    b_s = wavefunc%b_s(i - 1)
+    a_d = wavefunc%a_d(i - 1)
+    b_d = wavefunc%b_d(i - 1)
+    s = s_density_integral(a_s, b_s, k, r_f) + d_density_integral(a_d, b_d, k, r_f)
+    if (i == 1) then
+        s = s + a_s*b_s/(2*k)
+    else
+        r_i = wavefunc%radii(i - 1)
+        s = s - s_density_integral(a_s, b_s, k, r_i) - d_density_integral(a_d, b_d, k, r_i)
+    endif
+    
+end function definite_density_integral
+
+real(dp) function s_density_integral(a, b, k, r) result(s)
+    implicit none
+    real(dp), intent(in) :: a, b, k, r
+    s = (2*(b**2 - a**2)*k*r - 2*a*b*cosh(2*k*r) + (b**2 + a**2)*sinh(2*k*r))/(4*k)
+end function s_density_integral
+
+real(dp) function d_density_integral(a, b, k, r) result(s)
+    implicit none
+    real(dp) :: a, b, k, r
+
+    s =  2*(a**2 - b**2)*(3 - 3*(k*r)**2 - (k*r)**4) &
+        -2*(3*(a**2 + b**2)*(1 + (k*r)**2) + a*b*k*r*(12 + (k*r)**2))*cosh(2*k*r) &
+        +(k*r*(a**2 + b**2)*(12 + (k*r)**2) + 12*a*b*(1 + (k*r)**2) )*sinh(2*k*r)
+
+    s = s/(4*k**4*r**3)    
+end function d_density_integral
 
 !!
 !> @brief      Probability density at a particular integration radius

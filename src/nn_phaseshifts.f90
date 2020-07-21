@@ -39,7 +39,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     real(dp), intent(out) :: phases(:, :) !< phaseshifts in all partial waves
     real(dp), allocatable, intent(out) :: d_phases(:, :, :) !< derivatives of the partial waves with respect to the potential parameters
     real(dp) :: k_cm 
-    integer :: n_params, n_waves, j_max, i_max, n_radii
+    integer :: n_params, n_waves, j_max, i_max, n_radii, i_cut
     integer :: ij, j, i
     real(dp) :: r, alfa_1, alfa_2, ps_eigen(1:3)
     real(dp), allocatable :: radii(:), v_pw(:, :, :), dv_pw(:, :, :, :)
@@ -85,7 +85,18 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     call all_delta_shells(model, params, reaction, k_cm, j_max, radii, v_pw, dv_pw)
     n_radii = size(radii)
     i_max = n_radii
-    if (reaction == 'pp') i_max = i_max - 1
+    if (reaction == 'pp') then
+        select case(trim(model%potential_type))
+        case('local')
+            i_max = i_max - 1
+            i_cut = n_radii
+        case('delta_shell')
+            i_max = model%n_lambdas - 1
+            i_cut = model%n_lambdas
+        case default
+            stop 'unrecognized model potential type in all_phaseshifts'
+        end select
+    end if
     do i = 1, i_max
         r = radii(i)
         call uncoupled_variable_phase(0, k_cm, r, v_pw(1, 1, i), dv_pw(:, 1, 1, i), singlets(1), d_singlets(:,1))
@@ -111,13 +122,22 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
         enddo
     enddo
     if (reaction == 'pp') then
-        r = radii(n_radii)
-        v_pw(2, 1, n_radii) = v_pw(5, 1, n_radii)
-        dv_pw(:, 2 , 1, n_radii) = dv_pw(:, 5, 1, n_radii)
-        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :, n_radii), dv_pw(:, 1, :, n_radii), singlets, d_singlets)
-        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :, n_radii), dv_pw(:, 2, :, n_radii), triplets, d_triplets)
-        call match_coupled_waves(k_cm, r, v_pw(3:5, :, n_radii), dv_pw(:, 3:5, :, n_radii), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
-        call match_coupled_waves(k_cm, r, v_pw(3:5, :, n_radii), dv_pw(:, 3:5, :, n_radii), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        r = radii(i_cut)
+        v_pw(2, 1, i_cut) = v_pw(5, 1, i_cut)
+        dv_pw(:, 2 , 1, i_cut) = dv_pw(:, 5, 1, i_cut)
+        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :, i_cut), dv_pw(:, 1, :, i_cut), singlets, d_singlets)
+        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :, i_cut), dv_pw(:, 2, :, i_cut), triplets, d_triplets)
+        call match_coupled_waves(k_cm, r, v_pw(3:5, :, i_cut), dv_pw(:, 3:5, :, i_cut), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
+        call match_coupled_waves(k_cm, r, v_pw(3:5, :, i_cut), dv_pw(:, 3:5, :, i_cut), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        do i = i_cut + 1, n_radii
+            r = radii(i)
+            v_pw(2, 1, i) = v_pw(5, 1, i)
+            dv_pw(:, 2 , 1, i) = dv_pw(:, 5, 1, i)
+            call coulomb_uncoupled_phases(0, k_cm, r, v_pw(1, :, i), dv_pw(:, 1, :, i), singlets, d_singlets)
+            call coulomb_uncoupled_phases(1, k_cm, r, v_pw(2, :, i), dv_pw(:, 2, :, i), triplets, d_triplets)
+            call coulomb_coupled_phases(k_cm, r, v_pw(3:5, :, i), dv_pw(:, 3:5, :, i), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
+            call coulomb_coupled_phases(k_cm, r, v_pw(3:5, :, i), dv_pw(:, 3:5, :, i), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        enddo
     endif
     phases(1, 1) = atan(singlets(1))
     phases(5, 1) = atan(triplets(1))
@@ -485,6 +505,63 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
 
 end subroutine eigen_2_bar
 
+subroutine coulomb_uncoupled_phases(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_deltas)
+    implicit none
+    integer, intent(in) :: s !< spin quantum number
+    real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(:) !< lambda strength coefficients for all uncoupled waves in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :)  !< derivatives of lambda strength coefficients for all uncoupled waves
+    real(dp), intent(inout) :: tan_deltas(:) !< tangent of the phase shift for all uncoupled waves
+    real(dp), intent(inout) :: d_tan_deltas(:, :) !< derivatives of the tangent of the phase shift for all uncoupled waves
+    real(dp) :: etap, lambda, numerator, denominator, diff
+    real(dp), allocatable :: d_lambda(:), d_numerator(:), d_denominator(:), d_diff(:)
+    integer :: l_max, l, ifail, i, lqm
+    real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP
+    real(dp) :: F, G
+    ifail = 0
+    l_max = size(lambdas)
+
+    allocate(d_lambda, mold = d_lambdas(:, 1))
+    d_lambda = 0
+    allocate(d_numerator, d_denominator, d_diff, source = d_lambda)
+
+    if (l_max /= size(tan_deltas)) then
+        stop 'lambdas and tan_deltas must have the same size in match_uncoupled_waves'
+    endif
+
+    allocate(FC(0:l_max))
+    FC = 0
+    allocate(GC, FCP, GCP, source = FC)
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, l_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail'
+
+    do l = 0, l_max - 1
+        if (mod(s+l,2) == 0 .or. (s == 1 .and. l == 0)) then
+            if (s == 1 .and. l==0) then
+                lqm = 1
+            else
+                lqm = l
+            endif
+            i = l + 1
+            lambda = lambdas(i)
+            d_lambda = d_lambdas(:, i)
+            F = fc(lqm)
+            G = gc(lqm)
+            diff = F + tan_deltas(i)*G
+            d_diff = d_tan_deltas(:, i)*G
+            numerator   =  tan_deltas(i) - F*lambda*diff/k
+            denominator = 1 + lambda*diff*G/k
+            d_numerator   =  d_tan_deltas(:, i) - F*(d_lambda*diff + lambda*d_diff)/k
+            d_denominator = (d_lambda*diff + lambda*d_diff)*G/k
+            tan_deltas(i) = numerator/denominator
+            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        endif
+    enddo
+    
+end subroutine coulomb_uncoupled_phases
+
 !!
 !> @brief      Matches the uncoupled asymptotic solution the Coulomb wave function
 !!
@@ -577,6 +654,105 @@ real(dp) function eta_prime(k) result(etap)
     real(dp), intent(in) :: k !< Center of mass momentum in fm\f$^{-1}\f$
     etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)
 end function eta_prime
+
+subroutine coulomb_coupled_phases(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d_c, d_d)
+    implicit none
+    real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(:, :) !< lambda strength coefficients for all coupled waves in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :, :) !< derivatives lambda strength coefficients for all coupled waves
+    real(dp), intent(inout) :: a(:) !< the \f$A\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: b(:) !< the \f$B\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: c(:) !< the \f$C\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d(:) !< the \f$D\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_a(:, :) !< derivatives of the \f$A\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_b(:, :) !< derivatives of the \f$B\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_c(:, :) !< derivatives of the \f$C\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_d(:, :) !< derivatives of the \f$D\f$ parameter for all coupled waves
+    integer :: j_max, ifail, j, ij
+    real(dp) :: etap, ljm1, lj, ljp1, Fjm1, Gjm1, Fjp1, Gjp1, lin_comb_ab, lin_comb_cd, diff_b, diff_d
+    real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP
+    real(dp), dimension(:), allocatable :: d_ljm1, d_lj, d_ljp1, d_lin_comb_ab, d_lin_comb_cd, d_diff_b, d_diff_d
+    j_max = size(lambdas, 2)
+
+    if (size(a) /= size(b) .or. size(a) /= size(c) .or. size(a) /= size(d)) then
+        stop 'incorrect array size in match_coupled_waves'
+    endif
+
+    if (j_max /= size(a) + 1 ) stop 'incorrect array size in match_coupled_waves'
+
+    if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in match_uncoupled_waves'
+
+    allocate(FC(0:j_max))
+    FC = 0
+    allocate(GC, FCP, GCP, source = FC)
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, j_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail'
+
+    allocate(d_ljm1, mold = d_a(:, 1))
+    d_ljm1 = 0
+    allocate(d_lj, d_ljp1, d_lin_comb_ab, d_lin_comb_cd, d_diff_b, d_diff_d, source = d_ljm1)
+
+    do ij = 2, j_max
+        j = ij - 1
+        ljm1 = lambdas(1, ij)
+        lj   = lambdas(2, ij)
+        ljp1 = lambdas(3, ij)
+
+        d_ljm1 = d_lambdas(:, 1, ij)
+        d_lj   = d_lambdas(:, 2, ij)
+        d_ljp1 = d_lambdas(:, 3, ij)
+
+        Fjm1 = fc(j-1)
+        Gjm1 = gc(j-1)
+        Fjp1 = fc(j+1)
+        Gjp1 = gc(j+1)
+
+        lin_comb_ab = a(j)*Fjm1 - b(j)*Gjm1
+        lin_comb_cd = c(j)*Fjp1 - d(j)*Gjp1
+        diff_b = (ljm1*lin_comb_ab + lj*lin_comb_cd)/k
+        diff_d = (ljp1*lin_comb_cd + lj*lin_comb_ab)/k
+
+        d_lin_comb_ab = d_a(:, j)*Fjm1 - d_b(:, j)*Gjm1
+        d_lin_comb_cd = d_c(:, j)*Fjp1 - d_d(:, j)*Gjp1
+        d_diff_b = (d_ljm1*lin_comb_ab + ljm1*d_lin_comb_ab + d_lj*lin_comb_cd + lj*d_lin_comb_cd)/k
+        d_diff_d = (d_ljp1*lin_comb_cd + ljp1*d_lin_comb_cd + d_lj*lin_comb_ab + lj*d_lin_comb_ab)/k
+
+        a(j) = a(j) + diff_b*Gjm1
+        b(j) = b(j) + diff_b*Fjm1
+        c(j) = c(j) + diff_d*Gjp1
+        d(j) = d(j) + diff_d*Fjp1
+
+        d_a(:, j) = d_a(:, j) + d_diff_b*Gjm1
+        d_b(:, j) = d_b(:, j) + d_diff_b*Fjm1
+        d_c(:, j) = d_c(:, j) + d_diff_d*Gjp1
+        d_d(:, j) = d_d(:, j) + d_diff_d*Fjp1
+
+        ! Bf = Fjm1*(ljm1*(A(j)*jhjm1 + B(j)*yhjm1) + lj*(C(j)*jhjp1 + D(j)*yhjp1))/k &
+        !     -B(j)*(yhjm1*Fpjm1 - yhpjm1*Fjm1) - A(j)*(jhjm1*Fpjm1 - jhpjm1*Fjm1)
+        ! Df = Fjp1*(ljp1*(C(j)*jhjp1 + D(j)*yhjp1) + lj*(A(j)*jhjm1 + B(j)*yhjm1))/k &
+        !     -D(j)*(yhjp1*Fpjp1 - yhpjp1*Fjp1) - C(j)*(jhjp1*Fpjp1 - jhpjp1*Fjp1)
+
+        ! d_Bf = Fjm1*(d_ljm1*(A(j)*jhjm1 + B(j)*yhjm1) + ljm1*(d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1) &
+        !              + d_lj*(C(j)*jhjp1 + D(j)*yhjp1) +   lj*(d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1))/k &
+        !       -d_B(:, j)*(yhjm1*Fpjm1 - yhpjm1*Fjm1) - d_A(:, j)*(jhjm1*Fpjm1 - jhpjm1*Fjm1)
+        ! d_Df = Fjp1*(d_ljp1*(C(j)*jhjp1 + D(j)*yhjp1) + ljp1*(d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1) &
+        !              + d_lj*(A(j)*jhjm1 + B(j)*yhjm1) +   lj*(d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1))/k &
+        !       -d_D(:, j)*(yhjp1*Fpjp1 - yhpjp1*Fjp1) - d_C(:, j)*(jhjp1*Fpjp1 - jhpjp1*Fjp1)
+
+        ! A(j) = (A(j)*jhjm1 + B(j)*yhjm1 + Bf*Gjm1)/Fjm1
+        ! C(j) = (C(j)*jhjp1 + D(j)*yhjp1 + Df*Gjp1)/Fjp1
+        ! B(j) = Bf
+        ! D(j) = Df
+
+        ! d_A(:, j) = (d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1 + d_Bf*Gjm1)/Fjm1
+        ! d_C(:, j) = (d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1 + d_Df*Gjp1)/Fjp1
+        ! d_B(:, j) = d_Bf
+        ! d_D(:, j) = d_Df
+    enddo
+    
+end subroutine coulomb_coupled_phases
 
 !!
 !> @brief      Matches the coupled asymptotic solution to the Coulomb wave function

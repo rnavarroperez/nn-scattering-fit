@@ -28,7 +28,8 @@ private
 
 public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw, &
     df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable, &
-    f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds, df_all_phaseshifts_ds
+    f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds, df_all_phaseshifts_ds, &
+    f_observable_ds, df_observable_ds
 
 contains
 
@@ -207,12 +208,12 @@ real(dp) function f_observable(x, data) result(r)
     integer :: i_target, i_parameter
     real(dp) :: obs
     real(dp), allocatable :: d_obs(:)
-    integer, parameter :: n_observables = 27
+    integer, parameter :: n_observables = 28
     character(len=4), dimension(1:n_observables), parameter :: &
-    obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
-                 'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
-                 'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
-                 'sgt ','sgtt','sgtl','asl ']
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
     allocate(ap, source = data%x)
     model%potential => av18_all_partial_waves
@@ -256,12 +257,12 @@ function df_observable(data) result(r)
     integer :: i_target, i_parameter
     real(dp) :: obs
     real(dp), allocatable :: d_obs(:)
-    integer, parameter :: n_observables = 27
+    integer, parameter :: n_observables = 28
     character(len=4), dimension(1:n_observables), parameter :: &
-    obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
-                 'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
-                 'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
-                 'sgt ','sgtt','sgtl','asl ']
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
     allocate(ap, source = data%x)
     model%potential => av18_all_partial_waves
@@ -280,6 +281,84 @@ function df_observable(data) result(r)
     r = d_obs
 end function df_observable
 
+real(dp) function f_observable_ds(x, data) result(r)
+    use observables, only : observable
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for observable
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    type(kinematics) :: kinematic
+    integer :: i_target, i_parameter
+    real(dp) :: obs
+    real(dp), allocatable :: d_obs(:)
+    integer, parameter :: n_observables = 28
+    character(len=4), dimension(1:n_observables), parameter :: &
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    kinematic%t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%potential_type = 'delta_shell'
+    model%n_lambdas = data%k
+    kinematic%angle = data%e
+    kinematic%channel = trim(data%string)
+    kinematic%em_amplitude = 0._dp
+    i_parameter = data%i
+    i_target = data%j
+
+    kinematic%type = obs_types(i_target)
+    ap(i_parameter) = x
+    call observable(kinematic, ap, model, obs, d_obs)
+    r = obs
+end function f_observable_ds
+
+function df_observable_ds(data) result(r)
+    use observables, only : observable
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for observable
+    real(dp), allocatable :: r(:)
+    
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    type(kinematics) :: kinematic
+    integer :: i_target, i_parameter
+    real(dp) :: obs
+    real(dp), allocatable :: d_obs(:)
+    integer, parameter :: n_observables = 28
+    character(len=4), dimension(1:n_observables), parameter :: &
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    kinematic%t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%potential_type = 'delta_shell'
+    model%n_lambdas = data%k
+    kinematic%angle = data%e
+    kinematic%channel = trim(data%string)
+    kinematic%em_amplitude = 0._dp
+    i_parameter = data%i
+    i_target = data%j
+
+    kinematic%type = obs_types(i_target)
+    call observable(kinematic, ap, model, obs, d_obs)
+    r = d_obs
+end function df_observable_ds
 
 !!
 !> @brief      wrapper function for saclay_amplitudes
