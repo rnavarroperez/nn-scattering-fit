@@ -12,41 +12,12 @@ use precisions, only : dp
 use num_recipes, only : sphbes
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use coulombwf, only : coul90
+use delta_shell, only : nn_model, all_delta_shells
 implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm, nn_local_model, add_coulomb!, f_all_phaseshifts, df_all_phaseshifts
-
-!!
-!> @brief      interface of nn local potentials
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-interface
-    subroutine local_potential(ap, r, reaction, v_pw, dv_pw)
-        use precisions, only : dp
-        implicit none
-        real(dp), intent(in) :: ap(:) !< potential parameters
-        real(dp), intent(in) :: r !< radius (in fm) at which the potential is evaluated
-        character(len=2), intent(in) :: reaction !< reaction channel. 'pp' or 'np'
-        real(dp), intent(out) :: v_pw(:, :) !< local potential in all partial waves
-        real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of the potential with respect of the parameters
-    end subroutine local_potential
-end interface
-
-!!
-!> @brief      nn model for local interactions
-!!
-!! potential and fixed parameters to calculate all nuclear phase shifts
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-type :: nn_local_model
-    procedure(local_potential), pointer, nopass :: potential !< local NN potential
-    real(dp) :: r_max !< maximum intetgration radius
-    real(dp) :: dr !< radial integration step
-end type nn_local_model
+public :: all_phaseshifts, eta_prime, momentum_cm
 
 contains
 
@@ -61,18 +32,17 @@ contains
 !!
 subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     implicit none
-    type(nn_local_model), intent(in) :: model !< local potential and integration parameters
+    type(nn_model), intent(in) :: model !< local potential and integration parameters
     real(dp), intent(in) :: params(:) !< phenomenological parameters for the local potential
     real(dp), intent(in) :: t_lab !< laboratory energy of the scattering in MeV
     character(len=2), intent(in) :: reaction !< reaction channel (pp, np or nn)
     real(dp), intent(out) :: phases(:, :) !< phaseshifts in all partial waves
     real(dp), allocatable, intent(out) :: d_phases(:, :, :) !< derivatives of the partial waves with respect to the potential parameters
-    real(dp) :: dr
     real(dp) :: k_cm 
-    integer :: n_params, n_waves, j_max
-    integer :: ij, j
-    real(dp) :: r, mu, alfa_1, alfa_2, ps_eigen(1:3)
-    real(dp), allocatable :: v_pw(:, :), dv_pw(:, :, :)
+    integer :: n_params, n_waves, j_max, i_max, n_radii, i_cut
+    integer :: ij, j, i
+    real(dp) :: r, alfa_1, alfa_2, ps_eigen(1:3)
+    real(dp), allocatable :: radii(:), v_pw(:, :, :), dv_pw(:, :, :, :)
     real(dp), allocatable :: singlets(:), triplets(:), d_singlets(:, :), d_triplets(:, :)
     real(dp), allocatable :: a1(:), a2(:), b1(:), b2(:), c1(:), c2(:), d1(:), d2(:)
     real(dp), allocatable, dimension(:, :) :: d_a1, d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, d_ps_eigen
@@ -86,10 +56,8 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     phases = 0
 
     if (n_waves /= 5) stop 'incorrect number of waves for v_pw in all_phaseshifts'
-    dr = model%dr
     allocate(d_phases(1:n_params, 1:n_waves, 1:j_max))
     d_phases = 0
-    allocate(v_pw(1:n_waves, 1:j_max))
     allocate(singlets(1:j_max))
     singlets = 0
     allocate(triplets, source = singlets)
@@ -105,7 +73,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
 
     a1 = 1
     c2 = 1
-
+    i_cut = 0
     allocate(d_alfa_1(1:n_params))
     d_alfa_1 = 0
     allocate(d_alfa_2, source = d_alfa_1)
@@ -113,60 +81,63 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     allocate(d_ps_eigen(1:n_params, 1:3))
     d_ps_eigen = 0
 
-    select case (reaction)
-    case ('pp')
-        mu = m_p
-    case ('np')
-        mu = 2*m_p*m_n/(m_p + m_n)
-    case ('nn')
-        mu = m_n
-    case default
-        stop 'incorrect reaction channel in all_phaseshifts'
-    end select
     k_cm = momentum_cm(t_lab, reaction)
-    r = dr/2
-    do
-        if( r > model%r_max) exit
-        call model%potential(params, r, reaction, v_pw, dv_pw)
-        if (reaction == 'pp') then
-            call add_coulomb(r, k_cm, v_pw)
-        endif
-        v_pw = v_pw*mu*dr/(hbar_c**2)
-        dv_pw = dv_pw*mu*dr/(hbar_c**2)
-        call uncoupled_variable_phase(0, k_cm, r, v_pw(1, 1), dv_pw(:, 1, 1), singlets(1), d_singlets(:,1))
-        call uncoupled_variable_phase(1, k_cm, r, v_pw(5, 1), dv_pw(:, 5, 1), triplets(1), d_triplets(:,1))
+    call all_delta_shells(model, params, reaction, k_cm, j_max, radii, v_pw, dv_pw)
+    n_radii = size(radii)
+    i_max = n_radii
+    if (reaction == 'pp') then
+        select case(trim(model%potential_type))
+        case('local')
+            i_max = i_max - 1
+            i_cut = n_radii
+        case('delta_shell')
+            i_max = model%n_lambdas - 1
+            i_cut = model%n_lambdas
+        case default
+            stop 'unrecognized model potential type in all_phaseshifts'
+        end select
+    end if
+    do i = 1, i_max
+        r = radii(i)
+        call uncoupled_variable_phase(0, k_cm, r, v_pw(1, 1, i), dv_pw(:, 1, 1, i), singlets(1), d_singlets(:,1))
+        call uncoupled_variable_phase(1, k_cm, r, v_pw(5, 1, i), dv_pw(:, 5, 1, i), triplets(1), d_triplets(:,1))
         do ij = 2, j_max
             j = ij - 1
             if (reaction == 'np') then
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a1(j), b1(j), &
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij, i), dv_pw(:, 1, ij, i), singlets(ij), d_singlets(:,ij))
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij, i), dv_pw(:, 2, ij, i), triplets(ij), d_triplets(:,ij))
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a1(j), b1(j), &
                     c1(j), d1(j), d_a1(:, j), d_b1(:, j), d_c1(:, j), d_d1(:, j))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a2(j), b2(j), &
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a2(j), b2(j), &
                     c2(j), d2(j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j))
             elseif (mod(j, 2) == 1) then
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij), dv_pw(:, 2, ij), triplets(ij), d_triplets(:,ij))
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(2, ij, i), dv_pw(:, 2, ij, i), triplets(ij), d_triplets(:,ij))
             else
-                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij), dv_pw(:, 1, ij), singlets(ij), d_singlets(:,ij))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a1(j), b1(j), &
+                call uncoupled_variable_phase(j, k_cm, r, v_pw(1, ij, i), dv_pw(:, 1, ij, i), singlets(ij), d_singlets(:,ij))
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a1(j), b1(j), &
                     c1(j), d1(j), d_a1(:, j), d_b1(:, j), d_c1(:, j), d_d1(:, j))
-                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij), dv_pw(:, 3:5, ij), a2(j), b2(j), &
+                call coupled_variable_phase(j, k_cm, r, v_pw(3:5, ij, i), dv_pw(:, 3:5, ij, i), a2(j), b2(j), &
                     c2(j), d2(j), d_a2(:, j), d_b2(:, j), d_c2(:, j), d_d2(:, j))
             endif
         enddo
-        r = r + dr
     enddo
     if (reaction == 'pp') then
-        call model%potential(params, r, reaction, v_pw, dv_pw)
-        call add_coulomb(r, k_cm, v_pw)
-        v_pw = v_pw*mu*dr/(hbar_c**2)
-        dv_pw = dv_pw*mu*dr/(hbar_c**2)
-        v_pw(2, 1) = v_pw(5, 1)
-        dv_pw(:, 2 , 1) = dv_pw(:, 5, 1)
-        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :), dv_pw(:, 1, :), singlets, d_singlets)
-        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :), dv_pw(:, 2, :), triplets, d_triplets)
-        call match_coupled_waves(k_cm, r, v_pw(3:5, :), dv_pw(:, 3:5, :), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
-        call match_coupled_waves(k_cm, r, v_pw(3:5, :), dv_pw(:, 3:5, :), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        r = radii(i_cut)
+        v_pw(2, 1, i_cut) = v_pw(5, 1, i_cut)
+        dv_pw(:, 2 , 1, i_cut) = dv_pw(:, 5, 1, i_cut)
+        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :, i_cut), dv_pw(:, 1, :, i_cut), singlets, d_singlets)
+        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :, i_cut), dv_pw(:, 2, :, i_cut), triplets, d_triplets)
+        call match_coupled_waves(k_cm, r, v_pw(3:5, :, i_cut), dv_pw(:, 3:5, :, i_cut), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
+        call match_coupled_waves(k_cm, r, v_pw(3:5, :, i_cut), dv_pw(:, 3:5, :, i_cut), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        do i = i_cut + 1, n_radii
+            r = radii(i)
+            v_pw(2, 1, i) = v_pw(5, 1, i)
+            dv_pw(:, 2 , 1, i) = dv_pw(:, 5, 1, i)
+            call coulomb_uncoupled_phases(0, k_cm, r, v_pw(1, :, i), dv_pw(:, 1, :, i), singlets, d_singlets)
+            call coulomb_uncoupled_phases(1, k_cm, r, v_pw(2, :, i), dv_pw(:, 2, :, i), triplets, d_triplets)
+            call coulomb_coupled_phases(k_cm, r, v_pw(3:5, :, i), dv_pw(:, 3:5, :, i), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
+            call coulomb_coupled_phases(k_cm, r, v_pw(3:5, :, i), dv_pw(:, 3:5, :, i), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
+        enddo
     endif
     phases(1, 1) = atan(singlets(1))
     phases(5, 1) = atan(triplets(1))
@@ -330,7 +301,7 @@ real(dp) function momentum_cm(t_lab, reaction) result(k)
     case ('nn')
         k = sqrt(m_n/2*t_lab)/hbar_c
     case default
-        stop 'incorrect reaction channel in av18_all_partial_waves'
+        stop 'incorrect reaction channel in momentum_cm'
     end select
 end function momentum_cm
 
@@ -535,6 +506,75 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
 end subroutine eigen_2_bar
 
 !!
+!> @brief      Variable phase equation with Coulomb wave functions in uncoupled channels
+!!
+!! For delta shell potentials in the pp channel, which don't include the coulomb 
+!! interaction in their outer strength parameters, the variable phase needs to be 
+!! integrated using Coulomb wave functions (instead of reduced spherical Bessel functions)
+!!
+!! For all given phases (singlets or triplets), performs a single step in the integration of 
+!! the variable phase equation with the corresponding orbital angular momentum l
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine coulomb_uncoupled_phases(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_deltas)
+    implicit none
+    integer, intent(in) :: s !< spin quantum number
+    real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(:) !< lambda strength coefficients for all uncoupled waves in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :)  !< derivatives of lambda strength coefficients for all uncoupled waves
+    real(dp), intent(inout) :: tan_deltas(:) !< tangent of the phase shift for all uncoupled waves
+    real(dp), intent(inout) :: d_tan_deltas(:, :) !< derivatives of the tangent of the phase shift for all uncoupled waves
+    real(dp) :: etap, lambda, numerator, denominator, diff
+    real(dp), allocatable :: d_lambda(:), d_numerator(:), d_denominator(:), d_diff(:)
+    integer :: l_max, l, ifail, i, lqm
+    real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP
+    real(dp) :: F, G
+    ifail = 0
+    l_max = size(lambdas)
+
+    allocate(d_lambda, mold = d_lambdas(:, 1))
+    d_lambda = 0
+    allocate(d_numerator, d_denominator, d_diff, source = d_lambda)
+
+    if (l_max /= size(tan_deltas)) then
+        stop 'lambdas and tan_deltas must have the same size in match_uncoupled_waves'
+    endif
+
+    allocate(FC(0:l_max))
+    FC = 0
+    allocate(GC, FCP, GCP, source = FC)
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, l_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail'
+
+    do l = 0, l_max - 1
+        if (mod(s+l,2) == 0 .or. (s == 1 .and. l == 0)) then
+            if (s == 1 .and. l==0) then
+                lqm = 1
+            else
+                lqm = l
+            endif
+            i = l + 1
+            lambda = lambdas(i)
+            d_lambda = d_lambdas(:, i)
+            F = fc(lqm)
+            G = gc(lqm)
+            diff = F + tan_deltas(i)*G
+            d_diff = d_tan_deltas(:, i)*G
+            numerator   =  tan_deltas(i) - F*lambda*diff/k
+            denominator = 1 + lambda*diff*G/k
+            d_numerator   =  d_tan_deltas(:, i) - F*(d_lambda*diff + lambda*d_diff)/k
+            d_denominator = (d_lambda*diff + lambda*d_diff)*G/k
+            tan_deltas(i) = numerator/denominator
+            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        endif
+    enddo
+    
+end subroutine coulomb_uncoupled_phases
+
+!!
 !> @brief      Matches the uncoupled asymptotic solution the Coulomb wave function
 !!
 !! When integrating the uncoupled variable phase equation in the pp channel, the wave function
@@ -626,6 +666,95 @@ real(dp) function eta_prime(k) result(etap)
     real(dp), intent(in) :: k !< Center of mass momentum in fm\f$^{-1}\f$
     etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)
 end function eta_prime
+
+!!
+!> @brief      Variable phase equation with Coulomb wave functions in coupled channels
+!!
+!! For delta shell potentials in the pp channel, which don't include the Coulomb 
+!! interaction in their outer strength parameters, the variable phase needs to be 
+!! integrated using Coulomb wave functions (instead of reduced spherical Bessel functions)
+!!
+!! For all given coupled phases, performs a single step in the integration of 
+!! the variable phase equation with the corresponding total angular momentum j
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine coulomb_coupled_phases(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d_c, d_d)
+    implicit none
+    real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
+    real(dp), intent(in) :: r !< integration radius in fm
+    real(dp), intent(in) :: lambdas(:, :) !< lambda strength coefficients for all coupled waves in fm\f$^{-2}\f$
+    real(dp), intent(in) :: d_lambdas(:, :, :) !< derivatives lambda strength coefficients for all coupled waves
+    real(dp), intent(inout) :: a(:) !< the \f$A\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: b(:) !< the \f$B\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: c(:) !< the \f$C\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d(:) !< the \f$D\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_a(:, :) !< derivatives of the \f$A\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_b(:, :) !< derivatives of the \f$B\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_c(:, :) !< derivatives of the \f$C\f$ parameter for all coupled waves
+    real(dp), intent(inout) :: d_d(:, :) !< derivatives of the \f$D\f$ parameter for all coupled waves
+    integer :: j_max, ifail, j, ij
+    real(dp) :: etap, ljm1, lj, ljp1, Fjm1, Gjm1, Fjp1, Gjp1, lin_comb_ab, lin_comb_cd, diff_b, diff_d
+    real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP
+    real(dp), dimension(:), allocatable :: d_ljm1, d_lj, d_ljp1, d_lin_comb_ab, d_lin_comb_cd, d_diff_b, d_diff_d
+    j_max = size(lambdas, 2)
+
+    if (size(a) /= size(b) .or. size(a) /= size(c) .or. size(a) /= size(d)) then
+        stop 'incorrect array size in match_coupled_waves'
+    endif
+
+    if (j_max /= size(a) + 1 ) stop 'incorrect array size in match_coupled_waves'
+
+    if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in match_uncoupled_waves'
+
+    allocate(FC(0:j_max))
+    FC = 0
+    allocate(GC, FCP, GCP, source = FC)
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, j_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail'
+
+    allocate(d_ljm1, mold = d_a(:, 1))
+    d_ljm1 = 0
+    allocate(d_lj, d_ljp1, d_lin_comb_ab, d_lin_comb_cd, d_diff_b, d_diff_d, source = d_ljm1)
+
+    do ij = 2, j_max
+        j = ij - 1
+        ljm1 = lambdas(1, ij)
+        lj   = lambdas(2, ij)
+        ljp1 = lambdas(3, ij)
+
+        d_ljm1 = d_lambdas(:, 1, ij)
+        d_lj   = d_lambdas(:, 2, ij)
+        d_ljp1 = d_lambdas(:, 3, ij)
+
+        Fjm1 = fc(j-1)
+        Gjm1 = gc(j-1)
+        Fjp1 = fc(j+1)
+        Gjp1 = gc(j+1)
+
+        lin_comb_ab = a(j)*Fjm1 - b(j)*Gjm1
+        lin_comb_cd = c(j)*Fjp1 - d(j)*Gjp1
+        diff_b = (ljm1*lin_comb_ab + lj*lin_comb_cd)/k
+        diff_d = (ljp1*lin_comb_cd + lj*lin_comb_ab)/k
+
+        d_lin_comb_ab = d_a(:, j)*Fjm1 - d_b(:, j)*Gjm1
+        d_lin_comb_cd = d_c(:, j)*Fjp1 - d_d(:, j)*Gjp1
+        d_diff_b = (d_ljm1*lin_comb_ab + ljm1*d_lin_comb_ab + d_lj*lin_comb_cd + lj*d_lin_comb_cd)/k
+        d_diff_d = (d_ljp1*lin_comb_cd + ljp1*d_lin_comb_cd + d_lj*lin_comb_ab + lj*d_lin_comb_ab)/k
+
+        a(j) = a(j) + diff_b*Gjm1
+        b(j) = b(j) + diff_b*Fjm1
+        c(j) = c(j) + diff_d*Gjp1
+        d(j) = d(j) + diff_d*Fjp1
+
+        d_a(:, j) = d_a(:, j) + d_diff_b*Gjm1
+        d_b(:, j) = d_b(:, j) + d_diff_b*Fjm1
+        d_c(:, j) = d_c(:, j) + d_diff_d*Gjp1
+        d_d(:, j) = d_d(:, j) + d_diff_d*Fjp1
+    enddo
+    
+end subroutine coulomb_coupled_phases
 
 !!
 !> @brief      Matches the coupled asymptotic solution to the Coulomb wave function
@@ -733,43 +862,6 @@ subroutine match_coupled_waves(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d
     enddo
 
 end subroutine match_coupled_waves
-
-!!
-!> @brief      Adds energy dependent Coulomb term to pp potential
-!!
-!! Adds an energy dependent Coulomb term to the pp potential in all partial waves
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-subroutine add_coulomb(r, k, v_pw)
-    implicit none
-    real(dp), intent(in) :: r !< potential radius in fm
-    real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
-    real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
-    integer :: i
-    real(dp) :: v_coul, fcoulr, br, kmev, alphap
-    real(dp), parameter :: b=4.27_dp, small=0.e-5_dp
-    kmev = k*hbar_c
-    alphap = alpha*(1+2*kmev**2/m_p**2)/sqrt(1+kmev**2/m_p**2)
-    br = b*r
-    if (r < small) then
-       fcoulr = 5*b/16
-    else
-        fcoulr = (1 - (1 +   11*br/16   + 3*br**2/16 + br**3/48)*exp(-br))/r
-    end if
-
-    v_coul = alphap*hbar_c*fcoulr
-
-    do i = 1, size(v_pw, 2)
-        v_pw(1:3, i) = v_pw(1:3, i) + v_coul
-        v_pw(5, i) = v_pw(5, i) + v_coul
-    enddo
-end subroutine add_coulomb
-
-! The functions below were written to test the derivatives of all_phaseshifts against numerical calculations
-! and require the av18 module. All analytic calculations of the derivatives match the numerical ones.
-! since the nn_phaseshifts module should not depend on a specific module for the NN interaction the functions
-! are commented and left here for reference.
 
 
 

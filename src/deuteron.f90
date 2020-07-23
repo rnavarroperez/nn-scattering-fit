@@ -11,13 +11,17 @@
 !!
 module deuteron
 use precisions, only : dp
-use nn_phaseshifts, only : nn_local_model
+use delta_shell, only : nn_model, all_delta_shells
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 implicit none
 
 private
 
 public :: binding_energy
+
+character(len=2), parameter :: channel = 'np' !< reaction channel. For calling all_delta_shells
+real(dp), parameter :: k_cm = 0._dp !< center of mass momentum. For calling all_delta_shells
+integer, parameter :: j_max = 2 !< maximum angular momentum index number. For calling all_delta_shells
 
 !!
 !> @brief      Piece wise deuteron wave function
@@ -43,6 +47,7 @@ contains
 
 !!
 !> @brief      Binding energy of the deuteron
+!!
 !! Given a nn local model (local potential, maximum integration radius,
 !! integration step, and potential parameters), calculates the deuteron
 !! binding energy and its derivatives with respect to the potential parameters
@@ -73,7 +78,7 @@ contains
 !!
 subroutine binding_energy(model, parameters, be, dbe)
     implicit none
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) ::  parameters !< parameters of the nn interaction
     real(dp), intent(out) :: be !< deuteron binding energy. In MeV
     real(dp), intent(out), allocatable, dimension(:) :: dbe !< derivatives of the deuteron binding energy with respect of the potential parameters
@@ -81,32 +86,39 @@ subroutine binding_energy(model, parameters, be, dbe)
     real(dp) :: k, r, v, w
     type(ds_wave_function) :: wavefunc
     integer :: i
-    real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
-    real(dp), dimension(1:5, 1:2) :: v_pw
-    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), allocatable, dimension(:) :: radii
+    real(dp), allocatable, dimension(:, :, :) :: v_pw
+    real(dp), allocatable, dimension(:, :, :, :) :: dv_pw
 
     k = wave_number(model, parameters)
     be = m_p + m_n - sqrt(m_p**2 - (k*hbar_c)**2) - sqrt(m_n**2 - (k*hbar_c)**2)
     wavefunc = wave_function(k, model, parameters)
-    call normalize(wavefunc)
+    select case(trim(model%potential_type))
+    case('local')
+        call normalize_local(wavefunc)
+    case('delta_shell')
+        call normalize_ds(wavefunc)
+    case default
+        stop 'unrecognized potential type in binding_energy'
+    end select
+    
     allocate(dbe, mold=parameters)
     dbe = 0._dp
+    call all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
     ! Feynman-Hellman theorem to get the derivative of -k**2 with
     ! respect of the potential parameters
     do i = 1, wavefunc%n_radii
         r = wavefunc%radii(i)
-        call model%potential(parameters, r, 'np', v_pw, dv_pw)
-        dv_pw = dv_pw*mu*model%dr/(hbar_c**2)
         v = s_wave_function(wavefunc, i)
         w = d_wave_function(wavefunc, i)
-        dbe = dbe + dv_pw(:, 3, 2)*v**2 + 2*dv_pw(:, 4, 2)*v*w + dv_pw(:, 5, 2)*w**2
+        dbe = dbe + dv_pw(:, 3, 2, i)*v**2 + 2*dv_pw(:, 4, 2, i)*v*w + dv_pw(:, 5, 2, i)*w**2
     enddo
     ! Going from derivative of -k**2 to derivative of the binding energy
     dbe = -0.5_dp*(1/sqrt(m_p**2 - (k*hbar_c)**2) + 1/sqrt(m_p**2 - (k*hbar_c)**2))*hbar_c**2*dbe
 end subroutine binding_energy
 
 !!
-!> @brief      Normalize a piecewise wave function
+!> @brief      Normalize a piecewise wave function from a local potential
 !!
 !! Given a piecewise solution of the deuteron wave function, 
 !! uses a simple trapezoid rue to integrate the probability
@@ -130,7 +142,7 @@ end subroutine binding_energy
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine normalize(wavefunc)
+subroutine normalize_local(wavefunc)
     implicit none
     type(ds_wave_function), intent(inout) :: wavefunc !< piecewise deuteron wave function
 
@@ -159,7 +171,155 @@ subroutine normalize(wavefunc)
     wavefunc%b_s = a_norm*wavefunc%b_s
     wavefunc%a_d = a_norm*wavefunc%a_d
     wavefunc%b_d = a_norm*wavefunc%b_d
-end subroutine normalize
+end subroutine normalize_local
+
+!!
+!> @brief      Normalize a piecewise wave function from a delta shell potential
+!!
+!! Given a piecewise solution of the deuteron wave function, 
+!! uses piecewise definite integrals to calculate the integral
+!! of the probability density between each pair of consecutive
+!! integration radii.
+!!
+!! The integral from the last integration radius to infinity
+!! is calculated analytically based on the exponential decay
+!! of the wave function that has been imposed by construction
+!! by integrating backwards (see documentation of wave_function
+!! for details)
+!!
+!! The analytic expressions for the integrals to infinity are
+!! given by
+!!
+!! \f[ \int_{r_N}^\infty  A_S^2 \left[ \tilde{j}_0(kr) + \tilde{y}_0(kr) \right]^2 dr = 
+!!      A_S^2 \frac{e^{-2 k r_N}}{2 k}  \\
+!!     \int_{r_N}^\infty  A_D^2 \left[ \tilde{j}_2(kr) + \tilde{y}_2(kr) \right]^2 dr =
+!!     A_D^2 e^{-2 k r_N} \frac{ 6 + 12 k r_N + 6 (k r_N)^2 + (k r_N)^3}{2 k^4 r_N^3}
+!! \f]
+!!
+!! @author     Rodrigo Navarro Perez
+subroutine normalize_ds(wavefunc)
+    implicit none
+    type(ds_wave_function), intent(inout) :: wavefunc !< piecewise deuteron wave function
+
+    real(dp) :: s, a_s, a_d, r, k, a_norm
+    integer :: i, n_points
+
+    n_points = wavefunc%n_radii
+    s = 0._dp
+    do i = 1, n_points
+        s = s + definite_density_integral(wavefunc, i)
+    enddo
+    a_s = wavefunc%a_s(n_points)
+    a_d = wavefunc%a_d(n_points)
+    r = wavefunc%radii(n_points)
+    k = wavefunc%gamma
+    ! Integral from last grid point to infinity where the wave function has exponential decay
+    s = s + exp(-2*k*r)*(a_s**2/(2*k) + a_d**2*(6 + k*r*(12 + k*r*(6 + k*r)))/(2*k**4*r**3))
+    a_norm = sqrt(1._dp/s)
+    wavefunc%a_s = a_norm*wavefunc%a_s
+    wavefunc%b_s = a_norm*wavefunc%b_s
+    wavefunc%a_d = a_norm*wavefunc%a_d
+    wavefunc%b_d = a_norm*wavefunc%b_d
+end subroutine normalize_ds
+
+!!
+!> @brief      Analytic definite integral of the deuteron probability density
+!!
+!! Given a piecewise solution to the deuteron wave function and the position
+!! index of a concentration radius, calculates the definite integral of the
+!! deuteron probability density between the previous radius and the current one
+!!
+!! @return     Analytic integral of deuteron probability density between 2
+!!             consecutive interaction radii
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function definite_density_integral(wavefunc, i) result(s)
+    implicit none
+    type(ds_wave_function), intent(in) :: wavefunc !< Piecewise deuteron solution
+    integer, intent(in) :: i !< concentration radius index
+
+    real(dp) :: k, a_s, b_s, a_d, b_d, r_i, r_f
+
+    if (i <= 0 .or. i > wavefunc%n_radii) then
+        print*, i, wavefunc%n_radii
+        stop 'index i in probability_density is incompatible with wavefunc grid'
+    endif
+    k = wavefunc%gamma
+    r_f = wavefunc%radii(i)
+    a_s = wavefunc%a_s(i - 1)
+    b_s = wavefunc%b_s(i - 1)
+    a_d = wavefunc%a_d(i - 1)
+    b_d = wavefunc%b_d(i - 1)
+    s = s_density_integral(a_s, b_s, k, r_f) + d_density_integral(a_d, b_d, k, r_f)
+    if (i == 1) then
+        s = s + a_s*b_s/(2*k)
+    else
+        r_i = wavefunc%radii(i - 1)
+        s = s - s_density_integral(a_s, b_s, k, r_i) - d_density_integral(a_d, b_d, k, r_i)
+    endif
+    
+end function definite_density_integral
+
+!!
+!> @brief      Analytic integral of S wave probability density
+!!
+!! Given the linear combination parameters that determine the
+!! deuteron S wave function in a certain interval, returns the 
+!! integral of the corresponding probability density evaluated
+!! at the given radius
+!!
+!! The analytic integral is given by
+!!
+!! \f[  \int \left[A \tilde{j}_0(kr) + B \tilde{y}_0(kr) \right]^2 dr = 
+!!        \frac{2(B^2 - A^2)kr - 2AB\cosh(2kr) +(B^2+A^2)\sinh(2kr)}{4k} \f]
+!!
+!!
+!! @return     Analytic integral of S wave probability density
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function s_density_integral(a, b, k, r) result(s)
+    implicit none
+    real(dp), intent(in) :: a !< regular component in the S channel
+    real(dp), intent(in) :: b !< irregular component in the S channel
+    real(dp), intent(in) :: k !< wavenumber in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< radius in fm
+    s = (2*(b**2 - a**2)*k*r - 2*a*b*cosh(2*k*r) + (b**2 + a**2)*sinh(2*k*r))/(4*k)
+end function s_density_integral
+
+!!
+!> @brief      Analytic integral of D wave probability density
+!!
+!! Given the linear combination parameters that determine the
+!! deuteron D wave function in a certain interval, returns the 
+!! integral of the corresponding probability density evaluated
+!! at the given radius
+!!
+!! The analytic integral is given by
+!!
+!! \f[  \int \left[A \tilde{j}_2(kr) + B \tilde{y}_2(kr) \right]^2 dr = 
+!!        \frac{2(A^2 - B^2)(3 - 3 k^2 r^2 - k^4 r^4) 
+!!              -2(3(A^2+B^2)(1 + k^2r^2) + ABkr(12 + k^2r^2))\cosh(2kr) 
+!!              +(kr(A^2+B^2)(12 + k^2r^2) + 12 AB(1 + k^2r^2))\sinh(2kr)}{4k^4r^3} \f]
+!!
+!!
+!! @return     Analytic integral of D wave probability density
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function d_density_integral(a, b, k, r) result(s)
+    implicit none
+    real(dp), intent(in) :: a !< regular component in the D channel
+    real(dp), intent(in) :: b !< irregular component in the D channel
+    real(dp), intent(in) :: k !< wavenumber in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< radius in fm
+
+    s =  2*(a**2 - b**2)*(3 - 3*(k*r)**2 - (k*r)**4) &
+        -2*(3*(a**2 + b**2)*(1 + (k*r)**2) + a*b*k*r*(12 + (k*r)**2))*cosh(2*k*r) &
+        +(k*r*(a**2 + b**2)*(12 + (k*r)**2) + 12*a*b*(1 + (k*r)**2) )*sinh(2*k*r)
+    s = s/(4*k**4*r**3)    
+end function d_density_integral
 
 !!
 !> @brief      Probability density at a particular integration radius
@@ -255,7 +415,7 @@ end function d_wave_function
 !!
 real(dp) function wave_number(model, parameters, tolerance) result(r)
     implicit none
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
     real(dp), intent(in), optional :: tolerance !< tolerance in the secant method
 
@@ -317,7 +477,7 @@ end function wave_number
 real(dp) function irregularity(k, model, parameters) result(r)
     implicit none
     real(dp), intent(in) :: k !< deuteron wave number. In fm\f$^{-1}\f$ 
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
 
 
@@ -330,7 +490,7 @@ end function irregularity
 !!
 !> @brief      Piecewise integration of the deuteron with a local potential
 !!
-!! Given an object of type nn_local_model (a local potential,
+!! Given an object of type nn_model (a local potential,
 !! a maximum radius of integration and an integration step), determines
 !! the deuteron wave function for an specific wave number \f$k\f$
 !!
@@ -381,19 +541,21 @@ end function irregularity
 type(ds_wave_function) function wave_function(k, model, parameters) result(r)
     implicit none
     real(dp), intent(in) :: k !< deuteron wave number. In fm\f$^{-1}\f$ 
-    type(nn_local_model), intent(in) :: model !< local model for nn the interaction
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
     real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
     
     real(dp) ::  r_i
-    real(dp), parameter :: mu = 2*m_p*m_n/(m_p + m_n)
-    real(dp), dimension(1:5, 1:2) :: v_pw
-    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), allocatable, dimension(:) :: radii
+    real(dp), allocatable, dimension(:, :, :) :: v_pw
+    real(dp), allocatable, dimension(:, :, :, :) :: dv_pw
     real(dp), allocatable, dimension(:) :: a_alpha, b_alpha, c_alpha, d_alpha
     real(dp), allocatable, dimension(:) :: a_beta, b_beta, c_beta, d_beta
     integer :: i
     real(dp) :: beta
 
-    r%n_radii = int(model%r_max/model%dr)
+    call all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
+
+    r%n_radii = size(radii)
     r%gamma = k
     allocate(r%radii(1:r%n_radii))
     allocate(r%a_s(0:r%n_radii))
@@ -420,11 +582,9 @@ type(ds_wave_function) function wave_function(k, model, parameters) result(r)
         c_beta(i-1) = c_beta(i)
         d_beta(i-1) = d_beta(i)
 
-        r_i = model%dr*(i - 0.5_dp)
-        call model%potential(parameters, r_i, 'np', v_pw, dv_pw)
-        v_pw = v_pw*mu*model%dr/(hbar_c**2)
-        call reverse_variable_wave(k, r_i, v_pw(3:5, 2), a_alpha(i-1), b_alpha(i-1), c_alpha(i-1), d_alpha(i-1))
-        call reverse_variable_wave(k, r_i, v_pw(3:5, 2),  a_beta(i-1),  b_beta(i-1),  c_beta(i-1),  d_beta(i-1))
+        r_i = radii(i)
+        call reverse_variable_wave(k, r_i, v_pw(3:5, 2, i), a_alpha(i-1), b_alpha(i-1), c_alpha(i-1), d_alpha(i-1))
+        call reverse_variable_wave(k, r_i, v_pw(3:5, 2, i),  a_beta(i-1),  b_beta(i-1),  c_beta(i-1),  d_beta(i-1))
         r%radii(i) = r_i
     enddo
 

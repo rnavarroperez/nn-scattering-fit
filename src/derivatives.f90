@@ -18,7 +18,7 @@ module derivatives
 use precisions, only : dp
 use num_recipes, only : context
 use av18, only : av18_all_partial_waves
-use nn_phaseshifts, only : nn_local_model
+use delta_shell, only : nn_model
 use observables, only : kinematics
 
 
@@ -28,7 +28,8 @@ private
 
 public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw, &
     df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable, &
-    f_deuteron_binding_energy, df_deuteron_binding_energy
+    f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds, df_all_phaseshifts_ds, &
+    f_observable_ds, df_observable_ds
 
 contains
 
@@ -51,7 +52,7 @@ real(dp) function f_deuteron_binding_energy(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for binding_energy
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     integer :: i_parameter
     real(dp) :: be
     real(dp), allocatable, dimension(:) :: dbe
@@ -61,6 +62,7 @@ real(dp) function f_deuteron_binding_energy(x, data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     i_parameter = data%i
 
     parameters(i_parameter) = x
@@ -88,7 +90,7 @@ function df_deuteron_binding_energy(data) result(r)
     real(dp), allocatable, dimension(:) :: r
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: be
     real(dp), allocatable, dimension(:) :: dbe
 
@@ -97,6 +99,7 @@ function df_deuteron_binding_energy(data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     
     call binding_energy(model, parameters, be, dbe)
     r = dbe
@@ -122,7 +125,7 @@ real(dp) function f_scattering_length(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for scattering_length
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     integer :: i_target, i_parameter
     character(len=2), parameter, dimension(1:2) :: channels = ['np', 'nn']
     real(dp) :: a_length
@@ -133,6 +136,7 @@ real(dp) function f_scattering_length(x, data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     i_parameter = data%i
     i_target = data%j
 
@@ -161,7 +165,7 @@ function df_scattering_length(data) result(r)
     real(dp), allocatable, dimension(:) :: r
 
     real(dp), allocatable, dimension(:) :: parameters
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     integer :: i_target
     character(len=2), parameter, dimension(1:2) :: channels = ['np', 'nn']
     real(dp) :: a_length
@@ -172,6 +176,7 @@ function df_scattering_length(data) result(r)
     model%potential => av18_all_partial_waves
     model%dr = data%a
     model%r_max = data%b
+    model%potential_type = 'local'
     i_target = data%j
 
     call scattering_length(model, parameters, channels(i_target), a_length, da_length)
@@ -182,7 +187,7 @@ end function df_scattering_length
 !!
 !> @brief      wrapper function for observable
 !!
-!! This wrapper function is used to test the derivatives of the observable subroutine.
+!! This wrapper function is used to test the derivatives of the observable subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! observable. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which type of observable will be calculated.
@@ -198,23 +203,24 @@ real(dp) function f_observable(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for observable
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     type(kinematics) :: kinematic
     integer :: i_target, i_parameter
     real(dp) :: obs
     real(dp), allocatable :: d_obs(:)
-    integer, parameter :: n_observables = 27
+    integer, parameter :: n_observables = 28
     character(len=4), dimension(1:n_observables), parameter :: &
-    obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
-                 'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
-                 'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
-                 'sgt ','sgtt','sgtl','asl ']
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
     allocate(ap, source = data%x)
     model%potential => av18_all_partial_waves
     kinematic%t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     kinematic%angle = data%d
     kinematic%channel = trim(data%string)
     kinematic%em_amplitude = 0._dp
@@ -230,7 +236,7 @@ end function f_observable
 !!
 !> @brief      wrapper function for the derivatives of observable
 !!
-!! This wrapper function is used to test the derivatives of the observable subroutine.
+!! This wrapper function is used to test the derivatives of the observable subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! observable. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which type of observable will be calculated.
@@ -246,23 +252,24 @@ function df_observable(data) result(r)
     real(dp), allocatable :: r(:)
     
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     type(kinematics) :: kinematic
     integer :: i_target, i_parameter
     real(dp) :: obs
     real(dp), allocatable :: d_obs(:)
-    integer, parameter :: n_observables = 27
+    integer, parameter :: n_observables = 28
     character(len=4), dimension(1:n_observables), parameter :: &
-    obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   ', &
-                 'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   ', &
-                 'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt', &
-                 'sgt ','sgtt','sgtl','asl ']
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
     allocate(ap, source = data%x)
     model%potential => av18_all_partial_waves
     kinematic%t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     kinematic%angle = data%d
     kinematic%channel = trim(data%string)
     kinematic%em_amplitude = 0._dp
@@ -274,6 +281,108 @@ function df_observable(data) result(r)
     r = d_obs
 end function df_observable
 
+!!
+!> @brief      wrapper function for observable
+!!
+!! This wrapper function is used to test the derivatives of the observable subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! observable. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which type of observable will be calculated.
+!!
+!! @returns    A NN scattering observable at an specific lab frame energy and scattering angle
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function f_observable_ds(x, data) result(r)
+    use observables, only : observable
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for observable
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    type(kinematics) :: kinematic
+    integer :: i_target, i_parameter
+    real(dp) :: obs
+    real(dp), allocatable :: d_obs(:)
+    integer, parameter :: n_observables = 28
+    character(len=4), dimension(1:n_observables), parameter :: &
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    kinematic%t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%potential_type = 'delta_shell'
+    model%n_lambdas = data%k
+    kinematic%angle = data%e
+    kinematic%channel = trim(data%string)
+    kinematic%em_amplitude = 0._dp
+    i_parameter = data%i
+    i_target = data%j
+
+    kinematic%type = obs_types(i_target)
+    ap(i_parameter) = x
+    call observable(kinematic, ap, model, obs, d_obs)
+    r = obs
+end function f_observable_ds
+
+!!
+!> @brief      wrapper function for the derivatives of observable
+!!
+!! This wrapper function is used to test the derivatives of the observable subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! observable. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which type of observable will be calculated.
+!!
+!! @returns    derivatives of an observable at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+function df_observable_ds(data) result(r)
+    use observables, only : observable
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for observable
+    real(dp), allocatable :: r(:)
+    
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    type(kinematics) :: kinematic
+    integer :: i_target, i_parameter
+    real(dp) :: obs
+    real(dp), allocatable :: d_obs(:)
+    integer, parameter :: n_observables = 28
+    character(len=4), dimension(1:n_observables), parameter :: &
+    obs_types = ['dsg ', 'dt  ', 'ayy ', 'd   ', 'p   ', 'azz ', 'r   ', &
+                 'rt  ', 'rpt ', 'at  ', 'd0sk', 'nskn', 'nssn', 'nnkk', 'a   ', &
+                 'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
+                 'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    kinematic%t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%potential_type = 'delta_shell'
+    model%n_lambdas = data%k
+    kinematic%angle = data%e
+    kinematic%channel = trim(data%string)
+    kinematic%em_amplitude = 0._dp
+    i_parameter = data%i
+    i_target = data%j
+
+    kinematic%type = obs_types(i_target)
+    call observable(kinematic, ap, model, obs, d_obs)
+    r = d_obs
+end function df_observable_ds
 
 !!
 !> @brief      wrapper function for saclay_amplitudes
@@ -295,7 +404,7 @@ real(dp) function f_amplitudes(x, data) result(r)
     type(context), intent(in) :: data !< data structure with all the arguments for saclay_amplitudes
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab, theta, k_cm, phases(1:5,1:20)
     real(dp), allocatable :: d_phases(:, :, :)
     integer :: i_target, i_parameter
@@ -308,6 +417,7 @@ real(dp) function f_amplitudes(x, data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     theta = data%d
     reaction = trim(data%string)
     i_parameter = data%i
@@ -364,7 +474,7 @@ function df_amplitudes(data) result(r)
     real(dp), allocatable :: r(:)
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab, theta, k_cm, phases(1:5, 1:20)
     real(dp), allocatable :: d_phases(:, :, :)
     integer :: i_target, i_parameter
@@ -377,6 +487,7 @@ function df_amplitudes(data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     theta = data%d
     reaction = trim(data%string)
     i_parameter = data%i
@@ -418,7 +529,7 @@ end function df_amplitudes
 !!
 !> @brief      wrapper function for all_phaseshifts
 !!
-!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! all_phaseshifts. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which partial wave will be returned.
@@ -428,13 +539,14 @@ end function df_amplitudes
 !! @author     Rodrigo Navarro Perez
 !!
 real(dp) function f_all_phaseshifts(x, data) result(r)
-    use nn_phaseshifts, only : nn_local_model, all_phaseshifts
+    use delta_shell, only: nn_model
+    use nn_phaseshifts, only : all_phaseshifts
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
     type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab
     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
     integer :: i_target, i_parameter, ic, ij
@@ -445,6 +557,7 @@ real(dp) function f_all_phaseshifts(x, data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     reaction = trim(data%string)
     i_parameter = data%i
     i_target = data%j
@@ -462,7 +575,7 @@ end function f_all_phaseshifts
 !!
 !> @brief      wrapper function for the derivatives of all_phaseshifts
 !!
-!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! all_phaseshifts. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which partial wave will be returned.
@@ -472,13 +585,14 @@ end function f_all_phaseshifts
 !! @author     Rodrigo Navarro Perez
 !!
 function df_all_phaseshifts(data) result(r)
-    use nn_phaseshifts, only : nn_local_model, all_phaseshifts
+    use delta_shell, only : nn_model
+    use nn_phaseshifts, only : all_phaseshifts
     implicit none
     type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
     real(dp), allocatable :: r(:)
 
     real(dp), allocatable :: ap(:)
-    type(nn_local_model) :: model
+    type(nn_model) :: model
     real(dp) :: t_lab
     real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
     integer :: i_target, i_parameter, ic, ij
@@ -489,6 +603,7 @@ function df_all_phaseshifts(data) result(r)
     t_lab = data%a
     model%r_max = data%b
     model%dr = data%c
+    model%potential_type = 'local'
     reaction = trim(data%string)
     i_parameter = data%i
     i_target = data%j
@@ -500,6 +615,102 @@ function df_all_phaseshifts(data) result(r)
     call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
     r = d_phases(:, ic, ij)
 end function df_all_phaseshifts
+
+!!
+!> @brief      wrapper function for all_phaseshifts
+!!
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! all_phaseshifts. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    NN phase-shift at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function f_all_phaseshifts_ds(x, data) result(r)
+    use delta_shell, only: nn_model
+    use nn_phaseshifts, only : all_phaseshifts
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    real(dp) :: t_lab
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter, ic, ij
+    character(len=2) :: reaction
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%n_lambdas = data%k
+    model%potential_type = 'delta_shell'
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    ap(i_parameter) = x
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
+    call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
+    r = phases(ic, ij)
+end function f_all_phaseshifts_ds
+
+!!
+!> @brief      wrapper function for the derivatives of all_phaseshifts
+!!
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! all_phaseshifts. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    derivatives of a NN phase-shift at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+function df_all_phaseshifts_ds(data) result(r)
+    use delta_shell, only : nn_model
+    use nn_phaseshifts, only : all_phaseshifts
+    use pion_exchange, only : ope_all_partial_waves
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for all_phaseshifts
+    real(dp), allocatable :: r(:)
+
+    real(dp), allocatable :: ap(:)
+    type(nn_model) :: model
+    real(dp) :: t_lab
+    real(dp), allocatable :: phases(:, :), d_phases(:, :, :)
+    integer :: i_target, i_parameter, ic, ij
+    character(len=2) :: reaction
+
+    allocate(ap, source = data%x)
+    model%potential => ope_all_partial_waves
+    t_lab = data%a
+    model%r_max = data%b
+    model%dr_core = data%c
+    model%dr_tail = data%d
+    model%n_lambdas = data%k
+    model%potential_type = 'delta_shell'
+    reaction = trim(data%string)
+    i_parameter = data%i
+    i_target = data%j
+
+    ic = mod(i_target - 1, 5) + 1
+    ij = 1 + (i_target - 1)/5
+
+    allocate(phases(1:5, ij))
+    call all_phaseshifts(model, ap, t_lab, reaction, phases, d_phases)
+    r = d_phases(:, ic, ij)
+end function df_all_phaseshifts_ds
 
 !!
 !> @brief      wrapper function for the av18 potential

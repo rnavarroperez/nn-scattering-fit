@@ -7,10 +7,9 @@
 !! @author Rodrigo Navarro Perez
 !!
 program nn_fit
-
 use precisions, only : dp
 use av18, only : default_params, av18_all_partial_waves, n_parameters
-use nn_phaseshifts, only : nn_local_model
+use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database
 use observables, only : kinematics, observable
 use amplitudes, only : em_amplitudes
@@ -18,7 +17,7 @@ implicit none
 
 real(dp), parameter :: r_max = 12.5_dp
 real(dp), parameter :: dr = 0.01_dp
-type(nn_local_model) :: model
+type(nn_model) :: model
 type(nn_experiment), allocatable, dimension(:) :: experiments
 type(kinematics) :: kine
 integer :: i, j
@@ -29,6 +28,7 @@ real(dp), allocatable, dimension(:) :: d_obs
 model%potential => av18_all_partial_waves
 model%r_max = r_max
 model%dr = dr
+model%potential_type = 'local'
 
 allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)

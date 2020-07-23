@@ -36,6 +36,7 @@ type context
     real(dp) :: b !< a real number
     real(dp) :: c !< a real number
     real(dp) :: d !< a real number
+    real(dp) :: e !< a real number
     integer :: i !< an integer
     integer :: j !< an integer
     integer :: k !< an integer

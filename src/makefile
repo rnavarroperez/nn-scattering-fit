@@ -1,6 +1,6 @@
 COMPILER= gfortran
 
-FLAGS = -fcheck=all -Wall
+FLAGS = -fcheck=all -Wall -O3
 
 EXEC = nn_fit
 
@@ -29,31 +29,43 @@ test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o
+st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o
+em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o
+	$(COMPILER) $(FLAGS) -c $<
+
+av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
+	$(COMPILER) $(FLAGS) -c $<
+
+pion_exchange.o : pion_exchange.f90 precisions.o em_nn_potential.o
+	$(COMPILER) $(FLAGS) -c $<
+
+delta_shell.o: delta_shell.f90 precisions.o constants.o num_recipes.o
+	$(COMPILER) $(FLAGS) -c $<
+
+nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o
+observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o 
+read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 exp_data.o: exp_data.f90 precisions.o string_functions.o num_recipes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-deuteron.o: deuteron.f90 precisions.o nn_phaseshifts.o constants.o
+deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o
 	$(COMPILER) $(FLAGS) -c $<
 
-derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o
+derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o delta_shell.o pion_exchange.o
 	$(COMPILER) $(FLAGS) -c $<
 
-main.o: main.f90
+main.o: main.f90 exp_data.o
 	$(COMPILER) $(FLAGS) -c $<
 
 clean:

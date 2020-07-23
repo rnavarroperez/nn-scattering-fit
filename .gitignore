@@ -31,3 +31,4 @@
 *.out
 *.app
 /benchmarks/em_amplitudes/.ipynb_checkpoints/
+/doc/

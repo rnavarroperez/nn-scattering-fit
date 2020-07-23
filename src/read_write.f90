@@ -11,7 +11,8 @@ module read_write
 use precisions, only: dp
 use amplitudes, only: em_amplitudes
 use observables, only: observable, kinematics
-use nn_phaseshifts, only: all_phaseshifts, nn_local_model
+use nn_phaseshifts, only: all_phaseshifts
+use delta_shell, only: nn_model
 use constants, only: pi
 implicit none
 
@@ -78,7 +79,7 @@ end subroutine print_em_amplitudes
 subroutine print_observables(parameters, model, channel)
     implicit none
     real(dp), intent(in), dimension(:) :: parameters !< potential parameters
-    type(nn_local_model), intent(in) :: model !< nn scattering model
+    type(nn_model), intent(in) :: model !< nn scattering model
     character(len=2), intent(in) :: channel !< reaction channel (pp or np)
 
     integer, parameter :: n_observables = 26
@@ -127,7 +128,7 @@ end subroutine print_observables
 subroutine write_phases(parameters, model, channel)
     implicit none
     real(dp), intent(in), dimension(:) :: parameters !< potential parameters
-    type(nn_local_model), intent(in) :: model !< nn scattering model
+    type(nn_model), intent(in) :: model !< nn scattering model
     character(len=2), intent(in) :: channel !< reaction channel (pp or np)
 
     integer, parameter :: jmax = 20
