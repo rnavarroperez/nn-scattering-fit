@@ -19,9 +19,9 @@ private
 
 public :: binding_energy
 
-character(len=2), parameter :: channel = 'np'
-real(dp), parameter :: k_cm = 0._dp
-integer, parameter :: j_max = 2
+character(len=2), parameter :: channel = 'np' !< reaction channel. For calling all_delta_shells
+real(dp), parameter :: k_cm = 0._dp !< center of mass momentum. For calling all_delta_shells
+integer, parameter :: j_max = 2 !< maximum angular momentum index number. For calling all_delta_shells
 
 !!
 !> @brief      Piece wise deuteron wave function
@@ -47,6 +47,7 @@ contains
 
 !!
 !> @brief      Binding energy of the deuteron
+!!
 !! Given a nn local model (local potential, maximum integration radius,
 !! integration step, and potential parameters), calculates the deuteron
 !! binding energy and its derivatives with respect to the potential parameters
@@ -117,7 +118,7 @@ subroutine binding_energy(model, parameters, be, dbe)
 end subroutine binding_energy
 
 !!
-!> @brief      Normalize a piecewise wave function from a local potentialm
+!> @brief      Normalize a piecewise wave function from a local potential
 !!
 !! Given a piecewise solution of the deuteron wave function, 
 !! uses a simple trapezoid rue to integrate the probability
@@ -172,6 +173,30 @@ subroutine normalize_local(wavefunc)
     wavefunc%b_d = a_norm*wavefunc%b_d
 end subroutine normalize_local
 
+!!
+!> @brief      Normalize a piecewise wave function from a delta shell potential
+!!
+!! Given a piecewise solution of the deuteron wave function, 
+!! uses piecewise definite integrals to calculate the integral
+!! of the probability density between each pair of consecutive
+!! integration radii.
+!!
+!! The integral from the last integration radius to infinity
+!! is calculated analytically based on the exponential decay
+!! of the wave function that has been imposed by construction
+!! by integrating backwards (see documentation of wave_function
+!! for details)
+!!
+!! The analytic expressions for the integrals to infinity are
+!! given by
+!!
+!! \f[ \int_{r_N}^\infty  A_S^2 \left[ \tilde{j}_0(kr) + \tilde{y}_0(kr) \right]^2 dr = 
+!!      A_S^2 \frac{e^{-2 k r_N}}{2 k}  \\
+!!     \int_{r_N}^\infty  A_D^2 \left[ \tilde{j}_2(kr) + \tilde{y}_2(kr) \right]^2 dr =
+!!     A_D^2 e^{-2 k r_N} \frac{ 6 + 12 k r_N + 6 (k r_N)^2 + (k r_N)^3}{2 k^4 r_N^3}
+!! \f]
+!!
+!! @author     Rodrigo Navarro Perez
 subroutine normalize_ds(wavefunc)
     implicit none
     type(ds_wave_function), intent(inout) :: wavefunc !< piecewise deuteron wave function
@@ -197,10 +222,22 @@ subroutine normalize_ds(wavefunc)
     wavefunc%b_d = a_norm*wavefunc%b_d
 end subroutine normalize_ds
 
+!!
+!> @brief      Analytic definite integral of the deuteron probability density
+!!
+!! Given a piecewise solution to the deuteron wave function and the position
+!! index of a concentration radius, calculates the definite integral of the
+!! deuteron probability density between the previous radius and the current one
+!!
+!! @return     Analytic integral of deuteron probability density between 2
+!!             consecutive interaction radii
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function definite_density_integral(wavefunc, i) result(s)
     implicit none
     type(ds_wave_function), intent(in) :: wavefunc !< Piecewise deuteron solution
-    integer, intent(in) :: i !< integration radius index
+    integer, intent(in) :: i !< concentration radius index
 
     real(dp) :: k, a_s, b_s, a_d, b_d, r_i, r_f
 
@@ -224,20 +261,63 @@ real(dp) function definite_density_integral(wavefunc, i) result(s)
     
 end function definite_density_integral
 
+!!
+!> @brief      Analytic integral of S wave probability density
+!!
+!! Given the linear combination parameters that determine the
+!! deuteron S wave function in a certain interval, returns the 
+!! integral of the corresponding probability density evaluated
+!! at the given radius
+!!
+!! The analytic integral is given by
+!!
+!! \f[  \int \left[A \tilde{j}_0(kr) + B \tilde{y}_0(kr) \right]^2 dr = 
+!!        \frac{2(B^2 - A^2)kr - 2AB\cosh(2kr) +(B^2+A^2)\sinh(2kr)}{4k} \f]
+!!
+!!
+!! @return     Analytic integral of S wave probability density
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function s_density_integral(a, b, k, r) result(s)
     implicit none
-    real(dp), intent(in) :: a, b, k, r
+    real(dp), intent(in) :: a !< regular component in the S channel
+    real(dp), intent(in) :: b !< irregular component in the S channel
+    real(dp), intent(in) :: k !< wavenumber in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< radius in fm
     s = (2*(b**2 - a**2)*k*r - 2*a*b*cosh(2*k*r) + (b**2 + a**2)*sinh(2*k*r))/(4*k)
 end function s_density_integral
 
+!!
+!> @brief      Analytic integral of D wave probability density
+!!
+!! Given the linear combination parameters that determine the
+!! deuteron D wave function in a certain interval, returns the 
+!! integral of the corresponding probability density evaluated
+!! at the given radius
+!!
+!! The analytic integral is given by
+!!
+!! \f[  \int \left[A \tilde{j}_2(kr) + B \tilde{y}_2(kr) \right]^2 dr = 
+!!        \frac{2(A^2 - B^2)(3 - 3 k^2 r^2 - k^4 r^4) 
+!!              -2(3(A^2+B^2)(1 + k^2r^2) + ABkr(12 + k^2r^2))\cosh(2kr) 
+!!              +(kr(A^2+B^2)(12 + k^2r^2) + 12 AB(1 + k^2r^2))\sinh(2kr)}{4k^4r^3} \f]
+!!
+!!
+!! @return     Analytic integral of D wave probability density
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function d_density_integral(a, b, k, r) result(s)
     implicit none
-    real(dp) :: a, b, k, r
+    real(dp), intent(in) :: a !< regular component in the D channel
+    real(dp), intent(in) :: b !< irregular component in the D channel
+    real(dp), intent(in) :: k !< wavenumber in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< radius in fm
 
     s =  2*(a**2 - b**2)*(3 - 3*(k*r)**2 - (k*r)**4) &
         -2*(3*(a**2 + b**2)*(1 + (k*r)**2) + a*b*k*r*(12 + (k*r)**2))*cosh(2*k*r) &
         +(k*r*(a**2 + b**2)*(12 + (k*r)**2) + 12*a*b*(1 + (k*r)**2) )*sinh(2*k*r)
-
     s = s/(4*k**4*r**3)    
 end function d_density_integral
 

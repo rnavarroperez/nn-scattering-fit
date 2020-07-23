@@ -1,3 +1,11 @@
+!!
+!> @brief      electromagnetic NN potential
+!!
+!! Module for calculating the electromagnetic nucleon nucleon potential (WITHOUT Coulomb)
+!! that is added to the local NN potential used to calculate phasehifts 
+!!
+!! @author     Rodrigo Navarro Peerez
+!!
 module em_nn_potential
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, f2=>f_pi_n_2, &
@@ -11,7 +19,6 @@ private
 public :: n_em_terms, add_em_potential, em_potential
 
 integer, parameter :: n_em_terms = 14 !< Number of terms in the EM potential
-! integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
 contains
 
 !!

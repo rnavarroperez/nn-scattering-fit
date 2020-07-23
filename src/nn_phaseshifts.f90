@@ -73,7 +73,7 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
 
     a1 = 1
     c2 = 1
-
+    i_cut = 0
     allocate(d_alfa_1(1:n_params))
     d_alfa_1 = 0
     allocate(d_alfa_2, source = d_alfa_1)
@@ -505,6 +505,18 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
 
 end subroutine eigen_2_bar
 
+!!
+!> @brief      Variable phase equation with Coulomb wave functions in uncoupled channels
+!!
+!! For delta shell potentials in the pp channel, which don't include the coulomb 
+!! interaction in their outer strength parameters, the variable phase needs to be 
+!! integrated using Coulomb wave functions (instead of reduced spherical Bessel functions)
+!!
+!! For all given phases (singlets or triplets), performs a single step in the integration of 
+!! the variable phase equation with the corresponding orbital angular momentum l
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine coulomb_uncoupled_phases(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_deltas)
     implicit none
     integer, intent(in) :: s !< spin quantum number
@@ -655,6 +667,18 @@ real(dp) function eta_prime(k) result(etap)
     etap = m_p*alpha/(2*k*hbar_c)*(1 + 2*(k*hbar_c)**2/m_p**2)/sqrt(1 + (k*hbar_c)**2/m_p**2)
 end function eta_prime
 
+!!
+!> @brief      Variable phase equation with Coulomb wave functions in coupled channels
+!!
+!! For delta shell potentials in the pp channel, which don't include the Coulomb 
+!! interaction in their outer strength parameters, the variable phase needs to be 
+!! integrated using Coulomb wave functions (instead of reduced spherical Bessel functions)
+!!
+!! For all given coupled phases, performs a single step in the integration of 
+!! the variable phase equation with the corresponding total angular momentum j
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine coulomb_coupled_phases(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d_c, d_d)
     implicit none
     real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
@@ -728,28 +752,6 @@ subroutine coulomb_coupled_phases(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b
         d_b(:, j) = d_b(:, j) + d_diff_b*Fjm1
         d_c(:, j) = d_c(:, j) + d_diff_d*Gjp1
         d_d(:, j) = d_d(:, j) + d_diff_d*Fjp1
-
-        ! Bf = Fjm1*(ljm1*(A(j)*jhjm1 + B(j)*yhjm1) + lj*(C(j)*jhjp1 + D(j)*yhjp1))/k &
-        !     -B(j)*(yhjm1*Fpjm1 - yhpjm1*Fjm1) - A(j)*(jhjm1*Fpjm1 - jhpjm1*Fjm1)
-        ! Df = Fjp1*(ljp1*(C(j)*jhjp1 + D(j)*yhjp1) + lj*(A(j)*jhjm1 + B(j)*yhjm1))/k &
-        !     -D(j)*(yhjp1*Fpjp1 - yhpjp1*Fjp1) - C(j)*(jhjp1*Fpjp1 - jhpjp1*Fjp1)
-
-        ! d_Bf = Fjm1*(d_ljm1*(A(j)*jhjm1 + B(j)*yhjm1) + ljm1*(d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1) &
-        !              + d_lj*(C(j)*jhjp1 + D(j)*yhjp1) +   lj*(d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1))/k &
-        !       -d_B(:, j)*(yhjm1*Fpjm1 - yhpjm1*Fjm1) - d_A(:, j)*(jhjm1*Fpjm1 - jhpjm1*Fjm1)
-        ! d_Df = Fjp1*(d_ljp1*(C(j)*jhjp1 + D(j)*yhjp1) + ljp1*(d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1) &
-        !              + d_lj*(A(j)*jhjm1 + B(j)*yhjm1) +   lj*(d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1))/k &
-        !       -d_D(:, j)*(yhjp1*Fpjp1 - yhpjp1*Fjp1) - d_C(:, j)*(jhjp1*Fpjp1 - jhpjp1*Fjp1)
-
-        ! A(j) = (A(j)*jhjm1 + B(j)*yhjm1 + Bf*Gjm1)/Fjm1
-        ! C(j) = (C(j)*jhjp1 + D(j)*yhjp1 + Df*Gjp1)/Fjp1
-        ! B(j) = Bf
-        ! D(j) = Df
-
-        ! d_A(:, j) = (d_A(:, j)*jhjm1 + d_B(:, j)*yhjm1 + d_Bf*Gjm1)/Fjm1
-        ! d_C(:, j) = (d_C(:, j)*jhjp1 + d_D(:, j)*yhjp1 + d_Df*Gjp1)/Fjp1
-        ! d_B(:, j) = d_Bf
-        ! d_D(:, j) = d_Df
     enddo
     
 end subroutine coulomb_coupled_phases

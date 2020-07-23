@@ -1,3 +1,12 @@
+!!
+!> @brief      Pion exchange potentials
+!!
+!! Subroutines and functions to calculate the one (and later multiple)
+!! pion exchange potential and its derivatives with respect of the pion
+!! coupling constants.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 module pion_exchange
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, &
@@ -11,17 +20,28 @@ private
 
 public :: ope_all_partial_waves
 
-integer, parameter :: n_fpis = 3
+integer, parameter :: n_fpis = 3 !< number of nucleon-pion coupling constants
 
 contains
 
+!!
+!> @brief      One pion exchange in all partial waves
+!!
+!! Given a set of parameters (whose last three elements are the 
+!! nucleon-pion coupling constants, see set_pion_couplings for details), 
+!! calculates the one pion exchange potential for all partial waves in the 
+!! v_pw array. The derivatives of the potential with respect of the pion
+!! couplings are also calculated.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     implicit none
-    real(dp), intent(in), dimension(:) :: parameters
-    real(dp), intent(in) :: r
-    character(len=*), intent(in) :: reaction
-    real(dp), intent(out), dimension(:, :) :: v_pw
-    real(dp), intent(out), allocatable, dimension(:, :, :) :: dv_pw
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    real(dp), intent(in) :: r !< Radius at which the potential is calculated
+    character(len=*), intent(in) :: reaction !< reaction channel ('pp', 'nn', or 'np')
+    real(dp), intent(out), dimension(:, :) :: v_pw !< OPE potential in all partial waves
+    real(dp), intent(out), allocatable, dimension(:, :, :) :: dv_pw !< derivatives of the OPE potential with respect of the pion couplings
 
     real(dp), dimension(1:n_st_terms) :: v_00, v_10, v_01, v_11, v_01_p_em
     real(dp), allocatable, dimension(:, :) :: dv_00, dv_10, dv_01, dv_11
@@ -116,15 +136,30 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     enddo
 end subroutine ope_all_partial_waves
 
-subroutine ope_st_basis(parameters, r, reaction, s,t, v_st, dv_st)
+!!
+!> @brief      One pion exchange potential in spin isospin basis
+!!
+!! Given a set of parameters (whose last three elements are the 
+!! nucleon-pion coupling constants, see set_pion_couplings for details), 
+!! calculates the one pion exchange potential in the spin-isospin basis.
+!! The derivatives of the potential with respect of the pion
+!! couplings are also calculated.
+!!
+!! The structure and order of the spin-isospin basis is the same
+!! that was adopted in the av18 module. (see st_basis_2_partial_waves module
+!! for details)
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine ope_st_basis(parameters, r, reaction, s, t, v_st, dv_st)
     implicit none
-    real(dp), intent(in), dimension(:) :: parameters
-    real(dp), intent(in) :: r
-    character(len=*), intent(in) :: reaction
-    integer, intent(in) :: s
-    integer, intent(in) :: t
-    real(dp), intent(out), dimension(1:n_st_terms) :: v_st
-    real(dp), intent(out), allocatable, dimension(:, :) ::  dv_st
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    real(dp), intent(in) :: r !< Radius at which the potential is calculated
+    character(len=*), intent(in) :: reaction !< reaction channel ('pp', 'nn', or 'np')
+    integer, intent(in) :: s !< spin quantum number
+    integer, intent(in) :: t !< isospin quantum number
+    real(dp), intent(out), dimension(1:n_st_terms) :: v_st !< OPE potential in spin-isospin basis
+    real(dp), intent(out), allocatable, dimension(:, :) ::  dv_st !< derivatives of OPE potential in spin-isospin basis
     real(dp) :: y_0, t_0, y_c, t_c, y_total, t_total
     real(dp) :: f2c, f2pp, f2nn, f2np
     real(dp), dimension(1:n_fpis) :: fpi, df2c, df2pp, df2nn, df2np, dy_total, dt_total
@@ -168,17 +203,45 @@ subroutine ope_st_basis(parameters, r, reaction, s,t, v_st, dv_st)
     enddo
 end subroutine ope_st_basis
 
+!!
+!> @brief      Calculates the nucleon-pion coupling constants
+!!
+!! Given an array with the three coupling constants \f$ f_c \f$,
+!! \f$ f_p \f$, and\f$ f_n \f$, calculates the nucleon-pion coupling 
+!! constants \f$ f_c^2 \f$, \f$ f_{pp}^2 \f$, \f$ f_{nn}^2 \f$, 
+!! and \f$ f_{np}^2 \f$. The derivatives with respect to the given constants are also
+!! calculated
+!!
+!! If the three given constants are numerically zero (their absulte value smaller
+!! than \f$ 10^{-12} \f$), the recommended default value of 
+!! \f$ f_c^2 = f_{pp}^2 = f_{nn}^2 = -f_{np}^2 = 0.075 \f$ is used.
+!!
+!! If only the first element of the fpi array is numerically nonzero, then  
+!! \f$ f_c^2 = f_{pp}^2 = f_{nn}^2 = -f_{np}^2 = \f$ fpi(1) is returned.
+!!
+!! If only the first and second elements of the fpi array are numerically nonzero, then
+!! \f$ f_c^2 = -f_{np}^2 = \f$ fpi(1) and \f$ f_{pp}^2 = f_{nn}^2 = \f$ fpi(2) is returned.
+!!
+!! If all three elements of the fpi array are numerically nonzero, then
+!! \f$ f_c^2 = \f$ fpi(1), \f$ f_{pp}^2 = \f$ fpi(2), \f$ f_{nn}^2 = \f$ fpi(3)
+!! and \f$ f_{np}^2 = \f$ fpi(2)*fpi(3). Notice that for appropriate coupling constants
+!! fpi(3) should be negative
+!!
+!! See Phys. Rev. C 95(2017) 064001 for detail
+!!
+! @return     { description_of_the_return_value }
+!!
 subroutine set_pion_couplings(fpi, f2c, f2pp, f2nn, f2np, df2c, df2pp, df2nn, df2np)
     implicit none
-    real(dp), intent(in), dimension(1:n_fpis) :: fpi
-    real(dp), intent(out) :: f2c
-    real(dp), intent(out) :: f2pp
-    real(dp), intent(out) :: f2nn
-    real(dp), intent(out) :: f2np
-    real(dp), intent(out), dimension(1:n_fpis) :: df2c
-    real(dp), intent(out), dimension(1:n_fpis) :: df2pp
-    real(dp), intent(out), dimension(1:n_fpis) :: df2nn
-    real(dp), intent(out), dimension(1:n_fpis) :: df2np
+    real(dp), intent(in), dimension(1:n_fpis) :: fpi !< array containing the \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$ coupling
+    real(dp), intent(out) :: f2c !< \f$f_{c}^2\f$ coupling constant, dimensionless
+    real(dp), intent(out) :: f2pp !< \f$f_{pp}^2\f$ coupling constant, dimensionless
+    real(dp), intent(out) :: f2nn !< \f$f_{nn}^2\f$ coupling constant, dimensionless
+    real(dp), intent(out) :: f2np !< \f$f_{np}^2\f$ coupling constant, dimensionless
+    real(dp), intent(out), dimension(1:n_fpis) :: df2c !< derivatives of \f$f_{c}^2\f$ coupling constant with respect of \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$
+    real(dp), intent(out), dimension(1:n_fpis) :: df2pp !< derivatives of \f$f_{pp}^2\f$ coupling constant with respect of \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$
+    real(dp), intent(out), dimension(1:n_fpis) :: df2nn !< derivatives of \f$f_{nn}^2\f$ coupling constant with respect of \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$
+    real(dp), intent(out), dimension(1:n_fpis) :: df2np !< derivatives of \f$f_{np}^2\f$ coupling constant with respect of \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$
 
     real(dp), parameter :: small = 1.e-12_dp
     integer :: i, n_active
@@ -230,34 +293,77 @@ subroutine set_pion_couplings(fpi, f2c, f2pp, f2nn, f2np, df2c, df2pp, df2nn, df
     end select
 end subroutine set_pion_couplings
 
+!!
+!> @brief      spin component of one pion exchange potential
+!!
+!! Calculates the charge dependent (via the pion mass) spin component of the
+!! one pion exchange potential
+!!
+!! See Phys. Rev. C 95(2017) 064001 for detail
+!!
+!! @returns    \f$ \left(\frac{m}{m_{\pi^\pm}}\right)^2 \frac{m}{3} Y_m(r)\f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function v_ope_s(m, r) result(v)
     implicit none
-    real(dp) :: m, r
+    real(dp), intent(in) :: m !< pion mass, in MeV
+    real(dp), intent(in) :: r !< radius, in fm
     real(dp) :: xi
     xi = m/mpic
     v = xi**2*m*yukawa_y(m/hbar_c, r)/3
 end function v_ope_s
 
+!!
+!> @brief      tensor component of one pion exchange potential
+!!
+!! Calculates the charge dependent (via the pion mass) tensor component of the
+!! one pion exchange potential
+!!
+!! See Phys. Rev. C 95(2017) 064001 for detail
+!!
+!! @returns    \f$ \left(\frac{m}{m_{\pi^\pm}}\right)^2 \frac{m}{3} T_m(r)\f$ in units of MeV
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function v_ope_t(m, r) result(v)
     implicit none
-    real(dp) :: m, r
+    real(dp), intent(in) :: m !< pion mass, in MeV
+    real(dp), intent(in) :: r !< radius, in fm
     real(dp) :: xi
     xi = m/mpic
     v = xi**2*m*yukawa_t(m/hbar_c, r)/3
 end function v_ope_t
 
-
+!!
+!> @brief      Y Yukawa function
+!!
+!! The usual Y Yukawa function
+!!
+!! @return     \f$ \frac{e^{-mr}}{mr} \f$, dimensionless
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function yukawa_y(m, r) result(y)
     implicit none
-    real(dp), intent(in) :: m
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: m !< pion mass, in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< radius, in fm
     y = exp(-m*r)/(m*r)
 end function yukawa_y
 
+!!
+!> @brief      T Yukawa function
+!!
+!! The usual T Yukawa function
+!!
+!! @return     \f$ \frac{e^{-mr}}{mr}\left[1 + \frac{3}{mr} +  \frac{3}{(mr)^2} \right] \f$, dimensionless
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function yukawa_t(m, r) result(t)
     implicit none
-    real(dp), intent(in) :: m
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: m !< pion mass, in fm\f$^{-1}\f$
+    real(dp), intent(in) :: r !< radius, in fm
     t = yukawa_y(m, r)*(1 + 3/(m*r) + 3/(m*r)**2)
 end function yukawa_t
 

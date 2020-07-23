@@ -1,6 +1,6 @@
 COMPILER= gfortran
 
-FLAGS = -fcheck=all -Wall
+FLAGS = -fcheck=all -Wall -O3
 
 EXEC = nn_fit
 

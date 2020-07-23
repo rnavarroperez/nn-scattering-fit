@@ -187,7 +187,7 @@ end function df_scattering_length
 !!
 !> @brief      wrapper function for observable
 !!
-!! This wrapper function is used to test the derivatives of the observable subroutine.
+!! This wrapper function is used to test the derivatives of the observable subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! observable. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which type of observable will be calculated.
@@ -236,7 +236,7 @@ end function f_observable
 !!
 !> @brief      wrapper function for the derivatives of observable
 !!
-!! This wrapper function is used to test the derivatives of the observable subroutine.
+!! This wrapper function is used to test the derivatives of the observable subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! observable. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which type of observable will be calculated.
@@ -281,6 +281,18 @@ function df_observable(data) result(r)
     r = d_obs
 end function df_observable
 
+!!
+!> @brief      wrapper function for observable
+!!
+!! This wrapper function is used to test the derivatives of the observable subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! observable. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which type of observable will be calculated.
+!!
+!! @returns    A NN scattering observable at an specific lab frame energy and scattering angle
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function f_observable_ds(x, data) result(r)
     use observables, only : observable
     use pion_exchange, only : ope_all_partial_waves
@@ -321,6 +333,18 @@ real(dp) function f_observable_ds(x, data) result(r)
     r = obs
 end function f_observable_ds
 
+!!
+!> @brief      wrapper function for the derivatives of observable
+!!
+!! This wrapper function is used to test the derivatives of the observable subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! observable. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which type of observable will be calculated.
+!!
+!! @returns    derivatives of an observable at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 function df_observable_ds(data) result(r)
     use observables, only : observable
     use pion_exchange, only : ope_all_partial_waves
@@ -505,7 +529,7 @@ end function df_amplitudes
 !!
 !> @brief      wrapper function for all_phaseshifts
 !!
-!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! all_phaseshifts. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which partial wave will be returned.
@@ -551,7 +575,7 @@ end function f_all_phaseshifts
 !!
 !> @brief      wrapper function for the derivatives of all_phaseshifts
 !!
-!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine.
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using the AV18 potential.
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! all_phaseshifts. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which partial wave will be returned.
@@ -592,6 +616,18 @@ function df_all_phaseshifts(data) result(r)
     r = d_phases(:, ic, ij)
 end function df_all_phaseshifts
 
+!!
+!> @brief      wrapper function for all_phaseshifts
+!!
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! all_phaseshifts. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    NN phase-shift at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function f_all_phaseshifts_ds(x, data) result(r)
     use delta_shell, only: nn_model
     use nn_phaseshifts, only : all_phaseshifts
@@ -629,6 +665,18 @@ real(dp) function f_all_phaseshifts_ds(x, data) result(r)
     r = phases(ic, ij)
 end function f_all_phaseshifts_ds
 
+!!
+!> @brief      wrapper function for the derivatives of all_phaseshifts
+!!
+!! This wrapper function is used to test the derivatives of the all_phaseshifts subroutine using a DS potential.
+!! The generic data of type context is used to receive all the arguments necessary to call
+!! all_phaseshifts. The same data of type context is used to receive which parameter will
+!! be varied by the dfridr subroutine and which partial wave will be returned.
+!!
+!! @returns    derivatives of a NN phase-shift at an specific lab energy and partial wave
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 function df_all_phaseshifts_ds(data) result(r)
     use delta_shell, only : nn_model
     use nn_phaseshifts, only : all_phaseshifts

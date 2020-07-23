@@ -14,9 +14,8 @@ use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use num_recipes, only : kronecker_delta
 implicit none
 
-integer, parameter :: n_waves = 5
-integer, parameter :: n_active_waves = 15
-integer, parameter :: n_ds_parameters = 81
+integer, parameter :: n_waves = 5 !< number of waves per angular momentum quantum number 
+integer, parameter :: n_ds_parameters = 81 !< number of parameters in a DS potential
 real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30_params = &
     [ 1.31304950_dp, -0.71836850_dp, -0.19077786_dp,  0.00000000_dp, -0.02111031_dp, & !1S0 pp
      -0.15213746_dp, -0.05274411_dp,  0.03818241_dp,  0.00000000_dp, -0.00298297_dp, & !1S0(np - pp)
@@ -34,17 +33,17 @@ real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30_params = &
       0.00000000_dp,  0.00000000_dp,  0.11350103_dp,  0.09267627_dp,  0.00000000_dp, & !1F3
       0.00000000_dp,  0.53601375_dp,  0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !3D3
       0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !c1, c3, c4
-      sqrt(0.075_dp), sqrt(0.075_dp), -sqrt(0.075_dp)  & !fc fp fn
-    ]
+      0.00000000_dp,  0.00000000_dp,  0.00000000_dp  & !fc fp fn
+    ] !< Parameters  in the DS-OPE-30 potential
 
     real(dp), parameter, dimension(1:6) :: l_coulomb6 = [0.02566424_dp, 0.01374824_dp, 0.01351364_dp, &
-        0.00685448_dp, 0.00860307_dp, 0.00214887_dp]
+        0.00685448_dp, 0.00860307_dp, 0.00214887_dp] !< Coulomb strength coefficients for a DS potential with 6 inner lambdas
     real(dp), parameter, dimension(1:5) :: l_coulomb5 = [0.02091441_dp, 0.01816750_dp, 0.00952244_dp, &
-        0.01052224_dp, 0.00263887_dp]
+        0.01052224_dp, 0.00263887_dp] !< Coulomb strength coefficients for a DS potential with 5 inner lambdas
     real(dp), parameter, dimension(1:4) :: l_coulomb4 = [0.02530507_dp, 0.01398493_dp, 0.01358732_dp, &
-        0.00338383_dp]
-    real(dp), parameter, dimension(1:3) :: l_coulomb3 = [0.02069940_dp, 0.01871309_dp, 0.00460163_dp]
-    real(dp), parameter, dimension(1:2) :: l_coulomb2 = [0.02662183_dp, 0.00663334_dp]
+        0.00338383_dp] !< Coulomb strength coefficients for a DS potential with 4 inner lambdas
+    real(dp), parameter, dimension(1:3) :: l_coulomb3 = [0.02069940_dp, 0.01871309_dp, 0.00460163_dp] !< Coulomb strength coefficients for a DS potential with 3 inner lambdas
+    real(dp), parameter, dimension(1:2) :: l_coulomb2 = [0.02662183_dp, 0.00663334_dp] !< Coulomb strength coefficients for a DS potential with 2 inner lambdas
 private
 
 public :: nn_model, all_delta_shells, ds_ope30_params
@@ -78,40 +77,54 @@ type :: nn_model
     real(dp) :: r_max !< maximum intetgration radius
     real(dp) :: dr !< radial integration step
     character(len=24) :: potential_type !< Typr of nn potential ('local' or 'delta_shell')
-    integer :: n_lambdas
+    integer :: n_lambdas !< number of internal delta shells in a DS potential
     real(dp) :: dr_core !< Distance between the internal lambdas 
-    real(dp) :: dr_tail 
+    real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
 end type nn_model
 
+!!
+!> @brief      strength coefficients set directly by potential parameters
+!!
+!! When decomposing a DS potential into partial wave we make a distinction between
+!! 'active' partial waves (those set directly by the potential parameters) and
+!! 'derived' partial waves (those obtained by converting the active ones to operator
+!! basis and decomposing back to a desired partial wave).
+!!
+!! This type collects all the strength coefficients at a particular interaction radius
+!! as well as it's derivatives (either zero or one) with respect of the potential
+!! parameters
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 type :: active_lambdas
-    real(dp) :: l1s0
-    real(dp) :: l3p0
-    real(dp) :: l1p1
-    real(dp) :: l3p1
-    real(dp) :: l3s1
-    real(dp) :: lep1
-    real(dp) :: l3d1
-    real(dp) :: l1d2
-    real(dp) :: l3d2
-    real(dp) :: l3p2
-    real(dp) :: lep2
-    real(dp) :: l3f2
-    real(dp) :: l1f3
-    real(dp) :: l3d3
-    real(dp), allocatable, dimension(:) :: d1s0
-    real(dp), allocatable, dimension(:) :: d3p0
-    real(dp), allocatable, dimension(:) :: d1p1
-    real(dp), allocatable, dimension(:) :: d3p1
-    real(dp), allocatable, dimension(:) :: d3s1
-    real(dp), allocatable, dimension(:) :: dep1
-    real(dp), allocatable, dimension(:) :: d3d1
-    real(dp), allocatable, dimension(:) :: d1d2
-    real(dp), allocatable, dimension(:) :: d3d2
-    real(dp), allocatable, dimension(:) :: d3p2
-    real(dp), allocatable, dimension(:) :: dep2
-    real(dp), allocatable, dimension(:) :: d3f2
-    real(dp), allocatable, dimension(:) :: d1f3
-    real(dp), allocatable, dimension(:) :: d3d3
+    real(dp) :: l1s0 !< \f$ ^1S_0 \f$ strength coefficient
+    real(dp) :: l3p0 !< \f$ ^3P_0 \f$ strength coefficient
+    real(dp) :: l1p1 !< \f$ ^1P_1 \f$ strength coefficient
+    real(dp) :: l3p1 !< \f$ ^3P_1 \f$ strength coefficient
+    real(dp) :: l3s1 !< \f$ ^3S_1 \f$ strength coefficient
+    real(dp) :: lep1 !< \f$ \epsilon_1 \f$ strength coefficient
+    real(dp) :: l3d1 !< \f$ ^3D_1 \f$ strength coefficient
+    real(dp) :: l1d2 !< \f$ ^1D_2 \f$ strength coefficient
+    real(dp) :: l3d2 !< \f$ ^3D_2 \f$ strength coefficient
+    real(dp) :: l3p2 !< \f$ ^3P_2 \f$ strength coefficient
+    real(dp) :: lep2 !< \f$ \epsilon_2 \f$ strength coefficient
+    real(dp) :: l3f2 !< \f$ ^3F_2 \f$ strength coefficient
+    real(dp) :: l1f3 !< \f$ ^1F_3 \f$ strength coefficient
+    real(dp) :: l3d3 !< \f$ ^3D_3 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d1s0 !< derivatives of \f$ ^1S_0 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3p0 !< derivatives of \f$ ^3P_0 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d1p1 !< derivatives of \f$ ^1P_1 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3p1 !< derivatives of \f$ ^3P_1 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3s1 !< derivatives of \f$ ^3S_1 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: dep1 !< derivatives of \f$ \epsilon_1 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3d1 !< derivatives of \f$ ^3D_1 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d1d2 !< derivatives of \f$ ^1D_2 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3d2 !< derivatives of \f$ ^3D_2 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3p2 !< derivatives of \f$ ^3P_2 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: dep2 !< derivatives of \f$ \epsilon_2 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3f2 !< derivatives of \f$ ^3F_2 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d1f3 !< derivatives of \f$ ^1F_3 \f$ strength coefficient
+    real(dp), allocatable, dimension(:) :: d3d3 !< derivatives of \f$ ^3D_3 \f$ strength coefficient
 end type active_lambdas
 
 contains
@@ -119,15 +132,16 @@ contains
 !!
 !> @brief      delta shells in all partial waves
 !!
-!! Given a nn model (local potential, maximum integration radius and integration step),
+!! Given a nn_model (local potential, maximum integration radius and integration step, etc),
 !! returns a delta shell representation of said model.
 !!
 !! The delta shell representation includes an array of the concentration radii where 
 !! the delta shells are located, the strength coefficients that multiply the delta shells,
 !! an the derivatives of the strength coefficients with respect to the potential parameters.
 !!
-!! In the case of the proton-proton channel, a energy dependent Coulomb interaction is
-!! added to nn potential. The energy dependence is determined by the center of mass momemtum.
+!! In the case of the proton-proton channel and a fully local model, a energy dependent Coulomb 
+!! interaction is added to strength coefficients. The energy dependence is determined by the center
+!! of mass momentum.
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -142,61 +156,32 @@ subroutine all_delta_shells(model, parameters, channel, k_cm, j_max, radii, v_pw
     real(dp), intent(out), allocatable, dimension(:, :, :) :: v_pw !< delta shell strength parameters. In fm\f$^{-1}\f$
     real(dp), intent(out), allocatable, dimension(:, :, :, :) :: dv_pw !< derivatives of strength parameters with respect of potential parameters
 
-    ! integer :: i
-
     call sample_radii(model, radii)
     call sample_local_potential(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
 
     if (trim(model%potential_type) == 'delta_shell') then
         call inner_lambdas(model%n_lambdas, parameters, channel, v_pw, dv_pw)
     endif
-
-    ! do i = 1, size(radii)
-    !     print'(13e13.6)', radii(i), v_pw(1, 1, i), v_pw(5,1,i), v_pw(:, 2,i), v_pw(:,3,i)  
-    ! enddo
-
-    ! select case ()
-    ! case ('local')
-        
-    ! case ('delta_shell')
-        
-    !     call set_strength_coefficients(n_lambdas, parameters, channel, j_max, radii, v_pw, dv_pw)
-    ! case default
-    !     stop 'Incorrect potential_type in all_delta_shells'
-    ! end select
-
 end subroutine all_delta_shells
 
-! subroutine set_strength_coefficients(n_lambdas, parameters, channel, j_max, radii, v_pw, dv_pw)
-!     implicit none
-!     integer, intent(in) :: n_lambdas
-!     real(dp), intent(in), dimension(:) :: parameters
-!     character(len=*), intent(in) :: channel
-!     integer, intent(in) :: j_max
-!     real(dp), intent(in), dimension(:) :: radii
-!     real(dp), intent(out), allocatable, dimension(:, :, :) :: v_pw !< delta shell strength parameters. In fm\f$^{-1}\f$
-!     real(dp), intent(out), allocatable, dimension(:, :, :, :) :: dv_pw !< derivatives of strength parameters with respect of potential parameters
-
-!     integer :: n_radii, n_parameters
-!     n_radii = size(radii)
-!     n_parameters = size(parameters)
-!     allocate(v_pw(1:n_waves, 1:j_max, 1:n_radii))
-!     allocate(dv_pw(1:n_parameters, 1:n_waves, 1:j_max, 1:n_radii))
-!     v_pw = 0._dp
-!     dv_pw = 0._dp
-    
-!     ! call tail_lambdas(n_lambdas, parameters, channel, radii, v_pw, dv_pw)
-    
-! end subroutine set_strength_coefficients
-
-
-
+!!
+!> @brief      get active lambdas from parameters array
+!!
+!! Given the array of DS potential parameters and the index of the interaction radius,
+!! returns all the strength coefficient of all the 'active' partial waves in the
+!! indicated interaction radius. It also returns the derivatives of the strength coefficients
+!! with respect of the potential parameters (either 0 or 1)
+!!
+!! @return     object of type active_lambdas with all the inner strength coefficients
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 type(active_lambdas) function extract_active_lambdas(index, n_lambdas, channel, parameters) result(r)
     implicit none
-    integer, intent(in) :: index
-    integer, intent(in) :: n_lambdas
-    character(len=*), intent(in) :: channel
-    real(dp), intent(in), dimension(:) :: parameters
+    integer, intent(in) :: index !< position of the concentration radius (between 1 and n_lambdas)
+    integer, intent(in) :: n_lambdas !< number of inner delta shells
+    character(len=*), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    real(dp), intent(in), dimension(:) :: parameters !< DS potential parameters
 
     integer :: n_parameters
 
@@ -252,17 +237,31 @@ type(active_lambdas) function extract_active_lambdas(index, n_lambdas, channel, 
 
 end function extract_active_lambdas
 
+!!
+!> @brief      strength coefficient of a given partial wave
+!!
+!! Given the quantum numbers of a specific partial wave, reaction channel and 
+!! set of 'active' strength coefficients, returns the strength coefficient
+!! for the corresponding partial wave. The derivatives of the strength coefficient
+!! with respect of the potential parameters are also returned
+!!
+!! The strength coefficient is calculate by transforming the 'active' strength
+!! coefficients to the spin-isospin basis and decomposing back to the partial
+!! wave indicated by the quantum numbers
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine partial_wave_lamba(s, t, j, l1, l2, channel, lwaves, lambda, dlambda)
     implicit none
-    integer, intent(in) :: s
-    integer, intent(in) :: t
-    integer, intent(in) :: j
-    integer, intent(in) :: l1
-    integer, intent(in) :: l2
-    character(len=*), intent(in) :: channel
-    type(active_lambdas), intent(in) :: lwaves
-    real(dp), intent(out) :: lambda
-    real(dp), intent(out), dimension(:) :: dlambda
+    integer, intent(in) :: s !< spin quantum number
+    integer, intent(in) :: t !< isospin quantum number
+    integer, intent(in) :: j !< total angular momentum quantum number
+    integer, intent(in) :: l1 !< first orbital angular momentum quantum number
+    integer, intent(in) :: l2 !< second orbital angular momentum quantum number
+    character(len=*), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    type(active_lambdas), intent(in) :: lwaves !< set of 'active' strength coefficients (and their derivatives)
+    real(dp), intent(out) :: lambda !< strength coefficient in the given partial wave
+    real(dp), intent(out), dimension(:) :: dlambda !< derivatives of the strength coefficient in the given partial wave
 
     real(dp), dimension(0:1, 0:1) :: vc, vt, vl2, vls, vls2
     real(dp), allocatable, dimension(: ,:, :) :: dvc, dvt, dvl2, dvls, dvls2
@@ -343,13 +342,23 @@ subroutine partial_wave_lamba(s, t, j, l1, l2, channel, lwaves, lambda, dlambda)
     endif
 end subroutine partial_wave_lamba
 
+!!
+!> @brief      All the inner strength coefficients of a DS potential
+!!
+!! Given the DS potential parameters, returns the 'inner' strength coefficients
+!! in all the partial waves. The strength coefficients are stored in the 
+!! v_pw array. The dv_pw array stores the derivatives of the strength
+!! coefficients with respect of the potential parameters
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine inner_lambdas(n_lambdas, parameters, channel, v_pw, dv_pw)
     implicit none
-    integer, intent(in) :: n_lambdas
-    real(dp), intent(in), dimension(:) :: parameters
-    character(len=*), intent(in) :: channel
-    real(dp), intent(inout), dimension(:, :, :) :: v_pw
-    real(dp), intent(inout), dimension(:, :, :, :) :: dv_pw
+    integer, intent(in) :: n_lambdas !< number of inner lambdas in the DS potential
+    real(dp), intent(in), dimension(:) :: parameters !< DS potential parameters
+    character(len=*), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    real(dp), intent(inout), dimension(:, :, :) :: v_pw !< delta shell strength parameters. In fm\f$^{-1}\f$
+    real(dp), intent(inout), dimension(:, :, :, :) :: dv_pw !< derivatives of the strength coefficient in the given partial wave
     
 
     type(active_lambdas) :: low_waves
@@ -384,10 +393,28 @@ subroutine inner_lambdas(n_lambdas, parameters, channel, v_pw, dv_pw)
     endif
 end subroutine inner_lambdas
 
+!!
+!> @brief      Adds a coulomb strengths to the delta shell strength coefficients.
+!!
+!! For 'pp' potentials. Adds a set of strengths to the 'inner' strength
+!! coefficients that correspond to a coarse grained representation of the coulomb
+!! potential.
+!!
+!! The strengths added where calculated (with a legacy code) by adjusting a 
+!! specific number of delta-shells (between 2 and 6) every 0.6 fm to reproduce
+!! the nuclear phase shifts that result from the coulomb potential in the 
+!! same range.
+!!
+!! A delta shell potential with a concentration radii with a distance different
+!! from 0.6 fm (or more than 6 delta shells) can NOT be used with the strengths
+!! used in this subroutine
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine add_delta_shell_coulomb(n_lambdas, v_pw)
     implicit none
-    integer, intent(in) :: n_lambdas
-    real(dp), intent(inout), dimension(:, :, :) :: v_pw
+    integer, intent(in) :: n_lambdas !< number of inner lambdas in the DS potential
+    real(dp), intent(inout), dimension(:, :, :) :: v_pw !< delta shell strength parameters. In fm\f$^{-1}\f$
 
     real(dp), allocatable, dimension(:) :: l_coulomb
     integer :: i, j
@@ -417,10 +444,26 @@ subroutine add_delta_shell_coulomb(n_lambdas, v_pw)
     enddo
 end subroutine add_delta_shell_coulomb
 
+!!
+!> @brief      Samples the concentration radii for a DS representation
+!!
+!! Given a nn_model type object, samples the concentration radii where
+!! the DS strength coefficients will be located
+!!
+!! If the potential type is local, the radii are set to be equidistant
+!! with the distance set in dr and starting with the first radii at 0.5*dr
+!!
+!! If the potential type is delta_shell, the a number of inner radii are
+!! set to be equidistant starting with dr_core and ending at n_lambdas*dr_core.
+!! The rest of the radii are also equidistant with the distance set by dr_tail
+!! and starting at  n_lambdas*dr_core + 0.5*dr_tail.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine sample_radii(model, radii)
     implicit none
-    type(nn_model), intent(in) :: model
-    real(dp), intent(out), allocatable, dimension(:) :: radii
+    type(nn_model), intent(in) :: model !< nn model
+    real(dp), intent(out), allocatable, dimension(:) :: radii !< concentration radii in fm
 
     integer :: i, n_radii, n_tail
     real(dp) :: r_cut
@@ -447,6 +490,21 @@ subroutine sample_radii(model, radii)
     end select
 end subroutine sample_radii
 
+!!
+!> @brief      samples a local potential in a delta shell representation
+!!
+!! Given a nn model with a local potential, calculates a delta shell representation
+!! of said potential in the given interaction radii
+!!
+!! If the potential type is local, the sampling is done for all given radii.
+!! 
+!! If the potential type is delta_shell, the sampling is done only for the 'outer' radii
+!!
+!! For a potential type local and a 'pp' reaction channel, an energy dependent coulomb 
+!! contribution is added to the DS strength coefficients.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine sample_local_potential(model, parameters, channel, k_cm, j_max, radii, v_pw, dv_pw)
     implicit none
     type(nn_model), intent(in) :: model !< nn model
@@ -496,9 +554,18 @@ subroutine sample_local_potential(model, parameters, channel, k_cm, j_max, radii
 
 end subroutine sample_local_potential
 
+!!
+!> @brief      Reduced mass of a two nucleon system
+!!
+!! Given a reaction channel, calculates the corresponding reduced mass
+!!
+!! @returns    reduced mass in MeV
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function reduced_mass(channel) result(mu)
     implicit none
-    character(len=*) :: channel
+    character(len=*) :: channel !< reaction channel ('pp', 'nn', or 'np')
     select case (trim(channel))
     case ('pp')
         mu = m_p
