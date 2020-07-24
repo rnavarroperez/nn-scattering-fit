@@ -8,7 +8,7 @@
 module exp_data
 use precisions, only: dp
 use string_functions, only: lower
-use num_recipes, only: int_to_logical
+use utilities, only: int_to_logical
 implicit none
 private
 public read_old_data_base, nn_experiment, write_database, read_database

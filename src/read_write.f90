@@ -14,13 +14,115 @@ use observables, only: observable, kinematics
 use nn_phaseshifts, only: all_phaseshifts
 use delta_shell, only: nn_model
 use constants, only: pi
+use utilities, only : double_2darray_allocation, trim_2d_array
 implicit none
 
 private
 
-public :: print_em_amplitudes, print_observables, write_phases
+public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, write_montecarlo_phases
 
 contains
+
+!!
+!> @brief      Writes Monte Carlo phases.
+!!
+!! Writes to a file the low angular momentum phaseshifts from a given
+!! model, MC sample of potential parameter, reaction channel, and 
+!! laboratory energy in MeV
+!!
+!! Since the value of t_lab is used to determine the name of the file to which
+!! the phases are written, t_lab has to be a positive integer of up to three digits
+!! (the potential parameters are fitted to data up to 350 MeV anyway)
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine write_montecarlo_phases(model, mc_paramerters, channel, t_lab)
+    implicit none
+    type(nn_model), intent(in) :: model !< NN potential model
+    real(dp), intent(in), dimension(:, :) :: mc_paramerters !< MC sample of potential parameters
+    character(len=*), intent(in) :: channel !< reaction channel ('pp' or 'np')
+    integer, intent(in) :: t_lab !< laboratory energy in (MeV)
+
+    integer :: unit, imc
+    character(len=3) :: t_lab_string
+    character(len=50) :: file_name
+    integer, parameter :: j_max = 4, n_waves = 5
+    real(dp), dimension(n_waves, j_max) :: phases
+    real(dp), allocatable, dimension(:, :, :) :: d_phases
+
+    write(t_lab_string, '(i3.3)') t_lab
+    file_name = 'mc_phases_tlab_'//t_lab_string//'.dat'
+    open(newunit = unit, file = file_name, status = 'unknown')
+    write(unit, '(a1, a4,17a15)') '#', 'imc', '1S0', '3P0', '1P1', '3P1', '3S1', 'EP1', '3D1', '1D2', '3D2', &
+        '3P2', 'EP2', '3F2', '1F3', '3F3', '3D3', 'EP3', '3G3'
+    do imc = 1, size(mc_paramerters, 2)
+        call all_phaseshifts(model, mc_paramerters(:, imc), real(t_lab, kind=dp), channel, phases, d_phases)
+        write(unit, '(i5,17f15.8)') imc, phases(1, 1), phases(5, 1), phases(:, 2:4)
+    enddo
+    close(unit)
+end subroutine write_montecarlo_phases
+
+!!
+!> @brief      reads a set of samples of fitted parameters
+!!
+!! Given the name of a file containing a sample of fitted parameters
+!! (generated with a legace code), reads and stores the parameters 
+!! in an rank 2 array.
+!!
+!! Paramters that were set (and fixed) to zero in the orginal fitting
+!! in the legacy code were not sabed in the files to be read. In order
+!! to knew where to put the parameters that are fixed to zero a mask
+!! (array of logicals) needs to be given. The positions where the 
+!! paramter is meant to be zero are indicated by a .false. value in the 
+!! mask.
+!!
+!! Having the original set of parameters (with the zeros) the mask can
+!! be created pretty quickly with mask = abs(parameters) > 1.e-12_dp.
+!! See program in mc_phases.f90 for an example
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine read_montecarlo_parameters(param_mask, file_name, mc_params)
+    use iso_fortran_env, only : iostat_end
+    implicit none
+    logical, intent(in), dimension(:) :: param_mask
+    character(len=*), intent(in) :: file_name
+    real(dp), intent(out), allocatable, dimension(:, :) :: mc_params
+
+    integer :: counter, limit, unit, io_status, imc, n_np_data, n_pp_data, n_active_parameters
+    integer :: p_counter, ip
+    real(dp) :: pp_chi2, np_chi2
+    real(dp), allocatable, dimension(:) :: mc_lambdas
+
+    n_active_parameters = count(param_mask )
+    allocate(mc_lambdas(1:n_active_parameters))
+    counter = 0
+    p_counter = 0
+    limit = 1
+    allocate(mc_params(size(param_mask), 1))
+    open(newunit=unit, file=trim(file_name), status='old')
+    do
+        read(unit, *, iostat=io_status) imc, n_np_data, n_pp_data, pp_chi2, np_chi2, mc_lambdas
+        if(imc == 0) cycle
+        if (io_status == iostat_end) exit
+        counter = counter + 1
+        if (counter > limit) then
+            call double_2darray_allocation(mc_params)
+            limit = 2*limit
+        endif
+        do ip = 1, size(mc_params, 1)
+            if (param_mask(ip)) then
+                p_counter = p_counter + 1
+                mc_params(ip, counter) = mc_lambdas(p_counter) 
+            else
+                mc_params(ip, counter) = 0._dp
+            endif
+        enddo
+        p_counter = 0
+    enddo
+    close(unit)
+    call trim_2d_array(counter, mc_params)
+end subroutine read_montecarlo_parameters
 
 !!
 !> @brief      Test the output of em_amplitudes
