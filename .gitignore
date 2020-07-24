@@ -32,3 +32,4 @@
 *.app
 /benchmarks/em_amplitudes/.ipynb_checkpoints/
 /doc/
+/mc_phases/
