@@ -14,14 +14,7 @@ implicit none
 
 private
 
-public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic, &
-    kronecker_delta, int_to_logical
-
-! interface
-!     subroutine subr
-!     end subroutine subr
-! end interface
-
+public :: dfridr, context, func, sphbes, bessjy, cmplx_log_gamma, legendre_poly, spherical_harmonic
 
 !!
 !> @brief      generic type for data in function callbacks
@@ -66,42 +59,6 @@ end interface
 
 
 contains
-
-!!
-!> @brief      converts an integer to a logical
-!!
-!! Converts an integer to a logical. If the integer is zero,
-!! false is returned; true is returned for any other value
-!!
-!! @return     a logical representation of an integer
-!!
-logical function int_to_logical(i) result(r)
-    implicit none
-    integer, intent(in) :: i !< an integer
-    if (i == 0) then
-        r = .false.
-    else
-        r = .true.
-    endif    
-end function int_to_logical
-
-!!
-!> @brief      Kronecker_delta delta
-!!
-!! The usual Kronecker delta \f$\delta_{i,j} = 1 \; {\rm if } \; i=j, \;  0\; {\rm if} \; i\neq j \f$
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-integer function kronecker_delta(i, j) result(delta)
-    implicit none
-    integer, intent(in) :: i !< a integer
-    integer, intent(in) :: j !< another integer
-    if (i == j) then
-        delta = 1
-    else
-        delta = 0
-    endif
-end function kronecker_delta
 
 !!
 !> @brief      Logarithm of gamma function

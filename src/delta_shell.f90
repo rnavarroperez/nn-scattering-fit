@@ -11,7 +11,8 @@ module delta_shell
 
 use precisions, only : dp
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
-use num_recipes, only : kronecker_delta
+use utilities, only : kronecker_delta
+use pion_exchange, only : ope_all_partial_waves
 implicit none
 
 integer, parameter :: n_waves = 5 !< number of waves per angular momentum quantum number 
@@ -27,7 +28,7 @@ real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30_params = &
       0.00000000_dp,  0.00000000_dp,  0.40821749_dp,  0.06725153_dp,  0.02237340_dp, & !3D1
       0.00000000_dp, -0.20284762_dp, -0.20418276_dp,  0.00000000_dp, -0.01918031_dp, & !1D2
       0.00000000_dp, -1.01484880_dp, -0.17088142_dp, -0.23607873_dp, -0.01882201_dp, & !3D2
-      0.00000000_dp, -0.48384594_dp, -0.00000000_dp, -0.02803913_dp, -0.00414759_dp, & !3P2
+      0.00000000_dp, -0.48384594_dp,  0.00000000_dp, -0.02803913_dp, -0.00414759_dp, & !3P2
       0.00000000_dp,  0.29466313_dp,  0.19428354_dp,  0.04806034_dp,  0.01333910_dp, & !EP2
       0.00000000_dp,  3.45507794_dp, -0.22580425_dp,  0.00000000_dp, -0.01421141_dp, & !3F2
       0.00000000_dp,  0.00000000_dp,  0.11350103_dp,  0.09267627_dp,  0.00000000_dp, & !1F3
@@ -35,6 +36,26 @@ real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30_params = &
       0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !c1, c3, c4
       0.00000000_dp,  0.00000000_dp,  0.00000000_dp  & !fc fp fn
     ] !< Parameters  in the DS-OPE-30 potential
+
+real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30fff_params = &
+    [ 1.30805321_dp, -0.71599779_dp, -0.19227977_dp,  0.00000000_dp, -0.02051403_dp, & !1S0 pp
+     -0.14317826_dp, -0.05430227_dp,  0.03783094_dp,  0.00000000_dp, -0.00316311_dp, & !1S0 (np - pp)
+      0.00000000_dp,  0.94270616_dp, -0.31863305_dp, -0.06229178_dp, -0.02266658_dp, & !3P0
+      0.00000000_dp,  1.20156539_dp,  0.00000000_dp,  0.07454345_dp,  0.00000000_dp, & !1P1
+      0.00000000_dp,  1.35425731_dp,  0.00000000_dp,  0.05697965_dp,  0.00000000_dp, & !3P1
+      1.79212928_dp, -0.47487625_dp,  0.00000000_dp, -0.07201932_dp,  0.00000000_dp, & !3S1
+      0.00000000_dp, -1.64879496_dp, -0.32628229_dp, -0.23328971_dp, -0.01824648_dp, & !EP1
+      0.00000000_dp,  0.00000000_dp,  0.40446224_dp,  0.07026704_dp,  0.02084076_dp, & !3D1
+      0.00000000_dp, -0.19647879_dp, -0.20564374_dp,  0.00000000_dp, -0.01870414_dp, & !1D2
+      0.00000000_dp, -1.01391101_dp, -0.17034218_dp, -0.23731203_dp, -0.01603702_dp, & !3D2
+      0.00000000_dp, -0.48237361_dp,  0.00000000_dp, -0.02886842_dp, -0.00370122_dp, & !3P2
+      0.00000000_dp,  0.31926483_dp,  0.18971047_dp,  0.04959567_dp,  0.01266249_dp, & !EP2
+      0.00000000_dp,  3.50354961_dp, -0.22935164_dp,  0.00000000_dp, -0.01402715_dp, & !3F3
+      0.00000000_dp,  0.00000000_dp,  0.12395971_dp,  0.08901852_dp,  0.00000000_dp, & !1F3
+      0.00000000_dp,  0.53571542_dp,  0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !3D3
+      0.00000000_dp,  0.00000000_dp,  0.00000000_dp, & !c1, c3, c4
+      0.27535448_dp,  0.27641819_dp, -0.28177242_dp  & !fc fp fn
+    ] !< Parameters  in the DS-OPE-30-FFF potential
 
     real(dp), parameter, dimension(1:6) :: l_coulomb6 = [0.02566424_dp, 0.01374824_dp, 0.01351364_dp, &
         0.00685448_dp, 0.00860307_dp, 0.00214887_dp] !< Coulomb strength coefficients for a DS potential with 6 inner lambdas
@@ -44,9 +65,10 @@ real(dp), parameter, dimension(1:n_ds_parameters) :: ds_ope30_params = &
         0.00338383_dp] !< Coulomb strength coefficients for a DS potential with 4 inner lambdas
     real(dp), parameter, dimension(1:3) :: l_coulomb3 = [0.02069940_dp, 0.01871309_dp, 0.00460163_dp] !< Coulomb strength coefficients for a DS potential with 3 inner lambdas
     real(dp), parameter, dimension(1:2) :: l_coulomb2 = [0.02662183_dp, 0.00663334_dp] !< Coulomb strength coefficients for a DS potential with 2 inner lambdas
+
 private
 
-public :: nn_model, all_delta_shells, ds_ope30_params
+public :: nn_model, all_delta_shells, ds_ope30_params, ds_ope30fff_params, set_ds_potential
 
 !!
 !> @brief      interface of nn local potentials
@@ -77,6 +99,7 @@ type :: nn_model
     real(dp) :: r_max !< maximum intetgration radius
     real(dp) :: dr !< radial integration step
     character(len=24) :: potential_type !< Typr of nn potential ('local' or 'delta_shell')
+    character(len=24) :: name !< potential name
     integer :: n_lambdas !< number of internal delta shells in a DS potential
     real(dp) :: dr_core !< Distance between the internal lambdas 
     real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
@@ -128,6 +151,50 @@ type :: active_lambdas
 end type active_lambdas
 
 contains
+
+!!
+!> @brief      Sets the delta shell potential.
+!!
+!! Giventhe name of a delta shell potential, returns an object 
+!! of type nn_model with the corresponding values set.
+!!
+!! The set of 'default' parameters to the corresponding potential
+!! are also returned. These default parameters where determined
+!! by fitting to the granada data base with a legacy code. 
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine set_ds_potential(name, ds_potential, default_params)
+    implicit none
+    character(len=*), intent(in) :: name
+    type(nn_model), intent(out) :: ds_potential
+    real(dp), intent(out), allocatable, dimension(:) :: default_params
+    allocate(default_params(1:n_ds_parameters))
+    select case(trim(name))
+    case('ds_ope30')
+        default_params = ds_ope30_params
+        ds_potential%potential => ope_all_partial_waves
+        ds_potential%r_max = 13.0_dp
+        ds_potential%dr = 0._dp
+        ds_potential%potential_type = 'delta_shell'
+        ds_potential%name = name
+        ds_potential%n_lambdas = 5
+        ds_potential%dr_core = 0.6_dp
+        ds_potential%dr_tail = 0.5_dp
+    case('ds_ope30_fff')
+        default_params = ds_ope30fff_params
+        ds_potential%potential => ope_all_partial_waves
+        ds_potential%r_max = 13.0_dp
+        ds_potential%dr = 0._dp
+        ds_potential%potential_type = 'delta_shell'
+        ds_potential%name = name
+        ds_potential%n_lambdas = 5
+        ds_potential%dr_core = 0.6_dp
+        ds_potential%dr_tail = 0.5_dp
+    case default
+        stop 'unrecognized ds potential name in set_ds_potential'
+    end select
+end subroutine set_ds_potential
 
 !!
 !> @brief      delta shells in all partial waves

@@ -13,7 +13,8 @@ use precisions, only : dp
 use nn_phaseshifts, only : eta_prime, momentum_cm
 use constants, only : i_, m_p => proton_mass, hbar_c, alpha, pi, m_e => electron_mass, &
     mu_p => mu_proton, m_n => neutron_mass, mu_n => mu_neutron
-use num_recipes, only : cmplx_log_gamma, spherical_harmonic, kronecker_delta, legendre_poly
+use num_recipes, only : cmplx_log_gamma, spherical_harmonic, legendre_poly
+use utilities, only : kronecker_delta
 implicit none
 
 real(dp), parameter :: f_T = -alpha*mu_p**2/(4*m_p**2) !< Tensor factor in magnetic moment amplitude
