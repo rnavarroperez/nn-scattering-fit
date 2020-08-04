@@ -53,7 +53,7 @@ subroutine write_montecarlo_phases(model, mc_paramerters, channel, t_lab)
     write(t_lab_string, '(i3.3)') t_lab
     file_name = 'mc_phases_tlab_'//t_lab_string//'.dat'
     open(newunit = unit, file = file_name, status = 'unknown')
-    write(unit, '(a1, a4,17a15)') '#', 'imc', '1S0', '3P0', '1P1', '3P1', '3S1', 'EP1', '3D1', '1D2', '3D2', &
+    write(unit, '(a5,17a15)') 'imc', '1S0', '3P0', '1P1', '3P1', '3S1', 'EP1', '3D1', '1D2', '3D2', &
         '3P2', 'EP2', '3F2', '1F3', '3F3', '3D3', 'EP3', '3G3'
     do imc = 1, size(mc_paramerters, 2)
         call all_phaseshifts(model, mc_paramerters(:, imc), real(t_lab, kind=dp), channel, phases, d_phases)
