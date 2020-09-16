@@ -9,9 +9,10 @@ module exp_data
 use precisions, only: dp
 use string_functions, only: lower
 use utilities, only: int_to_logical
+use amplitudes, only: em_amplitudes
 implicit none
 private
-public read_old_data_base, nn_experiment, write_database, read_database
+public read_old_data_base, nn_experiment, write_database, read_database, init_ex_em_amplitudes
 
 !!
 !> @brief      a single experimental point
@@ -34,10 +35,10 @@ end type exp_point
 !!
 !> @brief      A single experiment
 !!
-!! type to define a NN scattering experiment, it consists of an array of 
-!! experimental points and data common to all experimental points; namely 
-!! number of data points, systematic error, type of observable, reaction 
-!! channel, whether or not the experiment is to be rejected from the 
+!! type to define a NN scattering experiment, it consists of an array of
+!! experimental points and data common to all experimental points; namely
+!! number of data points, systematic error, type of observable, reaction
+!! channel, whether or not the experiment is to be rejected from the
 !! analysis, the year, and a bibliographical reference.
 !!
 !! @author     Rodrigo Navarro Perez
@@ -57,8 +58,8 @@ contains
 !!
 !> @brief      Reads a database.
 !!
-!! Reads a database from a text file and stores it into a 
-!! database. See the 'granada_database.dat' file for 
+!! Reads a database from a text file and stores it into a
+!! database. See the 'granada_database.dat' file for
 !! the specific format
 !!
 !! @author     Rodrigo Navarro Perez
@@ -109,14 +110,14 @@ subroutine read_database(data_file, experiments)
     enddo
     close(unit)
     call trim_database(counter, experiments)
-    
+
 end subroutine read_database
 
 !!
 !> @brief      Writes a database.
 !!
 !! Given two databases (one for pp data and one for np data),
-!! the subroutine combines them in a single array and writes 
+!! the subroutine combines them in a single array and writes
 !! the full database into a text file
 !!
 !! @author     Rodrigo Navarro Perez
@@ -145,7 +146,7 @@ subroutine write_database(pp_data, np_data, file_name)
             enddo
     enddo
     close(unit)
-    
+
 end subroutine write_database
 
 !!
@@ -155,9 +156,9 @@ end subroutine write_database
 !! corresponding reaction channel, the subroutine reads the database
 !! and stores it in the experiments array
 !!
-!! The old format contains a lot of additional information that is 
+!! The old format contains a lot of additional information that is
 !! not relevant. This makes the reading of the file a much more
-!! convoluted process. The new format is preferred when reading 
+!! convoluted process. The new format is preferred when reading
 !! and writing any database
 !!
 !! @author    Rodrigo Navarro Perez
@@ -248,7 +249,7 @@ subroutine read_old_data_base(data_file, reaction, experiments)
                     experiments(counter)%data_points(n_final)%stat_error = deltas(i_data)
                 endif
             enddo
-            
+
         endif
     enddo
     close(unit)
@@ -267,8 +268,8 @@ end subroutine read_old_data_base
 !! array of a size determined by the cut_off
 !!
 !! This subroutine is necessary due to the fact that the size
-!! of the database is not know when the database is about to be 
-!! read from a file and the size of the array needs to be 
+!! of the database is not know when the database is about to be
+!! read from a file and the size of the array needs to be
 !! constantly increased. Once the reading is done, it is possible
 !! that the allocated array is larger than the actual number of experiments.
 !! This subroutine removes the extra elements of the array that are note used
@@ -287,7 +288,7 @@ subroutine trim_database(cut_off, array)
     allocate(temp(1:cut_off))
     temp = array(1:cut_off)
     call move_alloc(temp, array)
-    
+
 end subroutine trim_database
 
 !!
@@ -298,8 +299,8 @@ end subroutine trim_database
 !! in the first half of the new array
 !!
 !! This subroutine is necessary due to the fact that the size
-!! of the database is not know when the database is about to be 
-!! read from a file and the size of the array needs to be 
+!! of the database is not know when the database is about to be
+!! read from a file and the size of the array needs to be
 !! constantly doubled.
 !!
 !! @author     Rodrigo Navarro Perez
@@ -314,7 +315,30 @@ subroutine double_allocation(array)
     allocate(temp(1:2*array_size))
     temp(1:array_size) = array
     call move_alloc(temp, array)
-    
+
 end subroutine double_allocation
+
+!!
+!!> @brief  init_ex_em_amplitudes
+!!
+!! Calculates the em-amplitudes of all experiments.
+!! This are not dependent on the parameters
+!!
+!! @author Raul L Bernal-Gonzalez
+!!
+subroutine init_ex_em_amplitudes(experiments)
+implicit none
+type(nn_experiment), intent(inout) :: experiments(:) !< experimental data to calculate em_amplitudes
+integer :: i, j
+
+do i = 1, size(experiments)
+    if (experiments(i)%rejected) cycle
+    do j = 1, experiments(i)%n_data
+        experiments(i)%data_points(j)%em_amplitude = em_amplitudes(experiments(i)%data_points(j)%t_lab, &
+        experiments(i)%data_points(j)%theta, experiments(i)%channel)
+
+    enddo
+enddo
+end subroutine init_ex_em_amplitudes
 
 end module exp_data
