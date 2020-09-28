@@ -36,29 +36,5 @@ call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
 call calc_chi_square(experiments, default_params, model, chi2)
 print*, chi2
-!-----------------------------------
-! simple chi square
-! chi2 = 0
-! n_points = 0
-! do i = 1, size(experiments)
-!     if (experiments(i)%rejected) cycle
-!     kine%channel = experiments(i)%channel
-!     kine%type = experiments(i)%obs_type
-!     do j = 1, experiments(i)%n_data
-!         kine%t_lab = experiments(i)%data_points(j)%t_lab
-!         kine%angle = experiments(i)%data_points(j)%theta
-!         kine%em_amplitude = em_amplitudes(kine%t_lab, kine%angle, kine%channel)
-!         call observable(kine, default_params, model, obs, d_obs)
-!         exp_val = experiments(i)%data_points(j)%value
-!         sigma = experiments(i)%data_points(j)%stat_error
-!         residual = (exp_val - obs)/sigma
-!         chi2 = chi2 + residual**2
-!         n_points = n_points + 1
-!         ! print*, kine%channel, kine%type, kine%t_lab, kine%angle, exp_val, obs, residual, chi2/n_points
-!     enddo
-! enddo
-! print*,chi2/n_points
-!---------------------------------------
-
 
 end program nn_fit
