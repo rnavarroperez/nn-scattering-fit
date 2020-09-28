@@ -13,7 +13,7 @@ use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use observables, only : kinematics, observable
 use amplitudes, only : em_amplitudes
-use chi_square, only: simple_chi_square
+use chi_square, only: calc_chi_square
 implicit none
 
 real(dp), parameter :: r_max = 12.5_dp
@@ -34,7 +34,8 @@ model%potential_type = 'local'
 allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
-call simple_chi_square(experiments, default_params, model, chi2)
+call calc_chi_square(experiments, default_params, model, chi2)
+print*, chi2
 !-----------------------------------
 ! simple chi square
 ! chi2 = 0
