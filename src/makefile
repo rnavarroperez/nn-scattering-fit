@@ -85,6 +85,9 @@ main.o: main.f90 exp_data.o
 mc_phases.o: mc_phases.f90 precisions.o delta_shell.o read_write.o
 	$(COMPILER) $(FLAGS) -c $<
 
+chi_square.o: chi_square.f90 precisions.o observables.o exp_data.o amplitudes.o delta_shell.o
+	$(COMPILER) $(FLAGS) -c $<
+
 clean:
 	rm -rf *.o *.mod
 
