@@ -9,9 +9,10 @@ module exp_data
 use precisions, only: dp
 use string_functions, only: lower
 use utilities, only: int_to_logical
+use amplitudes, only: em_amplitudes
 implicit none
 private
-public read_old_data_base, nn_experiment, write_database, read_database
+public read_old_data_base, nn_experiment, write_database, read_database, init_ex_em_amplitudes
 
 !!
 !> @brief      a single experimental point
