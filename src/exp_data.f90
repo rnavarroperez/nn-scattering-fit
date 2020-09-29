@@ -317,7 +317,6 @@ subroutine double_allocation(array)
     
 end subroutine double_allocation
 
-<<<<<<< HEAD
 !!
 !!> @brief  init_ex_em_amplitudes
 !!
@@ -341,6 +340,3 @@ enddo
 end subroutine init_ex_em_amplitudes
 
 end module exp_data
-=======
-end module exp_data
->>>>>>> master
