@@ -9,9 +9,10 @@ module exp_data
 use precisions, only: dp
 use string_functions, only: lower
 use utilities, only: int_to_logical
+use amplitudes, only: em_amplitudes
 implicit none
 private
-public read_old_data_base, nn_experiment, write_database, read_database
+public read_old_data_base, nn_experiment, write_database, read_database, init_ex_em_amplitudes
 
 !!
 !> @brief      a single experimental point
@@ -316,5 +317,27 @@ subroutine double_allocation(array)
     call move_alloc(temp, array)
     
 end subroutine double_allocation
+
+!!
+!!> @brief  init_ex_em_amplitudes
+!!
+!! Calculates the em-amplitudes of all experiments.
+!! This are not dependent on the parameters
+!!
+!! @author Raul L Bernal-Gonzalez
+!!
+subroutine init_ex_em_amplitudes(experiments)
+implicit none
+type(nn_experiment), intent(inout) :: experiments(:) !< experimental data to calculate em_amplitudes
+integer :: i, j
+
+do i = 1, size(experiments)
+    if (experiments(i)%rejected) cycle
+    do j = 1, experiments(i)%n_data
+        experiments(i)%data_points(j)%em_amplitude = em_amplitudes(experiments(i)%data_points(j)%t_lab, &
+        experiments(i)%data_points(j)%theta, experiments(i)%channel)
+    enddo
+enddo
+end subroutine init_ex_em_amplitudes
 
 end module exp_data
