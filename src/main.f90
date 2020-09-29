@@ -12,6 +12,7 @@ use av18, only : default_params, av18_all_partial_waves
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use chi_square, only: calc_chi_square
+
 implicit none
 
 real(dp), parameter :: r_max = 12.5_dp
@@ -31,5 +32,6 @@ call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
 call calc_chi_square(experiments, default_params, model, n_points, chi2)
 print*, chi2, n_points, chi2/n_points
+
 
 end program nn_fit
