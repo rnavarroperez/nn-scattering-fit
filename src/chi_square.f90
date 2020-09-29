@@ -30,15 +30,17 @@ contains
     !! @author Rodrigo Navarro Perez
     !! @author Raul L Bernal-Gonzalez
     !!
-subroutine calc_chi_square(experiments, potential_parameters, model, chi2)
+subroutine calc_chi_square(experiments, potential_parameters, model, n_points, chi2)
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
     real(dp), intent(in) :: potential_parameters(:) !< potential model parameters
     type(nn_model), intent(in) :: model !< potential model
+    integer, intent(out) :: n_points !< number of data points in the total chi square
     real(dp), intent(out) :: chi2 !< chi square for given parameters and model
 
     type(kinematics) :: kine
-    real(dp) :: exp_val, sigma, obs, z_scale, chi_sys_error_cont
+    real(dp), allocatable, dimension (:) :: exp_val, sigma, obs
+    real(dp) :: z_scale, chi_sys_error_cont
     real(dp) :: znum, zden, sys_error, nth_chi2
     real(dp), allocatable :: d_obs(:)
     logical :: float
@@ -47,32 +49,43 @@ subroutine calc_chi_square(experiments, potential_parameters, model, chi2)
     ! initialize chi-squares at 0
     chi2 = 0
     nth_chi2 = 0
-    !n_points = 0
+    n_points = 0
     ! initialize znum and zden
     znum = 0
     zden = 0
-
     do i = 1, size(experiments) ! goes through all the experiments
         if (experiments(i)%rejected) cycle
         kine%channel = experiments(i)%channel
         kine%type = experiments(i)%obs_type
+        if (kine%type == 'dbe') cycle ! skipping deuteron binding energy during development process
         sys_error = experiments(i)%sys_error
+        allocate(exp_val(1: experiments(i)%n_data))
+        allocate(sigma, obs, mold=exp_val)
         do j = 1, experiments(i)%n_data ! goes through all points of nth experiment
+            n_points = n_points + 1
             kine%t_lab = experiments(i)%data_points(j)%t_lab
             kine%angle = experiments(i)%data_points(j)%theta
             kine%em_amplitude = experiments(i)%data_points(j)%em_amplitude
-            exp_val = experiments(i)%data_points(j)%value
-            sigma = experiments(i)%data_points(j)%stat_error
-            call observable(kine, potential_parameters, model, obs, d_obs)
-            znum = znum + (exp_val*obs)/sigma**2
-            zden = zden + (obs/sigma)**2
+            exp_val(j) = experiments(i)%data_points(j)%value
+            sigma(j) = experiments(i)%data_points(j)%stat_error
+            call observable(kine, potential_parameters, model, obs(j), d_obs)
+            znum = znum + (exp_val(j)*obs(j))/sigma(j)**2
+            zden = zden + (obs(j)/sigma(j))**2
         end do
-        call calc_z_scale(sys_error, znum, zden, z_scale, chi_sys_error_cont, float)
+        if (experiments(i)%n_data > 1) then
+            call calc_z_scale(sys_error, znum, zden, z_scale, chi_sys_error_cont, float)
+        else
+            z_scale = 1
+            chi_sys_error_cont = 0._dp
+            float = .false.
+        endif
         ! calculate chi-square for nth experiment
-        nth_chi2 = ((exp_val - obs*z_scale)/sigma)**2
+        nth_chi2 = sum(((exp_val - obs*z_scale)/sigma)**2)
+        deallocate(exp_val, sigma, obs)
         ! check if data is floated
         if(float) then ! add the systematic error contribution to the chi-square
              nth_chi2 = nth_chi2 + chi_sys_error_cont
+             n_points = n_points + 1
         end if
         ! total chi-square is the sum of all nth experiments
         chi2 = chi2 + nth_chi2
@@ -81,7 +94,6 @@ subroutine calc_chi_square(experiments, potential_parameters, model, chi2)
         zden = 0
         ! n_points = n_points + 1
     end do
-
 end subroutine calc_chi_square
 
 ! calculate Z scale

@@ -336,7 +336,6 @@ do i = 1, size(experiments)
     do j = 1, experiments(i)%n_data
         experiments(i)%data_points(j)%em_amplitude = em_amplitudes(experiments(i)%data_points(j)%t_lab, &
         experiments(i)%data_points(j)%theta, experiments(i)%channel)
-
     enddo
 enddo
 end subroutine init_ex_em_amplitudes
