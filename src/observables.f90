@@ -23,7 +23,7 @@ private
 !!
 !> @brief      kinematic variables for observables
 !!
-!! This can be considered the independent variables, which 
+!! This can be considered the independent variables, which
 !! change from one observable to the next in a \f$ \chi^2 \f$ calculation/optimization
 !!
 !! Although the electromagnetic amplitudes are technically not "independent varibles"
@@ -45,12 +45,12 @@ contains
 !!
 !> @brief Calculates a NN observable
 !!
-!! The type of observable is determined by the kinematic%type argument 
+!! The type of observable is determined by the kinematic%type argument
 !!
 !! This is a wrapper subroutine that base on the type of observable
-!! calls the appropriate subroutine. Either the \f$ ^1S_0 \f$ np 
+!! calls the appropriate subroutine. Either the \f$ ^1S_0 \f$ np
 !! scattering, the dueteron binding energy, or one of the 26 observables
-!! types that require to calculate all phase-shifts and scattering 
+!! types that require to calculate all phase-shifts and scattering
 !! amplitudes parameters
 !!
 !! @author     Rodrigo Navarro Perez
@@ -76,12 +76,12 @@ end subroutine observable
 !!
 !> @brief Calculates a NN scattering observable
 !!
-!! The type of observable is determined by the kinematic%type argument 
+!! The type of observable is determined by the kinematic%type argument
 !!
 !! To avoid recalculating phase-shifts (the more time consuming part
 !! of the calculation) the phases are only calculated if: kinematic%t_lab
-!! is different from the previous call, any of the fitting parameters is 
-!! different from the previews call, or the kinematic%channel is different 
+!! is different from the previous call, any of the fitting parameters is
+!! different from the previews call, or the kinematic%channel is different
 !! from the previous call.
 !!
 !! The derivative of the observable with respect of the parameters is stored
@@ -97,18 +97,18 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     type(nn_model), intent(in) :: model !< nn scattering model
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
-    
-    real(dp), save :: pre_t_lab = -1._dp
-    real(dp), save, allocatable :: pre_parameters(:)
-    real(dp), save :: k_cm
-    real(dp), save, allocatable :: phases(:,:)
-    real(dp), save, allocatable :: d_phases(:,:,:)
-    character(len=2), save :: pre_channel = '  '
+
+    real(dp)   :: pre_t_lab = -1._dp
+    real(dp),   allocatable :: pre_parameters(:)
+    real(dp)   :: k_cm
+    real(dp),   allocatable :: phases(:,:)
+    real(dp),   allocatable :: d_phases(:,:,:)
+    character(len=2)   :: pre_channel = '  '
     complex(dp) :: a, b, c, d, e
     complex(dp), allocatable :: d_a(:), d_b(:), d_c(:), d_d(:), d_e(:)
-    integer :: n_parameters 
-    real(dp) :: theta, sg, num, denom 
-    real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:) 
+    integer :: n_parameters
+    real(dp) :: theta, sg, num, denom
+    real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:)
     integer, parameter :: j_max = 20
 
     ! Set number of parameters
@@ -125,14 +125,14 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     allocate(d_num(1:n_parameters))
     allocate(d_denom(1:n_parameters))
 
-    if(kinematic%t_lab/=pre_t_lab .or. (.not. all(params==pre_parameters)) .or. &
-       kinematic%channel/=pre_channel) then
+    !if(kinematic%t_lab/=pre_t_lab .or. (.not. all(params==pre_parameters)) .or. &
+       !kinematic%channel/=pre_channel) then
         call all_phaseshifts(model, params, kinematic%t_lab, kinematic%channel, phases, d_phases)
         k_cm = momentum_cm(kinematic%t_lab, kinematic%channel)
         pre_t_lab = kinematic%t_lab
         pre_parameters = params
         pre_channel = kinematic%channel
-    end if
+    !end if
     theta = kinematic%angle*pi/180.0_dp ! angle in d_egrees to radians
     call saclay_amplitudes(k_cm, theta, kinematic%channel, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
     a = a + kinematic%em_amplitude(1)
@@ -355,7 +355,7 @@ end subroutine scattering_obs
 !> @brief     Calulate the 1S0 scattering length
 !!
 !! Uses a delta shell representation and the variable phase equation
-!! of the effective range expansion to calculate the \f$ ^1S_0 \f$ np 
+!! of the effective range expansion to calculate the \f$ ^1S_0 \f$ np
 !! scattering lenght
 !!
 !! @author     Rodrigo Navarro Perez
@@ -381,7 +381,7 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
 
 
     allocate(da_length, d_lambda, d_denominator, d_numerator, mold=parameters)
-    
+
     if (channel == 'pp') then
         stop 'scattering length for pp channel is not implemented yet'
     endif
@@ -401,7 +401,7 @@ subroutine scattering_length(model, parameters, channel, a_length, da_length)
         a_length = numerator/denominator
         da_length = (d_numerator*denominator - numerator*d_denominator)/denominator**2
     enddo
-    
+
 end subroutine scattering_length
 
 
