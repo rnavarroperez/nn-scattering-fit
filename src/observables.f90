@@ -98,19 +98,20 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
 
-    real(dp)   :: pre_t_lab = -1._dp
-    real(dp),   allocatable :: pre_parameters(:)
-    real(dp)   :: k_cm
-    real(dp),   allocatable :: phases(:,:)
-    real(dp),   allocatable :: d_phases(:,:,:)
-    character(len=2)   :: pre_channel = '  '
+    real(dp) :: pre_t_lab = -1._dp
+    real(dp), allocatable :: pre_parameters(:)
+    real(dp) :: k_cm
+    real(dp), allocatable :: phases(:,:)
+    real(dp), allocatable :: d_phases(:,:,:)
+    character(len=2) :: pre_channel = '  '
     complex(dp) :: a, b, c, d, e
     complex(dp), allocatable :: d_a(:), d_b(:), d_c(:), d_d(:), d_e(:)
     integer :: n_parameters
     real(dp) :: theta, sg, num, denom
     real(dp), allocatable :: d_sg(:), d_num(:), d_denom(:)
     integer, parameter :: j_max = 20
-
+    save pre_t_lab, pre_parameters, k_cm, phases, d_phases, pre_channel
+!$omp threadprivate(pre_t_lab, pre_parameters, k_cm, phases, d_phases, pre_channel)
     ! Set number of parameters
     n_parameters = size(params)
 
@@ -125,14 +126,14 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     allocate(d_num(1:n_parameters))
     allocate(d_denom(1:n_parameters))
 
-    !if(kinematic%t_lab/=pre_t_lab .or. (.not. all(params==pre_parameters)) .or. &
-       !kinematic%channel/=pre_channel) then
+    if(kinematic%t_lab/=pre_t_lab .or. (.not. all(params==pre_parameters)) .or. &
+        kinematic%channel/=pre_channel) then
         call all_phaseshifts(model, params, kinematic%t_lab, kinematic%channel, phases, d_phases)
         k_cm = momentum_cm(kinematic%t_lab, kinematic%channel)
         pre_t_lab = kinematic%t_lab
         pre_parameters = params
         pre_channel = kinematic%channel
-    !end if
+    end if
     theta = kinematic%angle*pi/180.0_dp ! angle in d_egrees to radians
     call saclay_amplitudes(k_cm, theta, kinematic%channel, phases, d_phases, a, b, c, d, e, d_a, d_b, d_c, d_d, d_e)
     a = a + kinematic%em_amplitude(1)

@@ -30,9 +30,7 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     real(dp), intent(out) :: chi2 !< chi square for given parameters and model
 
     real(dp), allocatable :: all_chi(:)
-    integer(dp), allocatable :: all_n_points(:)
-    real(dp), allocatable :: sum_chi(:)
-    integer(dp), allocatable :: sum_points(:)
+    integer, allocatable :: all_n_points(:)
     integer :: i
 
     allocate(all_chi(size(experiments)))
@@ -43,8 +41,7 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
 
     !$omp parallel default(none) private(i, chi2, n_points) &
     !$omp & shared(potential_parameters, model, all_chi, all_n_points, experiments)
-    !print*, 'using ', omp_get_num_threads(), ' threads'
-    !$omp do schedule(static)
+    !$omp do schedule(dynamic)
     do i = 1, size(experiments)
         if (experiments(i)%rejected) cycle
         call sum_chi_square(experiments(i), potential_parameters, model, n_points, chi2)
@@ -81,9 +78,8 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
     type(kinematics) :: kine
     real(dp), allocatable, dimension (:) :: exp_val, sigma, obs
     real(dp) :: z_scale, chi_sys_error_cont
-    real(dp) :: znum, zden, sys_error, nth_chi2
-    real(dp), allocatable :: d_obs(:), all_chi(:)
-    integer , allocatable :: all_n_points(:)
+    real(dp) :: znum, zden, sys_error
+    real(dp), allocatable :: d_obs(:)
     logical :: float
     integer :: i
 

@@ -336,7 +336,6 @@ integer :: i, j, n_points
 !-------Save to file-------------
 integer :: unit
 logical :: file_exists
-character(len=300) :: line
 !complex(dp), allocatable :: write_amps(:,:)
 complex(dp), dimension(1:5) :: amp
 

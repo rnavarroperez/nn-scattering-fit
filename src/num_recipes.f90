@@ -147,14 +147,15 @@ real(dp) function legendre_poly(l, m, x) result(r)
     integer, intent(in) :: m !< \fm\f$ index. Has to bee positive
     real(dp), intent(in) :: x !< a real number between \f$-1\f$ and \f$1\f$
     !------- place holder variables--------------------------
-    real(dp), save :: x_pre = -1.1
-    integer, save :: m_pre = -1, l_largest = -1
+    real(dp) :: x_pre = -1.1
+    integer :: m_pre = -1, l_largest = -1
     integer, parameter :: L_MAX = 2000 ! max number of polynomial iterations
-    real(dp), save, dimension(0:L_MAX) :: pl_array = 0 ! initialize to 0
+    real(dp), dimension(0:L_MAX) :: pl_array = 0 ! initialize to 0
     !-------------------------------------------------------
     integer ::  i
     real(dp) :: p_mm, factor, odd_factorial, p_mmp1, p_ml
-
+    save x_pre, m_pre, l_largest, pl_array
+!$omp threadprivate(x_pre, m_pre, l_largest, pl_array)
     ! set
     if (m < 0) stop 'legendre_poly is only valid for m >= 0'
     if (l < m) stop 'legendre_poly is only valid for l >= m'
