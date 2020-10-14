@@ -334,19 +334,6 @@ type(nn_experiment), intent(inout) :: experiments(:) !< experimental data to cal
 real(dp) :: t_lab, theta
 character(len=2) channel
 integer :: i, j, n_points
-!-------Save to file-------------
-! integer :: unit
-! logical :: file_exists
-! !complex(dp), allocatable :: write_amps(:,:)
-! complex(dp), dimension(1:5) :: amp
-
-
-! inquire(file = 'amp_data.txt', exist = file_exists)
-
-! if(.not. file_exists) then ! save to file !!
-! !allocate(write_amps(1:size(experiments), 1:5))
-! open(newunit=unit, file='amp_data.txt', status='new')
-! print*, 'no amp data, making new'
 
 !$omp parallel shared(experiments) private(i, j, t_lab, theta, channel)
 !$omp do schedule(static)
@@ -363,19 +350,6 @@ do i = 1, size(experiments)
 enddo
 !$omp end do
 !$omp end parallel
-! else
-!     print*, 'found amp data, reading'
-!     open(newunit=unit, file='amp_data.txt', status='old')
-!     do i = 1, size(experiments)
-!         if (experiments(i)%rejected) cycle
-!         n_points = experiments(i)%n_data
-!         do j = 1, n_points
-!             read(unit,*)  amp(1), amp(2), amp(3), amp(4), amp(5)
-!             experiments(i)%data_points(j)%em_amplitude = amp
-!         end do
-!     end do
-! end if ! save to file
-
 end subroutine init_ex_em_amplitudes
 
 end module exp_data
