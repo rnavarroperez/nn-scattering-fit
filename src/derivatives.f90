@@ -2,13 +2,13 @@
 !> @brief      Wrapper functions to test derivatives
 !!
 !! Set of wrapper functions that are used in conjuction with the
-!! test_derivatives module to benchmark the analytic calculations 
-!! of derivatives of dependent variablies with respect of the 
+!! test_derivatives module to benchmark the analytic calculations
+!! of derivatives of dependent variablies with respect of the
 !! potential parameters (independent variables)
 !!
-!! What these function do is to take the arguments of the 
+!! What these function do is to take the arguments of the
 !! generic type context and use the contents of that argument
-!! to call on the corresponding subroutine to return either 
+!! to call on the corresponding subroutine to return either
 !! the dependent variable or the dependent variables derivatives
 !!
 !! @author     Rodrigo Navarro Perez
@@ -100,10 +100,10 @@ function df_deuteron_binding_energy(data) result(r)
     model%dr = data%a
     model%r_max = data%b
     model%potential_type = 'local'
-    
+
     call binding_energy(model, parameters, be, dbe)
     r = dbe
-    
+
 end function df_deuteron_binding_energy
 
 !!
@@ -114,7 +114,7 @@ end function df_deuteron_binding_energy
 !! scattering_length. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which reaction channel will be used.
 !!
-!! @returns    \f$ ^1S_0 \f$ scattering lenght 
+!! @returns    \f$ ^1S_0 \f$ scattering lenght
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -154,7 +154,7 @@ end function f_scattering_length
 !! The generic data of type context is used to receive all the arguments necessary to call
 !! scattering_length. The same data of type context is used to receive which reaction channel will be used.
 !!
-!! @returns    derivatives of the \f$^1S_0\f$ scattering length 
+!! @returns    derivatives of the \f$^1S_0\f$ scattering length
 !!
 !! @author     Rodrigo Navarro Perez
 !!
@@ -181,7 +181,7 @@ function df_scattering_length(data) result(r)
 
     call scattering_length(model, parameters, channels(i_target), a_length, da_length)
     r = da_length
-    
+
 end function df_scattering_length
 
 !!
@@ -250,7 +250,7 @@ function df_observable(data) result(r)
     implicit none
     type(context), intent(in) :: data !< data structure with all the arguments for observable
     real(dp), allocatable :: r(:)
-    
+
     real(dp), allocatable :: ap(:)
     type(nn_model) :: model
     type(kinematics) :: kinematic
@@ -351,7 +351,7 @@ function df_observable_ds(data) result(r)
     implicit none
     type(context), intent(in) :: data !< data structure with all the arguments for observable
     real(dp), allocatable :: r(:)
-    
+
     real(dp), allocatable :: ap(:)
     type(nn_model) :: model
     type(kinematics) :: kinematic
@@ -716,7 +716,7 @@ end function df_all_phaseshifts_ds
 !> @brief      wrapper function for the av18 potential
 !!
 !! This wrapper function is used to test the derivatives of the av18_operator subroutine.
-!! The generic data of type context is used to receive all the arguments necessary to call the 
+!! The generic data of type context is used to receive all the arguments necessary to call the
 !! av18_operator subroutine. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which operator will be returned.
 !!
@@ -748,14 +748,14 @@ real(dp) function f_av18(x, data) result(r)
     call av18_operator(ap, radius, v_nn, dv_nn)
 
     r = v_nn(i_target)
-       
+
 end function f_av18
 
 !!
 !> @brief      wrapper function for the derivatives of the av18 potential
 !!
 !! This wrapper function is used to test the derivatives of the av18_operator subroutine.
-!! The generic data of type context is used to receive all the arguments necessary to call the 
+!! The generic data of type context is used to receive all the arguments necessary to call the
 !! av18_operator subroutine. The same data of type context is used to receive which operator
 !! will be returned
 !!
@@ -784,14 +784,14 @@ function df_av18(data) result(r)
     call av18_operator(ap, radius, v_nn, dv_nn)
 
     r = dv_nn(:, i_target)
-    
+
 end function df_av18
 
 !!
 !> @brief      wrapper function for av18_all_partial_waves
 !!
 !! This wrapper function is used to test the derivatives of the av18_all_partial_waves subroutine.
-!! The generic data of type context is used to receive all the arguments necessary to call 
+!! The generic data of type context is used to receive all the arguments necessary to call
 !! av18_all_partial_waves. The same data of type context is used to receive which parameter will
 !! be varied by the dfridr subroutine and which partial wave will be returned.
 !!
@@ -824,11 +824,11 @@ real(dp) function f_av18_pw(x, data) result(r)
 
     ic = mod(i_target - 1, 5) + 1
     ij = 1 + (i_target - 1)/5
-    
+
     call av18_all_partial_waves(ap, radius, reaction, v_pw, dv_pw)
 
     r = v_pw(ic, ij)
-       
+
 end function f_av18_pw
 
 
@@ -836,7 +836,7 @@ end function f_av18_pw
 !> @brief      wrapper function for the derivatives of av18_all_partial_waves
 !!
 !! This wrapper function is used to test the derivatives of the av18_all_partial_waves subroutine.
-!! The generic data of type context is used to receive all the arguments necessary to call 
+!! The generic data of type context is used to receive all the arguments necessary to call
 !! av18_all_partial_waves. The same data of type context is used to receive which operator
 !! will be returned
 !!
@@ -866,11 +866,11 @@ function df_av18_pw(data) result(r)
 
     ic = mod(i_target - 1, 5) + 1
     ij = 1 + (i_target - 1)/5
-    
+
     call av18_all_partial_waves(ap, radius, reaction, v_pw, dv_pw)
 
     r = dv_pw(:, ic, ij)
-       
+
 end function df_av18_pw
-    
+
 end module derivatives
