@@ -338,9 +338,9 @@ integer :: i, j, n_points
 !$omp parallel shared(experiments) private(i, j, t_lab, theta, channel)
 !$omp do schedule(static)
 do i = 1, size(experiments)
-    if (experiments(i)%rejected) cycle
+    if (experiments(i)%rejected) cycle ! skip rejected experiments
     n_points = experiments(i)%n_data
-    do j = 1, n_points
+    do j = 1, n_points ! read data and calculate em_amplitudes
         t_lab = experiments(i)%data_points(j)%t_lab
         theta = experiments(i)%data_points(j)%theta
         channel = experiments(i)%channel

@@ -79,9 +79,10 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
     real(dp), allocatable, dimension (:) :: exp_val, sigma, obs
     real(dp) :: z_scale, chi_sys_error_cont
     real(dp) :: znum, zden, sys_error
-    real(dp), allocatable :: d_obs(:)
+    real(dp), allocatable :: d_obs(:), all_d_obs(:,:)
+    real(dp), allocatable :: alpha(:,:), beta(:)
     logical :: float
-    integer :: i
+    integer :: i, k, l, n_size, n_param
 
     ! initialize chi-squares at 0
     chi2 = 0
@@ -89,14 +90,25 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
     ! initialize znum and zden
     znum = 0
     zden = 0
-
+    ! initialize kine data per experiment
     kine%channel = experiment%channel
     kine%type = experiment%obs_type
     !if (kine%type == 'dbe' .or. kine%type == 'asl') return ! skipping deuteron binding energy during development process
+    ! get systematic error per experiment
     sys_error = experiment%sys_error
-    allocate(exp_val(1: experiment%n_data))
+    ! get number of experiments
+    n_size = experiment%n_data
+    ! get number of parameters
+    n_param = size(potential_parameters)
+    ! allocate arrays
+    allocate(exp_val(1: n_size))
     allocate(sigma, obs, mold=exp_val)
-    do i = 1, experiment%n_data ! goes through all points of nth experiment
+    allocate(all_d_obs(n_size, n_param))
+    allocate(beta(n_size), alpha(n_param, n_param))
+    ! initialize alpha and beta
+    alpha = 0
+    beta = 0
+    do i = 1, n_size ! goes through all points of nth experiment
         n_points = n_points + 1
         kine%t_lab = experiment%data_points(i)%t_lab
         kine%angle = experiment%data_points(i)%theta
@@ -104,10 +116,12 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
         exp_val(i) = experiment%data_points(i)%value
         sigma(i) = experiment%data_points(i)%stat_error
         call observable(kine, potential_parameters, model, obs(i), d_obs)
+        ! save the derivative of the corresponding observable
+        all_d_obs(i, :) = d_obs
         znum = znum + (exp_val(i)*obs(i))/sigma(i)**2
         zden = zden + (obs(i)/sigma(i))**2
     end do
-    if (experiment%n_data > 1) then
+    if (n_size > 1) then
         call calc_z_scale(sys_error, znum, zden, z_scale, chi_sys_error_cont, float)
     else
         z_scale = 1
@@ -121,6 +135,19 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
         chi2 = chi2 + chi_sys_error_cont
         n_points = n_points + 1
     end if
+    ! calculate alpha and beta for single experiment
+    do i = 1, n_size
+        do k = 1, n_param
+            do l = 1, n_param
+                ! build alpha for single experiment
+                ! derivative of one, times all the others
+                alpha(k,l) = alpha(k,l) + (all_d_obs(i,k)*all_d_obs(i,l))*sigma(i)**2
+            end do
+            ! build beta
+            ! the derivative of chi-square with respect to the parameters
+            beta(i) = beta(i) + (exp_val(i) - obs(i)*z_scale)*all_d_obs(i,k)
+        end do
+    end do
 end subroutine sum_chi_square
 
 !!
