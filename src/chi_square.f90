@@ -67,20 +67,20 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     !$omp end parallel
 !---End parallel section--------------------------------------------------------
     ! reset alpha and beta
-    !alpha = 0
-    !beta = 0
+    alpha = 0
+    beta = 0
     ! sum all experiments
     chi2 = sum(all_chi)
     n_points = sum(all_n_points)
-    !alpha = sum(all_alpha, 1)
+    alpha = sum(all_alpha, dim=1, mask=.not.isnan(all_alpha))
+    beta = sum(all_beta, dim=1, mask=.not.isnan(all_beta))
 
-    do i = 1, size(alpha, 1)/3
-        do j = 1, size(alpha, 1)/3
-            write(*,"(f15.10)", advance='no') alpha(i,j)
-        end do
-        write(*,*)
-    end do
-
+    ! do i = 1, size(alpha, 1)/3
+    !     do j = 1, size(alpha, 1)/3
+    !         write(*,"(f15.10)", advance='no') alpha(i,j)
+    !     end do
+    !     write(*,*)
+    ! end do
 
     ! beta = sum(all_beta, 1) ! sum along the columns of all_beta
     ! do i = 1, size(all_beta, 1)
