@@ -33,17 +33,6 @@ call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
 call calc_chi_square(experiments, default_params, model, n_points, chi2, alpha, beta)
 print*, chi2, n_points, chi2/n_points
- print*, "beta size ", size(beta)
-do i = 1, size(beta)
-    write(*,"(1f28.15)") beta(i)
-end do
-write(*,*)
-print*, 'alpha', size(alpha)
-do i = 1, size(alpha, 1)/3
-    do j = 1, size(alpha, 1)/3
-        write(*,"(f28.15)", advance='no') alpha(i,j)
-    end do
-    write(*,*)
-end do
-
+print*, "beta size ", size(beta)
+print*, 'alpha size', size(alpha)
 end program nn_fit

@@ -20,7 +20,15 @@ private
 public :: calc_chi_square
 contains
 
-    ! calculate call square of all experiments
+!!
+!> @brief   calc_chi_square
+!!
+!! This will calculate the chi-square along with the alpha, and beta
+!! matrices for the current model parameters
+!!
+!! @author Rodrigo Navarro-Perez
+!! @author Raul L Bernal-Gonzalez
+!!
 subroutine calc_chi_square(experiments, potential_parameters, model, n_points, chi2, alpha, beta)
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
@@ -74,36 +82,20 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     n_points = sum(all_n_points)
     alpha = sum(all_alpha, dim=1, mask=.not.isnan(all_alpha))
     beta = sum(all_beta, dim=1, mask=.not.isnan(all_beta))
-
-    ! do i = 1, size(alpha, 1)/3
-    !     do j = 1, size(alpha, 1)/3
-    !         write(*,"(f15.10)", advance='no') alpha(i,j)
-    !     end do
-    !     write(*,*)
-    ! end do
-
-    ! beta = sum(all_beta, 1) ! sum along the columns of all_beta
-    ! do i = 1, size(all_beta, 1)
-    !     do j = 1, size(all_beta, 2)
-    !         print*,'b ', beta(j)
-    !         beta(j) = beta(j) + all_beta(i,j)
-    !         print*,'a ' ,beta(j)
-    !     end do
-    ! end do
 end subroutine calc_chi_square
 
 
 
 
-    !!
-    !> @brief      chi_square
-    !!
-    !! Sums the chi-square for all data in the given experiment,
-    !! parameters, and model
-    !!
-    !! @author Rodrigo Navarro Perez
-    !! @author Raul L Bernal-Gonzalez
-    !!
+!!
+!> @brief   chi_square
+!!
+!! Sums the chi-square for all data in the given experiment,
+!! parameters, and model
+!!
+!! @author Rodrigo Navarro Perez
+!! @author Raul L Bernal-Gonzalez
+!!
 subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi2, alpha, beta)
     implicit none
     ! type(nn_experiment), intent(in), dimension(:) :: experiment !< input experiment data
@@ -189,7 +181,7 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
 end subroutine sum_chi_square
 
 !!
-!> @brief      calc_z_scale
+!> @brief   calc_z_scale
 !!
 !! Caculates the Z scaling factor and the
 !! contribution of the systematic error to
