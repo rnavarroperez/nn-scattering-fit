@@ -1,3 +1,11 @@
+!!
+!> @brief   chi_minimization
+!!
+!! Subroutines and functions to implement the Lavenberg-Marquardt method for
+!! minimizing the chi-square
+!!
+!! @author Raul L Bernal-Gonzalez
+!!
 module chi_minimization
 use precisions, only: dp
 use exp_data, only: nn_experiment
@@ -8,7 +16,16 @@ implicit none
 private
 public :: lavenberg_marquardt
 contains
-! solve for the new parameters
+
+!!
+!> @brief   lavenberg-marquardt
+!!
+!! This subroutine contains the main loop that implements the
+!! lavenberg-marquardt method. It will return the minimize chi-square, covariance,
+!! and the optimal parameters for the input model
+!!
+!! @author Raul L Bernal-Gonzalez
+!!
 subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, chi2, covariance, new_parameters)
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
@@ -36,10 +53,6 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
     factor = 10
     ! condition counter
     counter = 0 ! stop after 2 consecutive negligible differences
-    ! initialize values before iteration.
-    ! chi2 = 0
-    ! prev_chi2 = 1
-    ! set value for previous chi-square
     ! first call outside the loop to initiate values using original parameters
     call calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
     prev_chi2 = chi2
@@ -76,12 +89,20 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
     covariance = alpha
 end subroutine lavenberg_marquardt
 
+!!
+!> @brief   calc_new_parameters
+!!
+!! The function uses lapack library to inverse alpha and solve the linear equation
+!! alpha*delta = beta. It then adds delta to the parameters to create new parameters
+!!
+!! @author Raul L Bernal-Gonzalez
+!!
 subroutine calc_new_parameters(alpha, beta, parameters, new_params)
     implicit none
-    real(dp), intent(in) :: alpha(:,:)
-    real(dp), intent(in) :: beta(:)
-    real(dp), intent(in) :: parameters(:)
-    real(dp), intent(out), allocatable :: new_params(:)
+    real(dp), intent(in) :: alpha(:,:) !< alpha matrix
+    real(dp), intent(in) :: beta(:) !< beta vector
+    real(dp), intent(in) :: parameters(:) !< current parameters
+    real(dp), intent(out), allocatable :: new_params(:) !< new parameters
 
     real(dp), allocatable :: delta_params(:), work(:,:)
     integer :: info
@@ -111,6 +132,13 @@ subroutine calc_new_parameters(alpha, beta, parameters, new_params)
     new_params = parameters + delta_params
 end subroutine calc_new_parameters
 
+!!
+!> @brief set_alpha_prime
+!!
+!! Function to multiply the lambda fudge factor to the diagonal of alpha to
+!! create alpha-prime
+!!
+!! @author Raul L Bernal-Gonzalez
 function set_alpha_prime(alpha, lambda) result(alpha_prime)
     implicit none
     real(dp), intent(in) :: alpha(:,:)
@@ -126,7 +154,7 @@ function set_alpha_prime(alpha, lambda) result(alpha_prime)
             if(i == j) then
                 alpha_prime = alpha(i,j)*(1 + lambda) ! diagonal
             else
-                alpha_prime(i,j) = alpha(i,j)
+                alpha_prime(i,j) = alpha(i,j) ! off-diagonal
             end if
         end do
     end do

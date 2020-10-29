@@ -92,7 +92,7 @@ subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2,
 end subroutine calc_chi_square
 
     !!
-    !> @brief      chi_square
+    !> @brief   sum_chi_square
     !!
     !! Sums the chi-square for all data in the given experiment,
     !! parameters, and model
@@ -203,7 +203,7 @@ subroutine sum_chi_square(experiment, model_parameters, model, n_points, chi2, a
 end subroutine sum_chi_square
 
 !!
-!> @brief      calc_z_scale
+!> @brief   calc_z_scale
 !!
 !! Caculates the Z scaling factor and the
 !! contribution of the systematic error to
