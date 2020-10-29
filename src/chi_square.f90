@@ -12,7 +12,6 @@ use precisions, only: dp
 use exp_data, only : nn_experiment
 use observables, only: observable, kinematics
 use delta_shell, only : nn_model
-use amplitudes, only : em_amplitudes
 use omp_lib
 implicit none
 
@@ -20,15 +19,15 @@ private
 public :: calc_chi_square
 contains
 
-    ! calculate call square of all experiments
-subroutine calc_chi_square(experiments, potential_parameters, model, n_points, chi2, alpha, beta)
+! calculate call square of all experiments
+subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
-    real(dp), intent(in) :: potential_parameters(:) !< potential model parameters
+    real(dp), intent(in) :: model_parameters(:) !< potential model parameters
     type(nn_model), intent(in) :: model !< potential model
-    real(dp), intent(out), allocatable :: alpha(:,:), beta(:) !< matrices to minimize chi-square
     integer, intent(out) :: n_points !< number of data points in the total chi-square
     real(dp), intent(out) :: chi2 !< chi square for given parameters and model
+    real(dp), intent(out), allocatable :: alpha(:,:), beta(:) !< matrices to minimize chi-square
 
     real(dp), allocatable :: all_chi(:)
     integer, allocatable :: all_n_points(:)
@@ -39,7 +38,7 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     n_exps = size(experiments)
     ! print*, 'exp ', n_exps
     ! get the number of parameters
-    n_param = size(potential_parameters)
+    n_param = size(model_parameters)
     ! allocate memory
     allocate(all_chi(n_exps))
     allocate(all_n_points(n_exps))
@@ -53,11 +52,11 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     all_n_points = 0
 !---Parallel section------------------------------------------------------------
     !$omp parallel default(none) private(i, chi2, n_points, beta, alpha) &
-    !$omp & shared(potential_parameters, model, all_chi, all_n_points, all_alpha, all_beta, experiments)
+    !$omp & shared(model_parameters, model, all_chi, all_n_points, all_alpha, all_beta, experiments)
     !$omp do schedule(dynamic)
     do i = 1, size(experiments) ! calculate chi-square, alpha, and beta for each experiment
         if (experiments(i)%rejected) cycle
-        call sum_chi_square(experiments(i), potential_parameters, model, n_points, chi2, alpha, beta)
+        call sum_chi_square(experiments(i), model_parameters, model, n_points, chi2, alpha, beta)
         all_chi(i) = chi2
         all_n_points(i) = n_points
         all_alpha(i,:,:) = alpha
@@ -72,8 +71,8 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     ! sum all experiments
     chi2 = sum(all_chi)
     n_points = sum(all_n_points)
-    alpha = sum(all_alpha, dim=1, mask=.not.isnan(all_alpha))
-    beta = sum(all_beta, dim=1, mask=.not.isnan(all_beta))
+    alpha = sum(all_alpha, dim=1)!, mask=.not.isnan(all_alpha))
+    beta = sum(all_beta, dim=1)!, mask=.not.isnan(all_beta))
 
     ! do i = 1, size(alpha, 1)/3
     !     do j = 1, size(alpha, 1)/3
@@ -92,9 +91,6 @@ subroutine calc_chi_square(experiments, potential_parameters, model, n_points, c
     ! end do
 end subroutine calc_chi_square
 
-
-
-
     !!
     !> @brief      chi_square
     !!
@@ -104,11 +100,11 @@ end subroutine calc_chi_square
     !! @author Rodrigo Navarro Perez
     !! @author Raul L Bernal-Gonzalez
     !!
-subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi2, alpha, beta)
+subroutine sum_chi_square(experiment, model_parameters, model, n_points, chi2, alpha, beta)
     implicit none
     ! type(nn_experiment), intent(in), dimension(:) :: experiment !< input experiment data
     type(nn_experiment), intent(in) :: experiment !< input single experiment data
-    real(dp), intent(in) :: potential_parameters(:) !< potential model parameters
+    real(dp), intent(in) :: model_parameters(:) !< potential model parameters
     type(nn_model), intent(in) :: model !< potential model
     integer, intent(out) :: n_points !< number of data points in the total chi square
     real(dp), intent(out) :: chi2 !< chi square for given parameters and model
@@ -119,10 +115,13 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
     real(dp) :: z_scale, chi_sys_error_cont
     real(dp) :: znum, zden, sys_error
     real(dp), allocatable :: d_obs(:), all_d_obs(:,:)
+    logical :: first_nan, first_nan_b
 
     logical :: float
     integer :: i, k, l, n_size, n_param
 
+    first_nan = .true.
+    first_nan_b = .true.
     ! initialize chi-squares at 0
     chi2 = 0
     n_points = 0
@@ -138,7 +137,7 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
     ! get number of experiments
     n_size = experiment%n_data
     ! get number of parameters
-    n_param = size(potential_parameters)
+    n_param = size(model_parameters)
     ! allocate arrays
     allocate(exp_val(1: n_size))
     allocate(sigma, obs, mold=exp_val)
@@ -153,9 +152,14 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
         kine%em_amplitude = experiment%data_points(i)%em_amplitude
         exp_val(i) = experiment%data_points(i)%value
         sigma(i) = experiment%data_points(i)%stat_error
-        call observable(kine, potential_parameters, model, obs(i), d_obs)
+        call observable(kine, model_parameters, model, obs(i), d_obs)
         ! save the derivative of the corresponding observable
         all_d_obs(i, :) = d_obs
+        ! if(isnan(all_d_obs(i,1))) then
+        !     print*, all_d_obs(i,:)
+        !     write(*,'(A)'), 'experiment: ', experiment%reference
+        !     print*, 'ith point: ', n_points, 'exp val: ', exp_val(i), 'channel: ', experiment%channel, ' type:', experiment%obs_type
+        ! end if
         znum = znum + (exp_val(i)*obs(i))/sigma(i)**2
         zden = zden + (obs(i)/sigma(i))**2
     end do
@@ -180,10 +184,20 @@ subroutine sum_chi_square(experiment, potential_parameters, model, n_points, chi
                 ! build alpha for single experiment
                 ! derivative of one, times all the others
                 alpha(k,l) = alpha(k,l) + ((all_d_obs(i,k)*all_d_obs(i,l))*z_scale**2)/sigma(i)**2
+                ! if(isnan(alpha(k,l)) .and. first_nan) then
+                !     print*, 'i, k, l, alpha(k,l), all_d_obs(i,k), all_d_obs(i,l), sigma(i)'
+                !     print*, i, k, l, alpha(k,l), all_d_obs(i,k), all_d_obs(i,l), sigma(i)
+                !     first_nan = .false.
+                ! end if
             end do
             ! build beta
             ! the derivative of chi-square with respect to the parameters
             beta(k) = beta(k) + ((exp_val(i) - obs(i)*z_scale)/sigma(i)**2)*(z_scale*all_d_obs(i,k))
+            ! if(isnan(beta(k)) .and. first_nan_b) then
+            !     print*, 'i, k, beta(k), obs(i), sigma(i), all_d_obs(i,k)'
+            !     print*, i, k, beta(k), obs(i), sigma(i), all_d_obs(i,k)
+            !     first_nan_b = .false.
+            ! end if
         end do
     end do
 end subroutine sum_chi_square
@@ -226,5 +240,4 @@ subroutine calc_z_scale(sys_error, znum, zden, z_scale, chi_sys_error_cont, floa
         end if
     end if
 end subroutine calc_z_scale
-
 end module chi_square
