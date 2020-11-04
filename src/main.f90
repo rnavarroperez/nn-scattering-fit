@@ -19,7 +19,8 @@ real(dp), parameter :: r_max = 12.5_dp
 real(dp), parameter :: dr = 0.01_dp
 type(nn_model) :: model
 type(nn_experiment), allocatable, dimension(:) :: experiments
-integer :: n_points
+real(dp), allocatable :: alpha(:,:), beta(:)
+integer :: n_points, i,j
 real(dp) :: chi2
 
 model%potential => av18_all_partial_waves
@@ -30,8 +31,8 @@ model%potential_type = 'local'
 allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
-call calc_chi_square(experiments, default_params, model, n_points, chi2)
+call calc_chi_square(experiments, default_params, model, n_points, chi2, alpha, beta)
 print*, chi2, n_points, chi2/n_points
-
-
+print*, "beta size ", size(beta)
+print*, 'alpha size', size(alpha)
 end program nn_fit

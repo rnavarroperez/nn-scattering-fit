@@ -2,6 +2,8 @@ COMPILER = gfortran
 
 FLAGS = -O3 -fopenmp -fcheck=all -Wall
 
+LAPACK = -llapack
+
 MAIN_EXEC = nn_fit
 
 MC_PHASES_EXEC = write_mc_phases
