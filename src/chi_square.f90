@@ -22,9 +22,10 @@ contains
 !!
 !> @brief   calc_chi_square
 !!
-!! This subroutine calculates the chi-square for a model given the parameters
-!! and experimental values
+!! This will calculate the chi-square along with the alpha, and beta
+!! matrices for the current model parameters
 !!
+!! @author Rodrigo Navarro-Perez
 !! @author Raul L Bernal-Gonzalez
 !!
 subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
@@ -43,7 +44,6 @@ subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2,
 
     ! get the number of experiments
     n_exps = size(experiments)
-    ! print*, 'exp ', n_exps
     ! get the number of parameters
     n_param = size(model_parameters)
     ! allocate memory
