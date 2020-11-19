@@ -2,6 +2,8 @@ COMPILER = gfortran
 
 FLAGS = -O3 -fopenmp -fcheck=all -Wall
 
+LAPACK = -llapack -lblas
+
 MAIN_EXEC = nn_fit
 
 MC_PHASES_EXEC = write_mc_phases
@@ -79,7 +81,10 @@ deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o
 derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o delta_shell.o pion_exchange.o
 	$(COMPILER) $(FLAGS) -c $<
 
-chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o amplitudes.o
+chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
+	$(COMPILER) $(FLAGS) -c $<
+
+chi_minimization.o: chi_minimization.f90 chi_square.o precisions.o exp_data.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 exp_data.o

@@ -136,14 +136,14 @@ end function spherical_harmonic
 !!
 !! The algorithm has been modified to save
 !! the values from previous calls and build up from them. This eliminates the
-!! need to start from the beginning when using same x and m values 
+!! need to start from the beginning when using same x and m values
 !!
 !! @author     Raul L Bernal-Gonzalez
 !! @author     Rodrigo Navarro Perez
 !!
 real(dp) function legendre_poly(l, m, x) result(r)
     implicit none
-    integer, intent(in) :: l !< \f$l\f$ index. Has to be smaller than \f$m\f$ and 2000 
+    integer, intent(in) :: l !< \f$l\f$ index. Has to be smaller than \f$m\f$ and 2000
     integer, intent(in) :: m !< \fm\f$ index. Has to bee positive
     real(dp), intent(in) :: x !< a real number between \f$-1\f$ and \f$1\f$
     !------- place holder variables--------------------------
@@ -187,7 +187,7 @@ real(dp) function legendre_poly(l, m, x) result(r)
             l_largest = l
         endif
     else
-        !Arguments are different, we need to start from scracth
+        !Arguments are different, we need to start from scratch
         pl_array = 0
         p_mm = 1._dp
         if (m > 0) then
@@ -583,5 +583,4 @@ real(dp) function chebev(a, b, c, x) result(r)
     enddo
     r = y*d - dd + c(1)/2
 end function chebev
-
 end module num_recipes

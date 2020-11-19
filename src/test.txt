@@ -1,4 +1,0 @@
- found amp data, reading, parallel chi2
-   8132.2143259699096             6700   1.2137633322343149
-parallel em_amp and chi2
-   8132.2143259699096             6700   1.2137633322343149
