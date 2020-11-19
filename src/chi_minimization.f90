@@ -6,7 +6,7 @@
 !!
 !! @author Raul L Bernal-Gonzalez
 !!
-module chi_minimization
+module chi_optimization
 use precisions, only: dp
 use exp_data, only: nn_experiment
 use delta_shell, only: nn_model
@@ -38,7 +38,7 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
 
     real(dp) :: lambda, delta, prev_chi2
     real(dp), allocatable :: alpha_prime(:,:), alpha(:,:), beta(:), old_parameters(:)
-    integer :: counter, factor, i, j, n_param
+    integer :: counter, factor, i, j, n_param, limit
 
     ! allocate new_parameters
     n_param = size(model_parameters)
@@ -52,7 +52,8 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
     ! factor to increase lambda by
     factor = 10
     ! condition counter
-    counter = 0 ! stop after 2 consecutive negligible differences
+    limit = 0 ! stop after 2 consecutive negligible differences
+    counter = 0
     ! first call outside the loop to initiate values using original parameters
     call calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
     prev_chi2 = chi2
@@ -60,30 +61,34 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
     ! begin optimization loop
     do
         ! check exit condition
-        if(counter >= 2) exit
+        if(limit >= 2) exit
+        ! limit iterations for testing
+        if(counter >= 5) exit
         ! set alpha-prime
         alpha_prime = set_alpha_prime(alpha, lambda)
         ! calculate new parameters
         call calc_new_parameters(alpha_prime, beta, old_parameters, new_parameters)
+        call exit(0)
         ! save new parameters
         old_parameters = new_parameters
         ! calculate chi-square with new parameters
         call calc_chi_square(experiments, new_parameters, model, n_points, chi2, alpha, beta)
         ! compare chi-squares
         if((prev_chi2 - chi2) <= delta) then
-            ! increase counter by 1 if there is a negligible difference
-            counter = counter + 1
+            ! increase limit by 1 if there is a negligible difference
+            limit = limit + 1
         else ! we want 2 consecutive negligible differences
-            counter = 0
+            limit = 0
         end if
         ! determined whether to raise or lower lambda
         if(chi2 >= prev_chi2) then
-            lambda = lambda + factor
+            lambda = lambda*factor
         else if(chi2 < prev_chi2) then
-            lambda = lambda - factor
+            lambda = lambda/factor
         end if
         ! update prev chi
         prev_chi2 = chi2
+        counter = counter + 1
     end do
     ! set covariance to last alpha calculated
     covariance = alpha
@@ -105,7 +110,7 @@ subroutine calc_new_parameters(alpha, beta, parameters, new_params)
     real(dp), intent(out), allocatable :: new_params(:) !< new parameters
 
     real(dp), allocatable :: delta_params(:), work(:,:)
-    integer :: info
+    integer :: info, n_param, i, j
 
     allocate(new_params, mold=parameters)
     allocate(delta_params, mold=beta)
@@ -113,21 +118,31 @@ subroutine calc_new_parameters(alpha, beta, parameters, new_params)
 
     ! set work equal to alpha to prevent changing alpha
     work = alpha
+    ! number of parameters
+    n_param = size(parameters)
     ! use lapack to inverse work
-    call dpotrf('u', 2, work, 2, info)
+    call dpotrf('U', n_param, work, n_param, info)
     ! check if call was successful
     if(info /= 0) then
         print*, 'Error calling dportf: ', info
         call exit(0)
     end if
-    call dpotri('u', 2, work, 2, info)
+    call dpotri('U', n_param, work, n_param, info)
     ! check if call was successful
     if(info /= 0) then
         print*, 'Error calling dportf: ', info
         call exit(0)
     end if
+
+    ! rebuild the matrix from upper triangular half
+    do i = 1, n_param
+        do j = 1, n_param
+                work(j,i) = work(i,j)
+        end do
+    end do
     ! multiply alpha inverse by beta to get deltas
     delta_params = matmul(work, beta)
+
     ! add deltas to get new parameters
     new_params = parameters + delta_params
 end subroutine calc_new_parameters
@@ -149,12 +164,11 @@ function set_alpha_prime(alpha, lambda) result(alpha_prime)
 
     allocate(alpha_prime, mold=alpha)
 
+    alpha_prime = alpha
     do i = 1, size(alpha, 1)
         do j = 1, size(alpha,2)
             if(i == j) then
-                alpha_prime = alpha(i,j)*(1 + lambda) ! diagonal
-            else
-                alpha_prime(i,j) = alpha(i,j) ! off-diagonal
+                alpha_prime(i,j) = alpha(i,j)*(1 + lambda) ! diagonal
             end if
         end do
     end do

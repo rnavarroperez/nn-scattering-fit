@@ -11,8 +11,8 @@ use precisions, only : dp
 use av18, only : default_params, av18_all_partial_waves
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
-use chi_square, only: calc_chi_square
-use chi_minimization, only: lavenberg_marquardt
+!use chi_square, only: calc_chi_square
+use chi_optimization, only: lavenberg_marquardt
 
 implicit none
 
@@ -22,7 +22,7 @@ type(nn_model) :: model
 type(nn_experiment), allocatable, dimension(:) :: experiments
 real(dp), allocatable :: covariance(:,:), new_parameters(:)
 real(dp), allocatable :: alpha(:,:), beta(:)
-integer :: n_points, i, j
+integer :: n_points
 real(dp) :: chi2
 
 model%potential => av18_all_partial_waves

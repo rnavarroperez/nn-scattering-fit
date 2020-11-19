@@ -2,7 +2,7 @@ COMPILER = gfortran
 
 FLAGS = -O3 -fopenmp -fcheck=all -Wall
 
-LAPACK = -llapack
+LAPACK = -llapack -lblas
 
 MAIN_EXEC = nn_fit
 
