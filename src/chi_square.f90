@@ -44,7 +44,6 @@ subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2,
 
     ! get the number of experiments
     n_exps = size(experiments)
-    ! print*, 'exp ', n_exps
     ! get the number of parameters
     n_param = size(model_parameters)
     ! allocate memory
