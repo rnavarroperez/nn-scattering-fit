@@ -38,17 +38,4 @@ call init_ex_em_amplitudes(experiments)
 !print*, 'Before minimization: ', chi2, n_points, chi2/n_points
 call lavenberg_marquardt(experiments, default_params, model, n_points, chi2, covariance, new_parameters)
 print*, 'after minimization: ', chi2, n_points, chi2/n_points
-! print*, "beta size ", size(beta)
-! do i = 1, size(beta)
-!     write(*,"(1f28.15)") beta(i)
-! end do
-! write(*,*)
-! print*, 'alpha', size(alpha)
-! do i = 1, size(alpha, 1)/3
-!     do j = 1, size(alpha, 1)/3
-!         write(*,"(f28.15)", advance='no') alpha(i,j)
-!     end do
-!     write(*,*)
-! end do
-
 end program nn_fit

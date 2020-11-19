@@ -155,11 +155,7 @@ subroutine sum_chi_square(experiment, model_parameters, model, n_points, chi2, a
         call observable(kine, model_parameters, model, obs(i), d_obs)
         ! save the derivative of the corresponding observable
         all_d_obs(i, :) = d_obs
-        ! if(isnan(all_d_obs(i,1))) then
-        !     print*, all_d_obs(i,:)
-        !     write(*,'(A)'), 'experiment: ', experiment%reference
-        !     print*, 'ith point: ', n_points, 'exp val: ', exp_val(i), 'channel: ', experiment%channel, ' type:', experiment%obs_type
-        ! end if
+        ! calculate the numerator and denominator of the z-scale term
         znum = znum + (exp_val(i)*obs(i))/sigma(i)**2
         zden = zden + (obs(i)/sigma(i))**2
     end do
@@ -184,20 +180,10 @@ subroutine sum_chi_square(experiment, model_parameters, model, n_points, chi2, a
                 ! build alpha for single experiment
                 ! derivative of one, times all the others
                 alpha(k,l) = alpha(k,l) + ((all_d_obs(i,k)*all_d_obs(i,l))*z_scale**2)/sigma(i)**2
-                ! if(isnan(alpha(k,l)) .and. first_nan) then
-                !     print*, 'i, k, l, alpha(k,l), all_d_obs(i,k), all_d_obs(i,l), sigma(i)'
-                !     print*, i, k, l, alpha(k,l), all_d_obs(i,k), all_d_obs(i,l), sigma(i)
-                !     first_nan = .false.
-                ! end if
             end do
             ! build beta
             ! the derivative of chi-square with respect to the parameters
             beta(k) = beta(k) + ((exp_val(i) - obs(i)*z_scale)/sigma(i)**2)*(z_scale*all_d_obs(i,k))
-            ! if(isnan(beta(k)) .and. first_nan_b) then
-            !     print*, 'i, k, beta(k), obs(i), sigma(i), all_d_obs(i,k)'
-            !     print*, i, k, beta(k), obs(i), sigma(i), all_d_obs(i,k)
-            !     first_nan_b = .false.
-            ! end if
         end do
     end do
 end subroutine sum_chi_square
