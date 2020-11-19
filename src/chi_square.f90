@@ -28,7 +28,7 @@ contains
 !! @author Rodrigo Navarro-Perez
 !! @author Raul L Bernal-Gonzalez
 !!
-subroutine calc_chi_square(experiments, potential_parameters, model, n_points, chi2, alpha, beta)
+subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
     real(dp), intent(in) :: model_parameters(:) !< potential model parameters
