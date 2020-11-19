@@ -1,5 +1,5 @@
 !!
-!> @brief   chi_minimization
+!> @brief   chi_optimization
 !!
 !! Subroutines and functions to implement the Lavenberg-Marquardt method for
 !! minimizing the chi-square
@@ -68,6 +68,7 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
         alpha_prime = set_alpha_prime(alpha, lambda)
         ! calculate new parameters
         call calc_new_parameters(alpha_prime, beta, old_parameters, new_parameters)
+        call exit(0)
         ! save new parameters
         old_parameters = new_parameters
         ! calculate chi-square with new parameters

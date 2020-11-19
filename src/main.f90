@@ -34,8 +34,8 @@ allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
 
-!call calc_chi_square(experiments, default_params, model, n_points, chi2, alpha, beta)
-!print*, 'Before minimization: ', chi2, n_points, chi2/n_points
+call calc_chi_square(experiments, default_params, model, n_points, chi2, alpha, beta)
+print*, 'Before minimization: ', chi2, n_points, chi2/n_points
 call lavenberg_marquardt(experiments, default_params, model, n_points, chi2, covariance, new_parameters)
 print*, 'after minimization: ', chi2, n_points, chi2/n_points
 end program nn_fit
