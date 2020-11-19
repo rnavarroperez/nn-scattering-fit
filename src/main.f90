@@ -11,7 +11,7 @@ use precisions, only : dp
 use av18, only : default_params, av18_all_partial_waves
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
-!use chi_square, only: calc_chi_square
+use chi_square, only: calc_chi_square
 use chi_optimization, only: lavenberg_marquardt
 
 implicit none
