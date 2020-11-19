@@ -80,22 +80,6 @@ subroutine calc_chi_square(experiments, model_parameters, model, n_points, chi2,
     n_points = sum(all_n_points)
     alpha = sum(all_alpha, dim=1)!, mask=.not.isnan(all_alpha))
     beta = sum(all_beta, dim=1)!, mask=.not.isnan(all_beta))
-
-    ! do i = 1, size(alpha, 1)/3
-    !     do j = 1, size(alpha, 1)/3
-    !         write(*,"(f15.10)", advance='no') alpha(i,j)
-    !     end do
-    !     write(*,*)
-    ! end do
-
-    ! beta = sum(all_beta, 1) ! sum along the columns of all_beta
-    ! do i = 1, size(all_beta, 1)
-    !     do j = 1, size(all_beta, 2)
-    !         print*,'b ', beta(j)
-    !         beta(j) = beta(j) + all_beta(i,j)
-    !         print*,'a ' ,beta(j)
-    !     end do
-    ! end do
 end subroutine calc_chi_square
 
     !!

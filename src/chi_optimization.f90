@@ -1,5 +1,5 @@
 !!
-!> @brief   chi_minimization
+!> @brief   chi_optimization
 !!
 !! Subroutines and functions to implement the Lavenberg-Marquardt method for
 !! minimizing the chi-square
