@@ -27,7 +27,7 @@ contains
 !> @brief      Writes Monte Carlo phases.
 !!
 !! Writes to a file the low angular momentum phaseshifts from a given
-!! model, MC sample of potential parameter, reaction channel, and 
+!! model, MC sample of potential parameter, reaction channel, and
 !! laboratory energy in MeV
 !!
 !! Since the value of t_lab is used to determine the name of the file to which
@@ -66,14 +66,14 @@ end subroutine write_montecarlo_phases
 !> @brief      reads a set of samples of fitted parameters
 !!
 !! Given the name of a file containing a sample of fitted parameters
-!! (generated with a legace code), reads and stores the parameters 
+!! (generated with a legace code), reads and stores the parameters
 !! in an rank 2 array.
 !!
 !! Paramters that were set (and fixed) to zero in the orginal fitting
 !! in the legacy code were not sabed in the files to be read. In order
 !! to knew where to put the parameters that are fixed to zero a mask
-!! (array of logicals) needs to be given. The positions where the 
-!! paramter is meant to be zero are indicated by a .false. value in the 
+!! (array of logicals) needs to be given. The positions where the
+!! paramter is meant to be zero are indicated by a .false. value in the
 !! mask.
 !!
 !! Having the original set of parameters (with the zeros) the mask can
@@ -113,7 +113,7 @@ subroutine read_montecarlo_parameters(param_mask, file_name, mc_params)
         do ip = 1, size(mc_params, 1)
             if (param_mask(ip)) then
                 p_counter = p_counter + 1
-                mc_params(ip, counter) = mc_lambdas(p_counter) 
+                mc_params(ip, counter) = mc_lambdas(p_counter)
             else
                 mc_params(ip, counter) = 0._dp
             endif
@@ -130,7 +130,7 @@ end subroutine read_montecarlo_parameters
 !! Makes a grid of t_lab from 1-350 in steps of 50 and angle from
 !! 10pi/180 - 180pi/180 in steps of 10
 !!
-!! This subroutine is for benchmarking purposes only and should not be 
+!! This subroutine is for benchmarking purposes only and should not be
 !! used in production runs!
 !!
 !! @author     Raul L Bernal-Gonzalez
@@ -172,7 +172,7 @@ end subroutine print_em_amplitudes
 !! Makes a grid of t_lab from 1-350 in steps of 50 and angle from
 !! 10pi/180 - 180pi/180 in steps of 10
 !!
-!! This subroutine is for benchmarking purposes only and should not be 
+!! This subroutine is for benchmarking purposes only and should not be
 !! used in production runs!
 !!
 !! @author     Raul L Bernal-Gonzalez
@@ -189,7 +189,7 @@ subroutine print_observables(parameters, model, channel)
            obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   '&
              ,'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   '&
              ,'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt'&
-             ,'sgt ','sgtt','sgtl'] 
+             ,'sgt ','sgtt','sgtl']
     !---------------------------------------------------------------------------
     type(kinematics) :: kinematic
     real(dp) :: obs
@@ -221,7 +221,7 @@ end subroutine print_observables
 !!
 !! Makes a grid of t_lab from 1-350 in steps of 50
 !!
-!! This subroutine is for benchmarking purposes only and should not be 
+!! This subroutine is for benchmarking purposes only and should not be
 !! used in production runs!
 !!
 !! @author     Raul L Bernal-Gonzalez
@@ -234,19 +234,24 @@ subroutine write_phases(parameters, model, channel)
     character(len=2), intent(in) :: channel !< reaction channel (pp or np)
 
     integer, parameter :: jmax = 20
-    
+
     integer :: unit, i
     real(dp) :: t_lab
     real(dp), dimension(1:5, 1:jmax) :: phases
     real(dp), allocatable, dimension(:, :, :) :: d_phases
-    
+
     open(newunit=unit, file='new_'//channel//'_aps.dat', status='unknown')
     do i = 50, 350, 50
         t_lab = real(i, kind=dp)
         call all_phaseshifts(model, parameters, t_lab, channel, phases, d_phases)
         write(unit, *) phases
     end do
-    close(unit)  
+    close(unit)
 end subroutine write_phases
+
+! subroutine write_chi(chi2, n_points, parameters)
+!     implicit none
+!     real(dp),
+! end subroutine write_chi
 
 end module read_write
