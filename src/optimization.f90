@@ -1,12 +1,12 @@
 !!
-!> @brief   chi_optimization
+!> @brief      optimization
 !!
 !! Subroutines and functions to implement the Lavenberg-Marquardt method for
 !! minimizing the chi-square
 !!
 !! @author Raul L Bernal-Gonzalez
 !!
-module chi_optimization
+module optimization
 use precisions, only: dp
 use exp_data, only: nn_experiment
 use delta_shell, only: nn_model
@@ -14,7 +14,7 @@ use chi_square, only: calc_chi_square
 implicit none
 
 private
-public :: lavenberg_marquardt
+public :: lavenberg_marquardt, invert_alpha
 contains
 
 !!
@@ -38,7 +38,7 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
 
     real(dp) :: lambda, delta, prev_chi2, chi_ratio, prev_chi_ratio
     real(dp), allocatable :: alpha_prime(:,:), alpha(:,:), beta(:), old_parameters(:)
-    integer :: counter, factor, i, j, n_param, limit
+    integer :: counter, factor, n_param, limit
 
     ! allocate new_parameters
     n_param = size(model_parameters)
@@ -113,7 +113,7 @@ subroutine calc_new_parameters(alpha, beta, parameters, new_params)
     real(dp), intent(out), allocatable :: new_params(:) !< new parameters
 
     real(dp), allocatable :: delta_params(:), work(:,:), c(:,:)
-    integer :: info, n_param, i, j
+    integer :: n_param
 
     allocate(new_params, mold=parameters)
     allocate(delta_params, mold=beta)
@@ -205,7 +205,7 @@ function invert_alpha(alpha) result(alpha_inv)
     call dpotri('U', n_param, alpha_inv, n_param, info)
     ! check if call was successful
     if(info /= 0) then
-        print*, 'Error calling dportf: ', info
+        print*, 'Error calling dpotri: ', info
         call exit(0)
     end if
 
@@ -216,4 +216,5 @@ function invert_alpha(alpha) result(alpha_inv)
         end do
     end do
 end function invert_alpha
-end module
+
+end module optimization

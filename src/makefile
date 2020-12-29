@@ -1,6 +1,6 @@
 COMPILER = gfortran
 
-FLAGS = -O3 -fopenmp -fcheck=all -Wall
+FLAGS = -O3 #-fopenmp -fcheck=all -Wall
 
 LAPACK = -llapack -lblas
 
@@ -84,7 +84,7 @@ derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.
 chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-chi_optimization.o: chi_optimization.f90 chi_square.o precisions.o exp_data.o delta_shell.o
+optimization.o: optimization.f90 chi_square.o precisions.o exp_data.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 exp_data.o
