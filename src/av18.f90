@@ -22,18 +22,18 @@ private
 
 public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators
 
-integer, parameter :: n_parameters = 44 !< Number of phenomenological parameters
+integer, parameter :: n_parameters = 42 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
 ! integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
 
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
-    [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp, 1811.57100_dp,    1.07985_dp, &
+    [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp,    1.07985_dp, &
      -190.09490_dp, -811.20400_dp,   -0.62697_dp,  -570.55710_dp,  819.12220_dp,    0.06709_dp, &
       342.06690_dp, -615.23390_dp,    0.74129_dp,     9.34180_dp, -376.43840_dp,   -8.62770_dp, &
      2605.26820_dp,  441.97330_dp,    1.48560_dp, -1126.83590_dp,  370.13240_dp,    0.10180_dp, &
        86.06580_dp, -356.51750_dp,   -0.13201_dp,   253.43500_dp,   -1.00760_dp,    0.07357_dp, &
      -217.57910_dp,   18.39350_dp,  -11.27028_dp,  3346.68740_dp,  -10.66788_dp, 3126.55420_dp, &
-      -11.27028_dp, 3342.76640_dp,    0.12472_dp,    16.77800_dp,   -2.09971_dp, 1204.43010_dp, &
+     3342.76640_dp,    0.12472_dp,   16.77800_dp,    -2.09971_dp, 1204.43010_dp, &
        -0.31452_dp,  217.45590_dp] !< default parameters in the AV18 potential
 contains
 
@@ -359,24 +359,24 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
 
     p11pp =  ap( 1)*tpi2 + ap( 2)*wsp + ap( 3)*wsx2 + ypi0p
     p11np =  ap( 1)*tpi2 + ap( 4)*wsp + ap( 3)*wsx2 - ypi0p + 2*ypicp
-    p11nn =  ap( 1)*tpi2 + ap( 5)*wsp + ap( 3)*wsx2 + ypi0p
-    pt1pp =  ap( 6)*tpi2 + ap( 7)*wsx + ap( 8)*wsx2 + tpi0
-    pt1np =  ap( 6)*tpi2 + ap( 7)*wsx + ap( 8)*wsx2 - tpi0 + 2*tpic
-    pt1nn =  ap( 6)*tpi2 + ap( 7)*wsx + ap( 8)*wsx2 + tpi0
-    pls1  =  ap( 9)*tpi2 + ap(10)*wsp + ap(11)*wsx2
-    pl211 =  ap(12)*tpi2 + ap(13)*wsp + ap(14)*wsx2
-    pls21 =  ap(15)*tpi2 + ap(16)*wsp + ap(17)*wsx2
-    p10   =  ap(18)*tpi2 + ap(19)*wsp + ap(20)*wsx2 - ypi0p - 2*ypicp
-    pt0   =  ap(21)*tpi2 + ap(22)*wsx + ap(23)*wsx2 - tpi0 - 2*tpic
-    pls0  =  ap(24)*tpi2 + ap(25)*wsp + ap(26)*wsx2
-    pl210 =  ap(27)*tpi2 + ap(28)*wsp + ap(29)*wsx2
-    pls20 =  ap(30)*tpi2 + ap(31)*wsp + ap(32)*wsx2
-    p01pp =  ap(33)*tpi2 + ap(34)*wsp - 3*ypi0p
-    p01np =  ap(35)*tpi2 + ap(36)*wsp - 3*(-ypi0p + 2*ypicp)
-    p01nn =  ap(37)*tpi2 + ap(38)*wsp - 3*ypi0p
-    pl201 =  ap(39)*tpi2 + ap(40)*wsp
-    p00   =  ap(41)*tpi2 + ap(42)*wsp - 3*(-ypi0p - 2*ypicp)
-    pl200 =  ap(43)*tpi2 + ap(44)*wsp
+    p11nn =  ap( 1)*tpi2 + (ap(2)-ap(33)+ap(36))*wsp + ap( 3)*wsx2 + ypi0p
+    pt1pp =  ap( 5)*tpi2 + ap( 6)*wsx + ap( 7)*wsx2 + tpi0
+    pt1np =  ap( 5)*tpi2 + ap( 6)*wsx + ap( 7)*wsx2 - tpi0 + 2*tpic
+    pt1nn =  ap( 5)*tpi2 + ap( 6)*wsx + ap( 7)*wsx2 + tpi0
+    pls1  =  ap( 8)*tpi2 + ap( 9)*wsp + ap(10)*wsx2
+    pl211 =  ap(11)*tpi2 + ap(12)*wsp + ap(13)*wsx2
+    pls21 =  ap(14)*tpi2 + ap(15)*wsp + ap(16)*wsx2
+    p10   =  ap(17)*tpi2 + ap(18)*wsp + ap(19)*wsx2 - ypi0p - 2*ypicp
+    pt0   =  ap(20)*tpi2 + ap(21)*wsx + ap(22)*wsx2 - tpi0 - 2*tpic
+    pls0  =  ap(23)*tpi2 + ap(24)*wsp + ap(25)*wsx2
+    pl210 =  ap(26)*tpi2 + ap(27)*wsp + ap(28)*wsx2
+    pls20 =  ap(29)*tpi2 + ap(30)*wsp + ap(31)*wsx2
+    p01pp =  ap(32)*tpi2 + ap(33)*wsp - 3*ypi0p
+    p01np =  ap(34)*tpi2 + ap(35)*wsp - 3*(-ypi0p + 2*ypicp)
+    p01nn =  ap(32)*tpi2 + ap(36)*wsp - 3*ypi0p
+    pl201 =  ap(37)*tpi2 + ap(38)*wsp
+    p00   =  ap(39)*tpi2 + ap(40)*wsp - 3*(-ypi0p - 2*ypicp)
+    pl200 =  ap(41)*tpi2 + ap(42)*wsp
 
     d_p11pp(1) =  tpi2
     d_p11pp(2) =  wsp
@@ -386,71 +386,73 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     d_p11np(4) =  wsp
     d_p11np(3) =  wsx2
 
-    d_p11nn(1) =  tpi2
-    d_p11nn(5) =  wsp
-    d_p11nn(3) =  wsx2
+    d_p11nn( 1) =  tpi2
+    d_p11nn( 2) =  wsp
+    d_p11nn(33) = -wsp
+    d_p11nn(36) =  wsp
+    d_p11nn( 3) =  wsx2
 
-    d_pt1pp(6) =  tpi2
-    d_pt1pp(7) =  wsx
-    d_pt1pp(8) =  wsx2
+    d_pt1pp(5) =  tpi2
+    d_pt1pp(6) =  wsx
+    d_pt1pp(7) =  wsx2
 
-    d_pt1np(6) =  tpi2
-    d_pt1np(7) =  wsx
-    d_pt1np(8) =  wsx2
+    d_pt1np(5) =  tpi2
+    d_pt1np(6) =  wsx
+    d_pt1np(7) =  wsx2
 
-    d_pt1nn(6) =  tpi2
-    d_pt1nn(7) =  wsx
-    d_pt1nn(8) =  wsx2
+    d_pt1nn(5) =  tpi2
+    d_pt1nn(6) =  wsx
+    d_pt1nn(7) =  wsx2
 
-    d_pls1( 9) =  tpi2
-    d_pls1(10) =  wsp
-    d_pls1(11) =  wsx2
+    d_pls1( 8) =  tpi2
+    d_pls1( 9) =  wsp
+    d_pls1(10) =  wsx2
 
-    d_pl211(12) =  tpi2
-    d_pl211(13) =  wsp
-    d_pl211(14) =  wsx2
+    d_pl211(11) =  tpi2
+    d_pl211(12) =  wsp
+    d_pl211(13) =  wsx2
 
-    d_pls21(15) =  tpi2
-    d_pls21(16) =  wsp
-    d_pls21(17) =  wsx2
+    d_pls21(14) =  tpi2
+    d_pls21(15) =  wsp
+    d_pls21(16) =  wsx2
 
-    d_p10(18) =  tpi2
-    d_p10(19) =  wsp
-    d_p10(20) =  wsx2
+    d_p10(17) =  tpi2
+    d_p10(18) =  wsp
+    d_p10(19) =  wsx2
 
-    d_pt0(21) =  tpi2
-    d_pt0(22) =  wsx
-    d_pt0(23) =  wsx2
+    d_pt0(20) =  tpi2
+    d_pt0(21) =  wsx
+    d_pt0(22) =  wsx2
 
-    d_pls0(24) =  tpi2
-    d_pls0(25) =  wsp
-    d_pls0(26) =  wsx2
+    d_pls0(23) =  tpi2
+    d_pls0(24) =  wsp
+    d_pls0(25) =  wsx2
 
-    d_pl210(27) =  tpi2
-    d_pl210(28) =  wsp
-    d_pl210(29) =  wsx2
+    d_pl210(26) =  tpi2
+    d_pl210(27) =  wsp
+    d_pl210(28) =  wsx2
 
-    d_pls20(30) =  tpi2
-    d_pls20(31) =  wsp
-    d_pls20(32) =  wsx2
+    d_pls20(29) =  tpi2
+    d_pls20(30) =  wsp
+    d_pls20(31) =  wsx2
 
-    d_p01pp(33) =  tpi2
-    d_p01pp(34) =  wsp
+    d_p01pp(32) =  tpi2
+    d_p01pp(33) =  wsp
 
-    d_p01np(35) =  tpi2
-    d_p01np(36) =  wsp
+    d_p01np(34) =  tpi2
+    d_p01np(35) =  wsp
 
-    d_p01nn(37) =  tpi2
-    d_p01nn(38) =  wsp
+    d_p01nn(32) =  tpi2
+    d_p01nn(36) =  wsp
 
-    d_pl201(39) =  tpi2
-    d_pl201(40) =  wsp
+    d_pl201(37) =  tpi2
+    d_pl201(38) =  wsp
 
-    d_p00(41) =  tpi2
-    d_p00(42) =  wsp
+    d_p00(39) =  tpi2
+    d_p00(40) =  wsp
 
-    d_pl200(43) =  tpi2
-    d_pl200(44) =  wsp
+    d_pl200(41) =  tpi2
+    d_pl200(42) =  wsp
 
     ! p11pp=  -7.62701*tpi2+1815.4920*wsp+1847.8059*wsx2+ypi0p
     ! p11np=  -7.62701*tpi2+1813.5315*wsp+1847.8059*wsx2-ypi0p+2*ypicp

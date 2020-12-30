@@ -178,7 +178,6 @@ function df_scattering_length(data) result(r)
     model%r_max = data%b
     model%potential_type = 'local'
     i_target = data%j
-
     call scattering_length(model, parameters, channels(i_target), a_length, da_length)
     r = da_length
 
@@ -779,11 +778,11 @@ function df_av18(data) result(r)
     radius = data%a
     i_target = data%j
     n_parameters = size(ap)
-    allocate(dv_nn(1:n_parameters, 1:n_operators))
+    allocate(dv_nn(1:n_operators, 1:n_parameters))
     allocate(r, mold=data%x)
     call av18_operator(ap, radius, v_nn, dv_nn)
 
-    r = dv_nn(:, i_target)
+    r = dv_nn(i_target, :)
 
 end function df_av18
 

@@ -38,7 +38,7 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
 
     real(dp) :: lambda, delta, prev_chi2, chi_ratio, prev_chi_ratio
     real(dp), allocatable :: alpha_prime(:,:), alpha(:,:), beta(:), old_parameters(:)
-    integer :: counter, factor, n_param, limit
+    integer :: counter, factor, n_param, limit, i, j
 
     ! allocate new_parameters
     n_param = size(model_parameters)
@@ -56,6 +56,8 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
     counter = 0
     ! first call outside the loop to initiate values using original parameters
     call calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
+    print'(6f15.8)', model_parameters
+    print*, chi2/n_points
     ! ratio of chi-square to n_points
     prev_chi_ratio = chi2/n_points
     prev_chi2 = chi2
@@ -65,7 +67,7 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
         ! check exit condition
         if(limit >= 2) exit
         ! limit iterations for testing
-        if(counter >= 5) exit
+        ! if(counter >= 2) exit
         ! set alpha-prime
         alpha_prime = set_alpha_prime(alpha, lambda)
         ! calculate new parameters
@@ -74,6 +76,8 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
         old_parameters = new_parameters
         ! calculate chi-square with new parameters
         call calc_chi_square(experiments, new_parameters, model, n_points, chi2, alpha, beta)
+        print'(6f15.8)', new_parameters
+        print*, chi2/n_points, limit, counter, lambda
         ! find new ratio chi-square to n_points
         chi_ratio = chi2/n_points
         ! compare chi-squares to n_points ratio
@@ -95,6 +99,10 @@ subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, c
     end do
     ! set covariance to last alpha calculated
     covariance = invert_alpha(alpha)
+    do i=1,7
+        print'(6f15.8)', new_parameters(6*(i-1)+1:6*i)
+        print'(6f15.8)', (sqrt(covariance(j,j)), j=6*(i-1)+1,6*i)
+    enddo
 end subroutine lavenberg_marquardt
 
 !!
