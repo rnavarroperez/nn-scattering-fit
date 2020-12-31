@@ -10,7 +10,7 @@ module optimization
 use precisions, only: dp
 use exp_data, only: nn_experiment
 use delta_shell, only: nn_model
-use chi_square, only: calc_chi_square
+use chi_square, only: total_chi_square
 implicit none
 
 private
@@ -26,84 +26,99 @@ contains
 !!
 !! @author Raul L Bernal-Gonzalez
 !!
-subroutine lavenberg_marquardt(experiments, model_parameters, model, n_points, chi2, covariance, new_parameters)
+subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
-    real(dp), intent(in) :: model_parameters(:) !< potential model parameters
+    logical, intent(in), dimension(:) :: mask
     type(nn_model), intent(in) :: model !< potential model
+    real(dp), intent(inout) :: parameters(:) !< potential model parameters
     integer, intent(out) :: n_points !< number of data points in the total chi-square
     real(dp), intent(out) :: chi2 !< chi square for given parameters and model
     real(dp), intent(out), allocatable :: covariance(:,:) !< estimated covariance
-    real(dp), intent(out), allocatable :: new_parameters(:) !< optimize parameters
 
-    real(dp) :: lambda, delta, prev_chi2, chi_ratio, prev_chi_ratio
-    real(dp), allocatable :: alpha_prime(:,:), alpha(:,:), beta(:), old_parameters(:)
-    integer :: counter, factor, n_param, limit, i, j
+    real(dp), allocatable :: alpha(:, :), beta(:)
+    real(dp), allocatable :: prev_alpha(:, :), prev_beta(:), prev_parameters(:), alpha_prime(:, :)
+    real(dp) :: lambda, prev_chi_ratio, chi_ratio
+    integer :: limit, counter, i, j
+    real(dp), parameter :: delta = 1.e-2_dp
+    real(dp), parameter :: factor = 10._dp
 
-    ! allocate new_parameters
-    n_param = size(model_parameters)
-    allocate(new_parameters, old_parameters, mold=model_parameters)
-    allocate(covariance(n_param, n_param))
-    allocate(alpha_prime, mold=covariance)
-    ! initialize lambda
-    lambda = 0.001_dp
-    ! set term for negligible differnce
-    delta = 0.01_dp
-    ! factor to increase lambda by
-    factor = 10
-    ! condition counter
-    limit = 0 ! stop after 2 consecutive negligible differences
+    limit = 0
     counter = 0
-    ! first call outside the loop to initiate values using original parameters
-    call calc_chi_square(experiments, model_parameters, model, n_points, chi2, alpha, beta)
-    print'(6f15.8)', model_parameters
-    print*, chi2/n_points
-    ! ratio of chi-square to n_points
+    lambda = 1.e-3_dp
+    call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
+    chi_ratio = chi2/n_points
+    
+    print'(6f15.8)', parameters
+    print'(2f15.8,3i10,1e15.4)', chi_ratio, chi2, n_points, limit, counter, lambda
+    
+    allocate(prev_parameters, source=parameters)
+    allocate(prev_alpha, source=alpha)
+    allocate(prev_beta, source=beta)
+    allocate(alpha_prime, mold=alpha)
     prev_chi_ratio = chi2/n_points
-    prev_chi2 = chi2
-    old_parameters = model_parameters
-    ! begin optimization loop
     do
-        ! check exit condition
-        if(limit >= 2) exit
-        ! limit iterations for testing
-        ! if(counter >= 2) exit
-        ! set alpha-prime
-        alpha_prime = set_alpha_prime(alpha, lambda)
-        ! calculate new parameters
-        call calc_new_parameters(alpha_prime, beta, old_parameters, new_parameters)
-        ! save new parameters
-        old_parameters = new_parameters
-        ! calculate chi-square with new parameters
-        call calc_chi_square(experiments, new_parameters, model, n_points, chi2, alpha, beta)
-        print'(6f15.8)', new_parameters
-        print*, chi2/n_points, limit, counter, lambda
-        ! find new ratio chi-square to n_points
+        if(limit == 2) exit
+        alpha_prime = set_alpha_prime(prev_alpha, lambda)
+        parameters = get_new_parameters(alpha_prime, prev_beta, prev_parameters, mask)
+        call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
         chi_ratio = chi2/n_points
-        ! compare chi-squares to n_points ratio
-        if((prev_chi_ratio - chi_ratio) <= delta) then
-            ! increase limit by 1 if there is a negligible difference
-            limit = limit + 1
-        else ! we want 2 consecutive negligible differences
-            limit = 0
-        end if
         ! determined whether to raise or lower lambda
         if(chi_ratio >= prev_chi_ratio) then
             lambda = lambda*factor
+            limit = 0
         else if(chi_ratio < prev_chi_ratio) then
             lambda = lambda/factor
+            if((prev_chi_ratio - chi_ratio)*n_points <= delta) then
+                ! increase limit by 1 if there is a negligible difference
+                limit = limit + 1
+            else ! we want 2 consecutive negligible differences
+                limit = 0
+            end if
+            prev_alpha = alpha
+            prev_beta = beta
+            prev_parameters = parameters
+            prev_chi_ratio = chi_ratio
         end if
-        ! update previous chi ratio
-        prev_chi_ratio = chi_ratio
         counter = counter + 1
-    end do
-    ! set covariance to last alpha calculated
-    covariance = invert_alpha(alpha)
+        print'(6f15.8)', parameters
+        print'(2f15.8,3i10,1e15.4)', chi_ratio, chi2, n_points, limit, counter, lambda
+    enddo
+    alpha = prev_alpha
+    parameters = prev_parameters
+    covariance = covariance_matrix(alpha, mask)
     do i=1,7
-        print'(6f15.8)', new_parameters(6*(i-1)+1:6*i)
+        print'(6f15.8)', parameters(6*(i-1)+1:6*i)
         print'(6f15.8)', (sqrt(covariance(j,j)), j=6*(i-1)+1,6*i)
     enddo
 end subroutine lavenberg_marquardt
+
+function covariance_matrix(alpha, mask) result(covariance)
+    implicit none
+    real(dp), intent(in), dimension(:, :) :: alpha
+    logical, intent(in), dimension(:) :: mask
+    real(dp), allocatable, dimension(:, :) :: covariance
+
+    real(dp), allocatable, dimension(:, :) :: alpha_inverse
+    integer :: i, j, k, l, n_parameters
+    n_parameters = size(mask)
+    allocate(alpha_inverse, mold = alpha)
+    allocate(covariance(1:n_parameters, 1:n_parameters))
+    
+    alpha_inverse = invert_alpha(alpha)
+    covariance = 0._dp
+    l = 0
+    do j = 1, n_parameters
+        if (.not.mask(j)) cycle
+        l = l + 1
+        k = 0
+        do i = 1, n_parameters
+            if (.not.mask(i)) cycle
+            k = k + 1
+            covariance(i, j) = alpha_inverse(k, l)
+        enddo
+    enddo
+end function covariance_matrix
 
 !!
 !> @brief   calc_new_parameters
@@ -113,55 +128,34 @@ end subroutine lavenberg_marquardt
 !!
 !! @author Raul L Bernal-Gonzalez
 !!
-subroutine calc_new_parameters(alpha, beta, parameters, new_params)
+function get_new_parameters(alpha, beta, parameters, mask) result(new_parameters)
     implicit none
     real(dp), intent(in) :: alpha(:,:) !< alpha matrix
     real(dp), intent(in) :: beta(:) !< beta vector
     real(dp), intent(in) :: parameters(:) !< current parameters
-    real(dp), intent(out), allocatable :: new_params(:) !< new parameters
+    logical, intent(in) :: mask(:)
+    real(dp), allocatable :: new_parameters(:) !< new parameters
 
-    real(dp), allocatable :: delta_params(:), work(:,:), c(:,:)
-    integer :: n_param
+    real(dp), allocatable :: delta_params(:), work(:,:)
+    integer :: i, j
 
-    allocate(new_params, mold=parameters)
+    allocate(new_parameters, source=parameters)
     allocate(delta_params, mold=beta)
-    allocate(work, c, mold=alpha)
+    allocate(work, mold=alpha)
 
-    ! ! set work equal to alpha to prevent changing alpha
-    ! work = alpha
-    ! ! number of parameters
-     n_param = size(parameters)
-    ! ! use lapack to inverse work
-    ! call dpotrf('U', n_param, work, n_param, info)
-    ! ! check if call was successful
-    ! if(info /= 0) then
-    !     print*, 'Error calling dportf: ', info
-    !     call exit(0)
-    ! end if
-    ! call dpotri('U', n_param, work, n_param, info)
-    ! ! check if call was successful
-    ! if(info /= 0) then
-    !     print*, 'Error calling dportf: ', info
-    !     call exit(0)
-    ! end if
-    !
-    ! ! rebuild the matrix from upper triangular half
-    ! do i = 1, n_param
-    !     do j = 1, n_param
-    !             work(j,i) = work(i,j)
-    !     end do
-    ! end do
+    
     ! multiply alpha inverse by beta to get deltas
     work = invert_alpha(alpha)
     delta_params = matmul(work, beta)
-    ! ! test the inversion of alpha
-    ! call dgemm('n','n',n_param,n_param,n_param,1.0_dp,work,n_param,alpha,n_param,0.0_dp,c,n_param)
-    ! ! if the multiplacation gives us the identity matrix, then the sum should equal the number of parameters
-    ! print*, 'sum: ', sum(c), 'parm: ', n_param
-    ! call exit(0)
     ! add deltas to get new parameters
-    new_params = parameters + delta_params
-end subroutine calc_new_parameters
+    j = 0
+    do i = 1, size(parameters)
+        if (.not.mask(i)) cycle
+        j = j + 1
+        new_parameters(i) = new_parameters(i) + delta_params(j)
+    enddo
+    
+end function get_new_parameters
 
 !!
 !> @brief set_alpha_prime
@@ -176,17 +170,12 @@ function set_alpha_prime(alpha, lambda) result(alpha_prime)
     real(dp), intent(in) :: lambda
     real(dp), allocatable :: alpha_prime(:,:)
 
-    integer :: i, j
+    integer :: i
 
-    allocate(alpha_prime, mold=alpha)
+    allocate(alpha_prime, source=alpha)
 
-    alpha_prime = alpha
     do i = 1, size(alpha, 1)
-        do j = 1, size(alpha,2)
-            if(i == j) then
-                alpha_prime(i,j) = alpha(i,j)*(1 + lambda) ! diagonal
-            end if
-        end do
+        alpha_prime(i,i) = alpha_prime(i,i)*(1 + lambda) ! diagonal
     end do
 end function set_alpha_prime
 
@@ -219,7 +208,7 @@ function invert_alpha(alpha) result(alpha_inv)
 
     ! rebuild the matrix from upper triangular half
     do i = 1, n_param
-        do j = 1, n_param
+        do j = i+1, n_param
                 alpha_inv(j,i) = alpha_inv(i,j)
         end do
     end do
