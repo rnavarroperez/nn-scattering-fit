@@ -63,6 +63,8 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
 
+    integer :: i, j
+
     select case (trim(kinematic%type))
     case('asl')
         call scattering_length(model, params, kinematic%channel, obs, d_obs)
@@ -71,6 +73,24 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     case default
         call scattering_obs(kinematic, params, model, obs, d_obs)
     end select
+    do i= 1, size(d_obs)
+        if (d_obs(i) /= d_obs(i)) then
+            print*, 'Derivative of the observable contains NaN'
+            print*, 'Kinematics given were'
+            print*, 'lab energy:', kinematic%t_lab
+            print*, 'angle:', kinematic%angle
+            print*, 'channel:', kinematic%channel
+            print*, 'type:', kinematic%type
+            print*, 'Printing parameters that were given:'
+            do j=1, size(params)
+                print*, params(i)
+            enddo
+            print*, 'See main program for the model given'
+            print*, 'Stopping program'
+            stop
+        endif    
+    enddo
+    
 end subroutine observable
 
 !!
@@ -159,21 +179,23 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
     case ('dt')
         obs = 0.5_dp*(abs(a)**2 - abs(b)**2 + abs(c)**2 - abs(d)**2 + abs(e)**2)/sg
         d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
-                  -real(b)*real(d_b) - aimag(b)*aimag(d_b) &
-                  +real(c)*real(d_c) + aimag(c)*aimag(d_c) &
-                  -real(d)*real(d_d) - aimag(d)*aimag(d_d) &
-                  +real(e)*real(d_e) + aimag(e)*aimag(d_e)
+               -real(b)*real(d_b) - aimag(b)*aimag(d_b) &
+               +real(c)*real(d_c) + aimag(c)*aimag(d_c) &
+               -real(d)*real(d_d) - aimag(d)*aimag(d_d) &
+               +real(e)*real(d_e) + aimag(e)*aimag(d_e)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('ayy')
        obs = 0.5_dp*(abs(a)**2-abs(b)**2-abs(c)**2+abs(d)**2+abs(e)**2)/sg
         d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
-                     - real(b)*real(d_b) - aimag(b)*aimag(d_b) &
-                     - real(c)*real(d_c) - aimag(c)*aimag(d_c) &
-                     + real(d)*real(d_d) + aimag(d)*aimag(d_d) &
-                     + real(e)*real(d_e) + aimag(e)*aimag(d_e)
+               -real(b)*real(d_b) - aimag(b)*aimag(d_b) &
+               -real(c)*real(d_c) - aimag(c)*aimag(d_c) &
+               +real(d)*real(d_d) + aimag(d)*aimag(d_d) &
+               +real(e)*real(d_e) + aimag(e)*aimag(d_e)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('d')
         obs = 0.5_dp*(abs(a)**2+abs(b)**2-abs(c)**2-abs(d)**2+abs(e)**2)/sg
         d_num = real(a)*real(d_a) + aimag(a)*aimag(d_a) &
@@ -182,19 +204,22 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                -real(d)*real(d_d) - aimag(d)*aimag(d_d) &
                +real(e)*real(d_e) + aimag(e)*aimag(d_e)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('p')
         obs = real(conjg(a)*e)/sg
         d_num = real(conjg(d_a)*e + conjg(a)*d_e)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('azz')
         obs = (-real(conjg(a)*d)*cos(theta) + real(conjg(b)*c) + aimag(conjg(d)*e)*sin(theta))/sg
         d_num = - real(conjg(d_a)*d + conjg(a)*d_d)*cos(theta) &
                 + real(conjg(d_b)*c + conjg(b)*d_c) &
                 +aimag(conjg(d_d)*e + conjg(d)*d_e)*sin(theta)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('r')
         obs = (cos(0.5_dp*theta)*( real(conjg(a)*b + conjg(c)*d)) &
               -sin(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
@@ -202,7 +227,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                                         +conjg(d_c)*d + conjg(c)*d_d)) &
                -sin(0.5_dp*theta)*(aimag(conjg(d_b)*e + conjg(b)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('rt')
         obs = (-cos(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                -cos(0.5_dp*(pi - theta))*( real(conjg(b)*d)) &
@@ -211,7 +237,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                 -cos(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d)) &
                 +sin(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('rpt')
         obs = ( sin(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                +sin(0.5_dp*(pi - theta))*( real(conjg(b)*d)) &
@@ -220,7 +247,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                +sin(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d)) &
                +cos(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('at')
         obs = -( sin(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
                 -sin(0.5_dp*(pi - theta))*( real(conjg(b)*d))&
@@ -229,7 +257,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                 +sin(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d))&
                 -cos(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('d0sk')
         obs = ( sin(0.5_dp*(pi + theta))*( real(conjg(a)*b)) &
                -sin(0.5_dp*(pi - theta))*( real(conjg(c)*d)) &
@@ -238,7 +267,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                -sin(0.5_dp*(pi - theta))*( real(conjg(d_c)*d + conjg(c)*d_d)) &
                +cos(0.5_dp*(pi + theta))*(aimag(conjg(d_b)*e + conjg(b)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('nskn')
         obs = (sin(0.5_dp*(pi + theta))*( real(conjg(c)*e)) &
               -cos(0.5_dp*(pi + theta))*(aimag(conjg(a)*c)) &
@@ -247,7 +277,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                -cos(0.5_dp*(pi + theta))*(aimag(conjg(d_a)*c + conjg(a)*d_c)) &
                +cos(0.5_dp*(pi - theta))*(aimag(conjg(d_b)*d + conjg(b)*d_d))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('nssn')
         obs = (-cos(0.5_dp*(pi + theta))*( real(conjg(c)*e)) &
                -sin(0.5_dp*(pi + theta))*(aimag(conjg(a)*c)) &
@@ -256,13 +287,15 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                 -sin(0.5_dp*(pi + theta))*(aimag(conjg(d_a)*c + conjg(a)*d_c)) &
                 -sin(0.5_dp*(pi - theta))*(aimag(conjg(d_b)*d + conjg(b)*d_d))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('nnkk')
         obs = (-cos(theta)*(real(conjg(d)*e)) - sin(theta)*(aimag(conjg(a)*d)))/sg
         d_num = -cos(theta)*( real(conjg(d_d)*e + conjg(d)*d_e)) &
                 -sin(theta)*(aimag(conjg(d_a)*d + conjg(a)*d_d))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('a')
         obs = (-sin(0.5_dp*theta)*( real(conjg(a)*b + conjg(c)*d)) &
                -cos(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
@@ -270,7 +303,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                                          +conjg(d_c)*d + conjg(c)*d_d)) &
                 -cos(0.5_dp*theta)*(aimag(conjg(d_b)*e + conjg(b)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('axx')
         obs = (cos(theta)* real(conjg(a)*d) + real(conjg(b)*c) &
               -sin(theta)*aimag(conjg(d)*e))/sg
@@ -278,12 +312,14 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                           +real(conjg(d_b)*c + conjg(b)*d_c) &
                -sin(theta)*aimag(conjg(d_d)*e + conjg(d)*d_e)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('ckp')
         obs = aimag(conjg(d)*e)/sg
         d_num = aimag(conjg(d_d)*e + conjg(d)*d_e)
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('rp')
         obs = (sin(0.5_dp*theta)*( real(conjg(a)*b-conjg(c)*d)) &
               +cos(0.5_dp*theta)*(aimag(conjg(b)*e)))/sg
@@ -291,7 +327,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                                         -conjg(d_c)*d - conjg(c)*d_d)) &
                +cos(0.5_dp*theta)*(aimag(conjg(d_b)*e+conjg(b)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('mssn')
         obs = (cos(0.5_dp*theta)*( real(conjg(b)*e)) &
               +sin(0.5_dp*theta)*(aimag(conjg(a)*b-conjg(c)*d)))/sg
@@ -299,7 +336,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                +sin(0.5_dp*theta)*(aimag(conjg(d_a)*b + conjg(a)*d_b &
                                         -conjg(d_c)*d - conjg(c)*d_d))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('mskn')
         obs = (-sin(0.5_dp*theta)*(real(conjg(b)*e)) &
                +cos(0.5_dp*theta)*(aimag(conjg(a)*b-conjg(c)*d)))/sg
@@ -307,14 +345,16 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                +cos(0.5_dp*theta)*(aimag(conjg(d_a)*b + conjg(a)*d_b &
                                         -conjg(d_c)*d - conjg(c)*d_d))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('azx')
         obs = (sin(theta)*( real(conjg(a)*d)) &
               +cos(theta)*(aimag(conjg(d)*e)))/sg
         d_num = sin(theta)*( real(conjg(d_a)*d + conjg(a)*d_d)) &
                +cos(theta)*(aimag(conjg(d_d)*e + conjg(d)*d_e))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('ap')
         obs = (-sin(0.5_dp*theta)*(aimag(conjg(b)*e)) &
                +cos(0.5_dp*theta)*( real(conjg(a)*b - conjg(c)*d)))/sg
@@ -322,7 +362,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                 +cos(0.5_dp*theta)*( real(conjg(d_a)*b + conjg(a)*d_b &
                                          -conjg(d_c)*d - conjg(c)*d_d))
         num = obs*sg
-        d_obs = (d_num*sg - num*d_sg)/sg**2
+        d_obs = (d_num*sg - num*d_sg)/sg
+        d_obs = d_obs/sg
     case ('dtrt')
         num = 0.5_dp*(abs(a)**2 - abs(b)**2 + abs(c)**2 - abs(d)**2 + abs(e)**2)
         denom = -cos(0.5_dp*(pi + theta))*( real(conjg(a)*c)) &
@@ -337,7 +378,8 @@ subroutine scattering_obs(kinematic, params, model, obs, d_obs)
                   -cos(0.5_dp*(pi - theta))*( real(conjg(d_b)*d + conjg(b)*d_d)) &
                   +sin(0.5_dp*(pi + theta))*(aimag(conjg(d_c)*e + conjg(c)*d_e))
         obs = num/denom
-        d_obs = (d_num*denom - num*d_denom)/denom**2
+        d_obs = (d_num*denom - num*d_denom)/denom
+        d_obs = d_obs/denom
     case ('sgt')
         obs = 20*pi*(aimag(a + b))/k_cm
         d_obs = 20*pi*(aimag(d_a + d_b))/k_cm

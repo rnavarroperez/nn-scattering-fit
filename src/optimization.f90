@@ -60,7 +60,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     allocate(alpha_prime, mold=alpha)
     prev_chi_ratio = chi2/n_points
     do
-        if(limit == 2) exit
+        if(limit == 5) exit
         alpha_prime = set_alpha_prime(prev_alpha, lambda)
         parameters = get_new_parameters(alpha_prime, prev_beta, prev_parameters, mask)
         call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
@@ -68,13 +68,12 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
         ! determined whether to raise or lower lambda
         if(chi_ratio >= prev_chi_ratio) then
             lambda = lambda*factor
-            limit = 0
         else if(chi_ratio < prev_chi_ratio) then
             lambda = lambda/factor
             if((prev_chi_ratio - chi_ratio)*n_points <= delta) then
                 ! increase limit by 1 if there is a negligible difference
                 limit = limit + 1
-            else ! we want 2 consecutive negligible differences
+            else ! we want consecutive negligible differences
                 limit = 0
             end if
             prev_alpha = alpha
