@@ -276,7 +276,8 @@ subroutine uncoupled_variable_phase(l, k, r, lambda, d_lambda, tan_delta, d_tan_
     denominator = 1 - lambda*y_hat*phi/k
     d_denominator = -(d_lambda*phi + lambda*d_phi)*y_hat/k
     tan_delta = numerator/denominator
-    d_tan_delta = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    d_tan_delta = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_tan_delta = d_tan_delta/denominator
 end subroutine uncoupled_variable_phase
 
 !!
@@ -360,7 +361,8 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d
         d_denominator = d_br
         alfa_1 = numerator/denominator
         alfa_2 = alfa_1
-        d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator
+        d_alfa_1 = d_alfa_1/denominator
         d_alfa_2 = d_alfa_1
     elseif (radical > 0) then
         numerator = -br + sqrt(radical)
@@ -368,12 +370,13 @@ subroutine solve_alfas(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, d
         denominator = 2*ar
         d_denominator = 2*d_ar
         alfa_1 = numerator/denominator
-        d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
-
+        d_alfa_1 = (d_numerator*denominator - numerator*d_denominator)/denominator
+        d_alfa_1 = d_alfa_1/denominator
         numerator = -br - sqrt(radical)
         d_numerator = -d_br - d_radical/(2*sqrt(radical))
         alfa_2 = numerator/denominator
-        d_alfa_2 = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+        d_alfa_2 = (d_numerator*denominator - numerator*d_denominator)/denominator
+        d_alfa_2 = d_alfa_2/denominator
     else
         print*, 'WARNING: No real solutions in solve_alfas'
         alfa_1 = 0
@@ -414,8 +417,8 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     real(dp), intent(in) :: d_d2(:) !< derivatives of the \f$D_2\f$ parameter
     real(dp), intent(in) :: alfa_1 !< the \f$\alpha_1\f$ solution
     real(dp), intent(in) :: alfa_2 !< the \f$\alpha_2\f$ solution
-    real(dp), intent(out) :: d_alfa_1(:) !< derivatives of the \f$\alpha_1\f$ solution
-    real(dp), intent(out) :: d_alfa_2(:) !< derivatives of the \f$\alpha_2\f$ solution
+    real(dp), intent(in) :: d_alfa_1(:) !< derivatives of the \f$\alpha_1\f$ solution
+    real(dp), intent(in) :: d_alfa_2(:) !< derivatives of the \f$\alpha_2\f$ solution
     real(dp), intent(out) :: ps_eigen(1:3) !< eigen phaseshifts in a coupled channel
     real(dp), intent(out) :: d_ps_eigen(:, :) !< derivatives of the eigen phaseshifts in a coupled channel
     real(dp) :: numerator, denominator, argument
@@ -428,7 +431,8 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     argument = numerator/denominator
     d_numerator = d_b1 + d_alfa_1*b2 + alfa_1*d_b2
     d_denominator = d_a1 + d_alfa_1*a2 + alfa_1*d_a2
-    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_argument = d_argument/denominator
     ps_eigen(1) = -atan(argument)
     d_ps_eigen(:, 1) = -1/(1 + argument**2)*d_argument
 
@@ -437,7 +441,8 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     argument = numerator/denominator
     d_numerator = d_d1 + d_alfa_1*d2 + alfa_1*d_d2
     d_denominator = d_b1 + d_alfa_1*b2 + alfa_1*d_b2
-    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_argument = d_argument/denominator
     ps_eigen(2) =  atan(argument)
     d_ps_eigen(:, 2) = 1/(1 + argument**2)*d_argument
 
@@ -446,7 +451,8 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     argument = numerator/denominator
     d_numerator = d_d1 + d_alfa_2*d2 + alfa_2*d_d2
     d_denominator = d_c1 + d_alfa_2*c2 + alfa_2*d_c2
-    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_argument = d_argument/denominator
     ps_eigen(3) = -atan(argument)
     d_ps_eigen(:, 3) = -1/(1 + argument**2)*d_argument
 end subroutine eigen_phases
@@ -489,7 +495,8 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
     denominator = tan(2*ps_eigen(2))
     d_denominator = (1/cos(2*ps_eigen(2))**2)*2*d_ps_eigen(:, 2)
     fraction = numerator/denominator
-    d_fraction = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+    d_fraction = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_fraction = d_fraction/denominator
 
     if (ps_eigen(1) - ps_eigen(3) > pi/2) then
         ps_bar(1) = (ps_eigen(1) + ps_eigen(3) + pi - asin(fraction))/2
@@ -568,7 +575,8 @@ subroutine coulomb_uncoupled_phases(s, k, r, lambdas, d_lambdas, tan_deltas, d_t
             d_numerator   =  d_tan_deltas(:, i) - F*(d_lambda*diff + lambda*d_diff)/k
             d_denominator = (d_lambda*diff + lambda*d_diff)*G/k
             tan_deltas(i) = numerator/denominator
-            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator
+            d_tan_deltas(:, i) = d_tan_deltas(:, i)/denominator
         endif
     enddo
     
@@ -643,7 +651,8 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
             d_numerator   =  (d_lambda*diff + lambda*d_diff)*F + k*d_tan_deltas(:, i)*(yh*Fp - F*yhp)
             d_denominator = -(d_lambda*diff + lambda*d_diff)*G + k*d_tan_deltas(:, i)*(G*yhp - yh*Gp)
             tan_deltas(i) = numerator/denominator
-            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator**2
+            d_tan_deltas(:, i) = (d_numerator*denominator - numerator*d_denominator)/denominator
+            d_tan_deltas(:, i) = d_tan_deltas(:, i)/denominator
         endif
     enddo
 
