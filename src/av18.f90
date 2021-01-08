@@ -20,21 +20,30 @@ implicit none
 
 private 
 
-public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators
+public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators, display_parameters
 
-integer, parameter :: n_parameters = 42 !< Number of phenomenological parameters
+integer, parameter :: n_parameters = 41 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
 ! integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
 
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
-    [  -7.62701_dp, 1815.49200_dp, 1847.80590_dp,  1813.53150_dp,    1.07985_dp, &
-     -190.09490_dp, -811.20400_dp,   -0.62697_dp,  -570.55710_dp,  819.12220_dp,    0.06709_dp, &
-      342.06690_dp, -615.23390_dp,    0.74129_dp,     9.34180_dp, -376.43840_dp,   -8.62770_dp, &
-     2605.26820_dp,  441.97330_dp,    1.48560_dp, -1126.83590_dp,  370.13240_dp,    0.10180_dp, &
-       86.06580_dp, -356.51750_dp,   -0.13201_dp,   253.43500_dp,   -1.00760_dp,    0.07357_dp, &
-     -217.57910_dp,   18.39350_dp,  -11.27028_dp,  3346.68740_dp,  -10.66788_dp, 3126.55420_dp, &
-     3342.76640_dp,    0.12472_dp,   16.77800_dp,    -2.09971_dp, 1204.43010_dp, &
-       -0.31452_dp,  217.45590_dp] !< default parameters in the AV18 potential
+    [  -7.62701_dp,  1815.49200_dp, 1847.80590_dp, & ! S=1, T=1 c
+        1.07985_dp,  -190.09490_dp, -811.20400_dp, & ! S=1, T=1 t
+       -0.62697_dp,  -570.55710_dp,  819.12220_dp, & ! S=1, T=1 ls
+        0.06709_dp,   342.06690_dp, -615.23390_dp, & ! S=1, T=1 l2
+        0.74129_dp,     9.34180_dp, -376.43840_dp, & ! S=1, T=1 ls2
+       -8.62770_dp,  2605.26820_dp,  441.97330_dp, & ! S=1, T=0 c
+        1.48560_dp, -1126.83590_dp,  370.13240_dp, & ! S=1, T=0 t
+        0.10180_dp,    86.06580_dp, -356.51750_dp, & ! S=1, T=0 ls
+       -0.13201_dp,   253.43500_dp,   -1.00760_dp, & ! S=1, T=0 l2
+        0.07357_dp,  -217.57910_dp,   18.39350_dp, & ! S=1, T=0 ls2
+      -11.27028_dp,  3346.68740_dp, & ! S=0, T=1 c pp
+      -10.66788_dp,  3126.55420_dp, & ! S=0, T=1 c np
+        0.12472_dp,    16.77800_dp, & ! S=0, T=1 l2
+       -2.09971_dp,  1204.43010_dp, & ! S=0, T=0 c
+       -0.31452_dp,   217.45590_dp, & ! S=0, T=1 l2
+       -3.92200_dp & ! P CD c term 
+    ] !< default parameters in the AV18 potential
 contains
 
 !!
@@ -358,101 +367,102 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     tpi = (tpi0 + 2*tpic)/3
 
     p11pp =  ap( 1)*tpi2 + ap( 2)*wsp + ap( 3)*wsx2 + ypi0p
-    p11np =  ap( 1)*tpi2 + ap( 4)*wsp + ap( 3)*wsx2 - ypi0p + 2*ypicp
-    p11nn =  ap( 1)*tpi2 + (ap(2)-ap(33)+ap(36))*wsp + ap( 3)*wsx2 + ypi0p
-    pt1pp =  ap( 5)*tpi2 + ap( 6)*wsx + ap( 7)*wsx2 + tpi0
-    pt1np =  ap( 5)*tpi2 + ap( 6)*wsx + ap( 7)*wsx2 - tpi0 + 2*tpic
-    pt1nn =  ap( 5)*tpi2 + ap( 6)*wsx + ap( 7)*wsx2 + tpi0
-    pls1  =  ap( 8)*tpi2 + ap( 9)*wsp + ap(10)*wsx2
-    pl211 =  ap(11)*tpi2 + ap(12)*wsp + ap(13)*wsx2
-    pls21 =  ap(14)*tpi2 + ap(15)*wsp + ap(16)*wsx2
-    p10   =  ap(17)*tpi2 + ap(18)*wsp + ap(19)*wsx2 - ypi0p - 2*ypicp
-    pt0   =  ap(20)*tpi2 + ap(21)*wsx + ap(22)*wsx2 - tpi0 - 2*tpic
-    pls0  =  ap(23)*tpi2 + ap(24)*wsp + ap(25)*wsx2
-    pl210 =  ap(26)*tpi2 + ap(27)*wsp + ap(28)*wsx2
-    pls20 =  ap(29)*tpi2 + ap(30)*wsp + ap(31)*wsx2
-    p01pp =  ap(32)*tpi2 + ap(33)*wsp - 3*ypi0p
-    p01np =  ap(34)*tpi2 + ap(35)*wsp - 3*(-ypi0p + 2*ypicp)
-    p01nn =  ap(32)*tpi2 + ap(36)*wsp - 3*ypi0p
-    pl201 =  ap(37)*tpi2 + ap(38)*wsp
-    p00   =  ap(39)*tpi2 + ap(40)*wsp - 3*(-ypi0p - 2*ypicp)
-    pl200 =  ap(41)*tpi2 + ap(42)*wsp
+    p11np =  ap( 1)*tpi2 + (ap( 2) + 0.5_dp*ap(41))*wsp + ap( 3)*wsx2 - ypi0p + 2*ypicp
+    p11nn =  ap( 1)*tpi2 + (ap( 2) + ap(41))*wsp + ap( 3)*wsx2 + ypi0p
+    pt1pp =  ap( 4)*tpi2 + ap( 5)*wsx + ap( 6)*wsx2 + tpi0
+    pt1np =  ap( 4)*tpi2 + ap( 5)*wsx + ap( 6)*wsx2 - tpi0  + 2*tpic
+    pt1nn =  ap( 4)*tpi2 + ap( 5)*wsx + ap( 6)*wsx2 + tpi0
+    pls1  =  ap( 7)*tpi2 + ap( 8)*wsp + ap( 9)*wsx2
+    pl211 =  ap(10)*tpi2 + ap(11)*wsp + ap(12)*wsx2
+    pls21 =  ap(13)*tpi2 + ap(14)*wsp + ap(15)*wsx2
+    p10   =  ap(16)*tpi2 + ap(17)*wsp + ap(18)*wsx2 - ypi0p - 2*ypicp
+    pt0   =  ap(19)*tpi2 + ap(20)*wsx + ap(21)*wsx2 - tpi0  - 2*tpic
+    pls0  =  ap(22)*tpi2 + ap(23)*wsp + ap(24)*wsx2
+    pl210 =  ap(25)*tpi2 + ap(26)*wsp + ap(27)*wsx2
+    pls20 =  ap(28)*tpi2 + ap(29)*wsp + ap(30)*wsx2
+    p01pp =  ap(31)*tpi2 + ap(32)*wsp - 3*ypi0p
+    p01np =  ap(33)*tpi2 + ap(34)*wsp - 3*(-ypi0p + 2*ypicp)
+    p01nn =  ap(31)*tpi2 + (ap(32) + ap(41))*wsp - 3*ypi0p
+    pl201 =  ap(35)*tpi2 + ap(36)*wsp
+    p00   =  ap(37)*tpi2 + ap(38)*wsp - 3*(-ypi0p - 2*ypicp)
+    pl200 =  ap(39)*tpi2 + ap(40)*wsp
 
     d_p11pp(1) =  tpi2
     d_p11pp(2) =  wsp
     d_p11pp(3) =  wsx2
 
-    d_p11np(1) =  tpi2
-    d_p11np(4) =  wsp
-    d_p11np(3) =  wsx2
+    d_p11np( 1) =  tpi2
+    d_p11np( 2) =  wsp
+    d_p11np(41) =  0.5_dp*wsp
+    d_p11np( 3) =  wsx2
 
     d_p11nn( 1) =  tpi2
     d_p11nn( 2) =  wsp
-    d_p11nn(33) = -wsp
-    d_p11nn(36) =  wsp
+    d_p11nn(41) =  wsp
     d_p11nn( 3) =  wsx2
 
-    d_pt1pp(5) =  tpi2
-    d_pt1pp(6) =  wsx
-    d_pt1pp(7) =  wsx2
+    d_pt1pp(4) =  tpi2
+    d_pt1pp(5) =  wsx
+    d_pt1pp(6) =  wsx2
 
-    d_pt1np(5) =  tpi2
-    d_pt1np(6) =  wsx
-    d_pt1np(7) =  wsx2
+    d_pt1np(4) =  tpi2
+    d_pt1np(5) =  wsx
+    d_pt1np(6) =  wsx2
 
-    d_pt1nn(5) =  tpi2
-    d_pt1nn(6) =  wsx
-    d_pt1nn(7) =  wsx2
+    d_pt1nn(4) =  tpi2
+    d_pt1nn(5) =  wsx
+    d_pt1nn(6) =  wsx2
 
-    d_pls1( 8) =  tpi2
-    d_pls1( 9) =  wsp
-    d_pls1(10) =  wsx2
+    d_pls1(7) =  tpi2
+    d_pls1(8) =  wsp
+    d_pls1(9) =  wsx2
 
-    d_pl211(11) =  tpi2
-    d_pl211(12) =  wsp
-    d_pl211(13) =  wsx2
+    d_pl211(10) =  tpi2
+    d_pl211(11) =  wsp
+    d_pl211(12) =  wsx2
 
-    d_pls21(14) =  tpi2
-    d_pls21(15) =  wsp
-    d_pls21(16) =  wsx2
+    d_pls21(13) =  tpi2
+    d_pls21(14) =  wsp
+    d_pls21(15) =  wsx2
 
-    d_p10(17) =  tpi2
-    d_p10(18) =  wsp
-    d_p10(19) =  wsx2
+    d_p10(16) =  tpi2
+    d_p10(17) =  wsp
+    d_p10(18) =  wsx2
 
-    d_pt0(20) =  tpi2
-    d_pt0(21) =  wsx
-    d_pt0(22) =  wsx2
+    d_pt0(19) =  tpi2
+    d_pt0(20) =  wsx
+    d_pt0(21) =  wsx2
 
-    d_pls0(23) =  tpi2
-    d_pls0(24) =  wsp
-    d_pls0(25) =  wsx2
+    d_pls0(22) =  tpi2
+    d_pls0(23) =  wsp
+    d_pls0(24) =  wsx2
 
-    d_pl210(26) =  tpi2
-    d_pl210(27) =  wsp
-    d_pl210(28) =  wsx2
+    d_pl210(25) =  tpi2
+    d_pl210(26) =  wsp
+    d_pl210(27) =  wsx2
 
-    d_pls20(29) =  tpi2
-    d_pls20(30) =  wsp
-    d_pls20(31) =  wsx2
+    d_pls20(28) =  tpi2
+    d_pls20(29) =  wsp
+    d_pls20(30) =  wsx2
 
-    d_p01pp(32) =  tpi2
-    d_p01pp(33) =  wsp
+    d_p01pp(31) =  tpi2
+    d_p01pp(32) =  wsp
 
-    d_p01np(34) =  tpi2
-    d_p01np(35) =  wsp
+    d_p01np(33) =  tpi2
+    d_p01np(34) =  wsp
 
-    d_p01nn(32) =  tpi2
-    d_p01nn(36) =  wsp
+    d_p01nn(31) =  tpi2
+    d_p01nn(32) =  wsp
+    d_p01nn(41) =  wsp
 
-    d_pl201(37) =  tpi2
-    d_pl201(38) =  wsp
+    d_pl201(35) =  tpi2
+    d_pl201(36) =  wsp
 
-    d_p00(39) =  tpi2
-    d_p00(40) =  wsp
+    d_p00(37) =  tpi2
+    d_p00(38) =  wsp
 
-    d_pl200(41) =  tpi2
-    d_pl200(42) =  wsp
+    d_pl200(39) =  tpi2
+    d_pl200(40) =  wsp
 
     ! p11pp=  -7.62701*tpi2+1815.4920*wsp+1847.8059*wsx2+ypi0p
     ! p11np=  -7.62701*tpi2+1813.5315*wsp+1847.8059*wsx2-ypi0p+2*ypicp
@@ -541,5 +551,47 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     enddo
 
 end subroutine av18_operator
+
+subroutine display_parameters(ap, cv)
+    implicit none
+    real(dp), intent(in), dimension(:) :: ap
+    real(dp), intent(in), optional, dimension(:, :) :: cv
+
+    integer :: i
+
+    print'(3(2x,a,f15.8))', 'I_11    c:', ap( 1), 'P_11    c:', ap( 2), 'R_11    c:', ap( 3)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=1, 3)
+    print'(3(2x,a,f15.8))', 'I_11    t:', ap( 4), 'Q_11    t:', ap( 5), 'R_11    t:', ap( 6)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=4, 6)
+    print'(3(2x,a,f15.8))', 'I_11   ls:', ap( 7), 'P_11   ls:', ap( 8), 'R_11   ls:', ap( 9)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=7, 9)
+    print'(3(2x,a,f15.8))', 'I_11   l2:', ap(10), 'P_11   l2:', ap(11), 'R_11   l2:', ap(12)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=10, 12)
+    print'(3(2x,a,f15.8))', 'I_11  ls2:', ap(13), 'P_11  ls2:', ap(14), 'R_11  ls2:', ap(15)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=13, 15)
+    print'(3(2x,a,f15.8))', 'I_10    c:', ap(16), 'P_10    c:', ap(17), 'R_10    c:', ap(18)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=16, 18)
+    print'(3(2x,a,f15.8))', 'I_10    t:', ap(19), 'Q_10    t:', ap(20), 'R_10    t:', ap(21)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=19, 21)
+    print'(3(2x,a,f15.8))', 'I_10   ls:', ap(22), 'P_10   ls:', ap(23), 'R_10   ls:', ap(24)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=22, 24)
+    print'(3(2x,a,f15.8))', 'I_10   l2:', ap(25), 'P_10   l2:', ap(26), 'R_10   l2:', ap(27)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=25, 27)
+    print'(3(2x,a,f15.8))', 'I_10  ls2:', ap(28), 'P_10  ls2:', ap(29), 'R_10  ls2:', ap(30)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=28, 30)
+    print'(2(2x,a,f15.8))', 'I_01 c pp:', ap(31), 'P_01 c pp:', ap(32)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=31, 32)
+    print'(2(2x,a,f15.8))', 'I_01 c np:', ap(33), 'P_01 c np:', ap(34)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=33, 34)
+    print'(2(2x,a,f15.8))', 'I_01   l2:', ap(35), 'P_01   l2:', ap(36)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=35, 36)
+    print'(2(2x,a,f15.8))', 'I_00    c:', ap(37), 'P_00    c:', ap(38)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=37, 38)
+    print'(2(2x,a,f15.8))', 'I_00   l2:', ap(39), 'P_00   l2:', ap(40)
+    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=39, 40)
+    print'(1(2x,a,f15.8))', 'P CD    c:', ap(41) 
+    if(present(cv)) print'(3(12x,f15.8))', sqrt(cv(41,41))
+
+end subroutine display_parameters
 
 end module av18

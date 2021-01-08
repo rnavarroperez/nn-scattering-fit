@@ -8,7 +8,7 @@
 !!
 program nn_fit
 use precisions, only : dp
-use av18, only : default_params, av18_all_partial_waves
+use av18, only : default_params, av18_all_partial_waves, display_parameters
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt
@@ -26,6 +26,7 @@ integer :: n_points
 real(dp) :: chi2
 
 model%potential => av18_all_partial_waves
+model%display_subroutine => display_parameters
 model%r_max = r_max
 model%dr = dr
 model%potential_type = 'local'

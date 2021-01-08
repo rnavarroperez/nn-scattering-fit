@@ -87,6 +87,15 @@ interface
     end subroutine local_potential
 end interface
 
+interface
+    subroutine display_parameters(ap, cv)
+        use precisions, only : dp
+        implicit none
+        real(dp), intent(in), dimension(:) :: ap !< potential parameters
+        real(dp), intent(in), optional, dimension(:, :) :: cv !< covariance matrix
+    end subroutine display_parameters
+end interface
+
 !!
 !> @brief      nn model for local interactions
 !!
@@ -96,6 +105,7 @@ end interface
 !!
 type :: nn_model
     procedure(local_potential), pointer, nopass :: potential !< local NN potential
+    procedure(display_parameters), pointer, nopass :: display_subroutine !< local NN potential
     real(dp) :: r_max !< maximum intetgration radius
     real(dp) :: dr !< radial integration step
     character(len=24) :: potential_type !< Typr of nn potential ('local' or 'delta_shell')

@@ -39,7 +39,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     real(dp), allocatable :: alpha(:, :), beta(:)
     real(dp), allocatable :: prev_alpha(:, :), prev_beta(:), prev_parameters(:), alpha_prime(:, :)
     real(dp) :: lambda, prev_chi_ratio, chi_ratio
-    integer :: limit, counter, i, j
+    integer :: limit, counter
     real(dp), parameter :: delta = 1.e-2_dp
     real(dp), parameter :: factor = 10._dp
 
@@ -49,8 +49,10 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
     chi_ratio = chi2/n_points
     
-    print'(6f15.8)', parameters
-    print'(2f15.8,3i10,1e15.4)', chi_ratio, chi2, n_points, limit, counter, lambda
+    call model%display_subroutine(parameters)
+    print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
+        counter, 'lambda:', lambda, 'limit:', limit
+    print*,
     
     allocate(prev_parameters, source=parameters)
     allocate(prev_alpha, source=alpha)
@@ -81,16 +83,17 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
             prev_chi_ratio = chi_ratio
         end if
         counter = counter + 1
-        print'(6f15.8)', parameters
-        print'(2f15.8,3i10,1e15.4)', chi_ratio, chi2, n_points, limit, counter, lambda
+        call model%display_subroutine(parameters)
+        print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
+            counter, 'lambda:', lambda, 'limit:', limit
+        print*,
     enddo
     alpha = prev_alpha
     parameters = prev_parameters
     covariance = covariance_matrix(alpha, mask)
-    do i=1,7
-        print'(6f15.8)', parameters(6*(i-1)+1:6*i)
-        print'(6f15.8)', (sqrt(covariance(j,j)), j=6*(i-1)+1,6*i)
-    enddo
+    call model%display_subroutine(parameters, covariance)
+
+1 format(x,a,f15.8,2x,a,i5,2x,a,f13.8,2x,a,i5,2x,a,e11.4,2x,a,i2)
 end subroutine lavenberg_marquardt
 
 function covariance_matrix(alpha, mask) result(covariance)
