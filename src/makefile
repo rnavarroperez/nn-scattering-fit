@@ -1,6 +1,6 @@
 COMPILER = gfortran
 
-FLAGS = -O3 #-fopenmp -fcheck=all -Wall
+FLAGS = -O3 -fopenmp -fcheck=all -Wall
 
 LAPACK = -llapack -lblas
 
@@ -52,6 +52,9 @@ em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_parti
 	$(COMPILER) $(FLAGS) -c $<
 
 av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
+	$(COMPILER) $(FLAGS) -c $<
+
+av18_compatibility.o: av18_compatibility.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 pion_exchange.o : pion_exchange.f90 precisions.o em_nn_potential.o

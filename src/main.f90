@@ -9,6 +9,7 @@
 program nn_fit
 use precisions, only : dp
 use av18, only : default_params, av18_all_partial_waves, display_parameters
+use av18_compatibility, only : read_marias_format
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt
@@ -31,10 +32,13 @@ model%r_max = r_max
 model%dr = dr
 model%potential_type = 'local'
 
+allocate(parameters, mold=default_params)
+call read_marias_format('av18.bob.in', parameters)
+
 allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)
 call init_ex_em_amplitudes(experiments)
-allocate(parameters, source=default_params)
+
 allocate(mask(1: size(parameters)))
 mask = .true.
 call lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
