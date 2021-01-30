@@ -40,7 +40,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     real(dp), allocatable :: prev_alpha(:, :), prev_beta(:), prev_parameters(:), alpha_prime(:, :)
     real(dp) :: lambda, prev_chi_ratio, chi_ratio
     integer :: limit, counter
-    real(dp), parameter :: delta = 1.e-2_dp
+    real(dp), parameter :: delta = 1.e1_dp
     real(dp), parameter :: factor = 10._dp
 
     limit = 0

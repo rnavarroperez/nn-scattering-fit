@@ -32,8 +32,7 @@ model%r_max = r_max
 model%dr = dr
 model%potential_type = 'local'
 
-allocate(parameters, mold=default_params)
-call read_marias_format('av18.bob.in', parameters)
+allocate(parameters, source=default_params)
 
 allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)

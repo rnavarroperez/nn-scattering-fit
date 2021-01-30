@@ -1,6 +1,6 @@
 COMPILER = gfortran
 
-FLAGS = -O3 -fopenmp -fcheck=all -Wall
+FLAGS = -O3 -fcheck=all -Wall # -fopenmp
 
 LAPACK = -llapack -lblas
 
