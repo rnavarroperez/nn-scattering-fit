@@ -181,9 +181,18 @@ function set_alpha_prime(alpha, lambda) result(alpha_prime)
     end do
 end function set_alpha_prime
 
+!!
+!> @brief      Function to invert the matrix alpha
+!!
+!! Wrapper subroutine that uses LAPACK to invert a matrix
+!! In particular we use dportf and dpotri because alpha
+!! is a positive definite matrix by construction.
+!!
+!! @return     The inverse of the alpha matrix
+!!
 function invert_alpha(alpha) result(alpha_inv)
     implicit none
-    real(dp), intent(in) :: alpha(:,:)
+    real(dp), intent(in) :: alpha(:,:) !< Positive definite matrix
     real(dp), allocatable :: alpha_inv(:,:)
     integer :: i, j, info, n_param
 
