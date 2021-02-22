@@ -96,6 +96,9 @@ main.o: main.f90 exp_data.o
 mc_phases.o: mc_phases.f90 precisions.o delta_shell.o read_write.o
 	$(COMPILER) $(FLAGS) -c $<
 
+random_num.o: random_num.f90 constants.o precisions.o
+	$(COMPILER) $(FLAGS) -c $<
+
 clean:
 	rm -rf *.o *.mod
 
