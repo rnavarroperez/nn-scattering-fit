@@ -13,7 +13,7 @@ use av18_compatibility, only : read_marias_format
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt
-use random_num, only: box_muller_num
+use random_num, only: box_muller_num, generator_100_num, verify_box_muller_num
 
 implicit none
 
@@ -27,7 +27,7 @@ logical, allocatable, dimension(:) :: mask
 integer :: n_points
 real(dp) :: chi2
 real(dp) :: x
-integer :: i
+integer :: i, n_samples
 
 model%potential => av18_all_partial_waves
 model%display_subroutine => display_parameters
@@ -41,6 +41,8 @@ DO i = 1,100
         call box_muller_num(x)
         PRINT*, x
 END DO
+call generator_100_num
+call verify_box_muller_num(n_samples)
 
 !allocate(parameters, mold=default_params)
 !call read_marias_format('av18.bob.in', parameters)
