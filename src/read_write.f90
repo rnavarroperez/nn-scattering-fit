@@ -19,7 +19,8 @@ implicit none
 
 private
 
-public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, write_montecarlo_phases
+public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
+    write_montecarlo_phases, print_phases
 
 contains
 
@@ -249,9 +250,61 @@ subroutine write_phases(parameters, model, channel)
     close(unit)
 end subroutine write_phases
 
-! subroutine write_chi(chi2, n_points, parameters)
-!     implicit none
-!     real(dp),
-! end subroutine write_chi
+subroutine print_phases(parameters, model)
+    implicit none
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    type(nn_model), intent(in) :: model !< nn scattering model
+    integer, parameter :: n_energies = 11
+    real(dp), parameter, dimension(1:n_energies) :: energies = [1._dp, 5._dp, 10._dp, 25._dp, &
+        50._dp, 100._dp, 150._dp, 200._dp, 250._dp, 300._dp, 350._dp]
+    integer :: i
+    integer, parameter :: jmax = 4
+    real(dp), dimension(1:5, 1:jmax, 1:n_energies) :: phases
+    real(dp), allocatable, dimension(:, :, :) :: d_phases
+
+    do i = 1, size(energies)
+        call all_phaseshifts(model, parameters, energies(i), 'pp', phases(:, :, i), d_phases)
+    enddo
+    phases = phases*180/pi
+    print*, 'Reproducing pp phases (Table IV in WSS paper)'
+    print '(9a9)', 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
+    do i = 1, size(energies)
+        print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
+            phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
+    enddo
+    print*, 
+
+    do i = 1, size(energies)
+        call all_phaseshifts(model, parameters, energies(i), 'nn', phases(:, :, i), d_phases)
+    enddo
+    phases = phases*180/pi
+    print*, 'Reproducing nn phases (Table V in WSS paper)'
+    print '(9a9)', 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
+    do i = 1, size(energies)
+        print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
+            phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
+    enddo
+    print*, 
+
+    do i = 1, size(energies)
+        call all_phaseshifts(model, parameters, energies(i), 'np', phases(:, :, i), d_phases)
+    enddo
+    phases = phases*180/pi
+    print*, 'Reproducing np, T=1 phases (Table VI in WSS paper)'
+    print '(9a9)', 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
+    do i = 1, size(energies)
+        print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
+            phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
+    enddo
+    print*, 
+    print*, 'Reproducing np, T=0 phases (Table VII in WSS paper)'
+    print '(10a9)', 'T_lab', '1P1', '1F3', '3S1', 'Ep1', '3D1', '3D2', '3D3', 'Ep3', '3G3'
+    do i = 1, size(energies)
+        print '(10f9.2)', energies(i), phases(1, 2, i), phases(1, 4, i), phases(3, 2, i), phases(4, 2, i), &
+            phases(5, 2, i), phases(2, 3, i), phases(3, 4, i), phases(4, 4, i), phases(5, 4, i)
+    enddo
+
+    
+end subroutine print_phases
 
 end module read_write
