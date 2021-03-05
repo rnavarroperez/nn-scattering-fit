@@ -668,7 +668,7 @@ subroutine add_coulomb(r, k, v_pw)
     real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
     real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
     integer :: i
-    real(dp) :: v_coul, v_coul2, fcoulr, br, kmev, alpha_prime
+    real(dp) :: v_coul, fcoulr, br, kmev, alpha_prime
     real(dp), parameter :: b = 4.27_dp, small = 0.e-5_dp
     kmev = k*hbar_c
     alpha_prime = alpha*(1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
@@ -680,13 +680,10 @@ subroutine add_coulomb(r, k, v_pw)
     end if
 
     v_coul = alpha_prime*hbar_c*fcoulr
-    v_coul2 = -alpha*alpha_prime*(hbar_c*fcoulr)**2/m_p
-
     do i = 1, size(v_pw, 2)
         v_pw(1:3, i) = v_pw(1:3, i) + v_coul
         v_pw(5, i) = v_pw(5, i) + v_coul
     enddo
-    !v_pw(1, 1) = v_pw(1, 1) + v_coul2
 end subroutine add_coulomb
 
 end module delta_shell

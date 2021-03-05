@@ -42,7 +42,7 @@ subroutine add_em_potential(reaction, s, v_em, v_st)
     s1ds2 = 4*s - 3
     select case (trim(reaction))
     case ('pp')
-        v_st(1) = v_st(1) + v_em(1)*0 + v_em(2) + v_em(3)*0 + v_em(4)*0 + s1ds2*v_em(6)
+        v_st(1) = v_st(1) + v_em(1)*0 + v_em(2) + v_em(3) + v_em(4) + s1ds2*v_em(6)
         v_st(2) = v_st(2) + v_em(9)
         v_st(3) = v_st(3) + v_em(12)
     case ('np')
