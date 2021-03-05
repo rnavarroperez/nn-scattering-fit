@@ -48,7 +48,7 @@ constants.o: constants.f90 precisions.o
 st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o
+em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
 av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
@@ -88,6 +88,9 @@ chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 optimization.o: optimization.f90 chi_square.o precisions.o exp_data.o delta_shell.o
+	$(COMPILER) $(FLAGS) -c $<
+
+quadrature.o: quadrature.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 exp_data.o
