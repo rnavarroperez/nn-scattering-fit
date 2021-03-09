@@ -17,7 +17,7 @@ implicit none
 
 private
 
-public :: n_em_terms, add_em_potential, em_potential, vacuum_polarization_integral, compare_Ivps
+public :: n_em_terms, add_em_potential, em_potential, vacuum_polarization_integral
 
 integer, parameter :: n_em_terms = 14 !< Number of terms in the EM potential
 contains
@@ -115,28 +115,26 @@ function em_potential(r) result(v_em)
     v_em(14) = -alpha*hbar_c**3*mu_n*flsr3/(2*m_n*mr)
 end function em_potential
 
-subroutine compare_Ivps(r_min, r_max, dr)
-    implicit none
-    real(dp), intent(in) :: r_min, r_max, dr
 
-    real(dp) :: r, Ivp, Ivp_small, Ivp_large, kr
-
-    r = r_min
-    do
-        if(r > r_max) exit
-        kr = m_e*r/hbar_c
-        Ivp = vacuum_polarization_integral(r)
-        Ivp_small = -gamma - 5/6._dp + abs(log(kr)) + 6*pi*kr/8
-        Ivp_large = 2*sqrt(2*pi)/4._dp*exp(-2*kr)/((2*kr)**1.5_dp)
-        print*, r, 2*kr, Ivp, Ivp_small, Ivp_large
-        r = r + dr
-    enddo
-    
-end subroutine compare_Ivps
-
+!!
+!> @brief      Integral for Vacuum Polarization potential
+!!
+!! Calculates the integral inside the Vacuum Polarization potential
+!!
+!! In order to perform the integral from 1 to infinity a change of 
+!! variable is used to recast it as an integral from 0 to 1.
+!!
+!! The change of variable is
+!! \f[
+!!    \int_a^b f(x) dx = \int_{1/b}^{1/a} \frac{1}{t^2} f\left(\frac{1}{t} \right) dt
+!! \f]
+!!
+!!
+!! @return     \f$ \int_1^\infty e^{2 m_e r x} \left(1 + \frac{1}{2x^2} \right) \frac{\sqrt{x^2 - 1}}{x^2} dx \f$
+!!
 real(dp) function vacuum_polarization_integral(r) result(Ivp)
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r !< radius at which the vacuum polarization potential will be evaluated, in units of fm
 
     integer, parameter :: n_points = 401
     real(dp), parameter :: t_min = 0._dp
@@ -158,6 +156,14 @@ real(dp) function vacuum_polarization_integral(r) result(Ivp)
 
 end function vacuum_polarization_integral
 
+!!
+!> @brief      Kernel for the VP integral
+!!
+!! 
+!! @return     \f$ e^{2 m_e r x} \left(1 + \frac{1}{2x^2} \right) \frac{\sqrt{x^2 - 1}}{x^2} \f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function vacuum_polarization_kernel(r, x) result(vpk)
     implicit none
     real(dp), intent(in) :: r
@@ -167,6 +173,20 @@ real(dp) function vacuum_polarization_kernel(r, x) result(vpk)
     
 end function vacuum_polarization_kernel
 
+!!
+!> @brief      Change of variable for the kernel for the VP integral
+!!
+!! In order to calculate a integral from 1 to infinity, a change of variable is 
+!! needed. The change of variable is given by 
+!! 
+!! \f[
+!!    \int_a^b f(x) dx = \int_{1/b}^{1/a} \frac{1}{t^2} f\left(\frac{1}{t} \right) dt
+!! \f]
+!!
+!! This function returns the kernel on the right hand side of the equation above
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function inverse_vp_kernel(r, t) result(ivpk)
     implicit none
     real(dp), intent(in) :: r
@@ -177,3 +197,37 @@ real(dp) function inverse_vp_kernel(r, t) result(ivpk)
 end function inverse_vp_kernel
     
 end module em_nn_potential
+
+!!
+!> @brief      Compare 3 methods for the integral in Vacuum Polarization
+!!
+!! Given a range between 2 radii and an increment step, calculates the integral
+!! inside the the vacuum polarization potential via direct Booles quadrature,
+!! and approximation valid for small radii and and approximation valid for large
+!! radii.
+!!
+!! This subroutine was only written for debugging purposes and is not necessary
+!! to run the main program. We keep the subroutine, commented, only for future reference
+!!
+!! @author    Rodrigo Navarro Perez
+!!
+! subroutine compare_Ivps(r_min, r_max, dr)
+!     implicit none
+!     real(dp), intent(in) :: r_min !< Minimum radius of comparison, in units of fm
+!     real(dp), intent(in) :: r_max !< Maximum radius of comparison, in units of fm
+!     real(dp), intent(in) :: dr !< Increment step for radius, in units of fm
+
+!     real(dp) :: r, Ivp, Ivp_small, Ivp_large, kr
+
+!     r = r_min
+!     do
+!         if(r > r_max) exit
+!         kr = m_e*r/hbar_c
+!         Ivp = vacuum_polarization_integral(r)
+!         Ivp_small = -gamma - 5/6._dp + abs(log(kr)) + 6*pi*kr/8
+!         Ivp_large = 2*sqrt(2*pi)/4._dp*exp(-2*kr)/((2*kr)**1.5_dp)
+!         print*, r, 2*kr, Ivp, Ivp_small, Ivp_large
+!         r = r + dr
+!     enddo
+    
+! end subroutine compare_Ivps

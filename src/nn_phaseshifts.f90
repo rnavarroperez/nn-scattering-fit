@@ -656,6 +656,7 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
             G = gc(lqm)
             Fp = fcp(lqm)
             Gp = gcp(lqm)
+            ! Calculating full EM waves for the 1S0 case
             if (lqm == 0) then
                 tan_rhotau = tan_rho0_tau0(k)
                 s_fvf = c2_vp_integral(r, k, fvf_kernel)
@@ -680,9 +681,31 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
 
 end subroutine match_uncoupled_waves
 
+!!
+!> @brief      tangent of C2 and VP phases
+!!
+!! Given a center of mass momentum \f$k\f$ in units of fm\f$^{-1}\f$, 
+!! calculates the integral 
+!! \f[
+!!    \rho_0 + \tau_0 = -\int_0^\infinity F_0(k*r, \eta') V(r) F_0(k*r, \eta') dr,
+!! \f]
+!! where \f$F_0\f$ is the regular Coulomb wave function, \f$\eta'\f$ is the energy
+!! dependent Sommerfeld parameter,
+!! \f[
+!!  V(r) = \frac{M_p}{k}(V_{\rm C2}(r) + V_{\rm VP}(r)),
+!! \f]
+!! where \f$ M_p \f$ is the mass of the proton, \f$V_{\rm C2}(r)\f$ and \f$V_{\rm VP}(r) \f$
+!! are the two photon exchange and vacuum polarization pp potentials
+!!
+!! For more details see Appendix D in Phys. Rev. C 91, 024003
+!!
+!! @return     \f$\tan (\rho_0 + \tau_0) \f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function tan_rho0_tau0(k) result(tan_rhotau)
     implicit none
-    real(dp), intent(in) :: k
+    real(dp), intent(in) :: k !< Center of mass momentum in fm\f$^{-1}\f$
 
     integer, parameter :: n_points = 4001
     real(dp), dimension(1:n_points) :: fvf
@@ -699,12 +722,26 @@ real(dp) function tan_rho0_tau0(k) result(tan_rhotau)
     tan_rhotau = tan(-booles_quadrature(fvf, delta_r))
 end function tan_rho0_tau0
 
-
+!!
+!> @brief      Integral of C2 and VP potentials with coulomb waves
+!!
+!! Given a radius \f$r_{\rm min}\f$ in units of fm, a center of mass momentum \f$k\f$ in
+!! units of fm\f$^{-1}\f$, and a specific kernel calculates the integral 
+!! \f[
+!!    \int_{r_{\rm min}}^\infty K(r', k) dr',
+!! \f]
+!! where \f$K\f$ is the specific kernel.
+!!
+!! Possible kernels are the fvf_kernel, gvf_kernel and gvg_kernel. See the documentation
+!! of those functions for additional details
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function c2_vp_integral(r_min, k, cvc_kernel) result(s)
     implicit none
-    procedure(coul_v_coul_kernel) :: cvc_kernel
-    real(dp), intent(in) :: r_min
-    real(dp), intent(in) :: k
+    procedure(coul_v_coul_kernel) :: cvc_kernel !< Kernel to be integrates
+    real(dp), intent(in) :: r_min !< lower limit in the radial integral, in units of fm
+    real(dp), intent(in) :: k !< Center of mass momentum in fm\f$^{-1}\f$
 
     integer, parameter :: n_points = 4001
     real(dp), dimension(1:n_points) :: cvc
@@ -721,10 +758,37 @@ real(dp) function c2_vp_integral(r_min, k, cvc_kernel) result(s)
 
 end function c2_vp_integral
 
+!!
+!> @brief      C2 and VP kernel with F Coulomb waves
+!!
+!! Given a radius in units of fm and a center of mass momentum \f$k\f$ in units of fm\f$^{-1}\f$, 
+!! calculates one of the 3 kernels to be integrated necessary to get the full EM wave functions.
+!!
+!! The specific kernel is
+!! \f[
+!!    F_0(k*r, \eta') V(r) F_0(k*r, \eta') dr,
+!! \f]
+!! where \f$F_0\f$ is the regular Coulomb wave function, \f$\eta'\f$ is the energy
+!! dependent Sommerfeld parameter,
+!! \f[
+!!  V(r) = \frac{M_p}{k}(V_{\rm C2}(r) + V_{\rm VP}(r)),
+!! \f]
+!! where \f$ M_p \f$ is the mass of the proton, \f$V_{\rm C2}(r)\f$ and \f$V_{\rm VP}(r) \f$
+!! are the two photon exchange and vacuum polarization pp potentials.
+!!
+!! The relativistic correction that changes \f$\alpha\f$ to \f$\alpha'\f$ is also included
+!!
+!! For more details see Appendix D in Phys. Rev. C 91, 024003
+!!
+!! @return     \f$\frac{M_p}{k}  F_0(k*r, \eta') (V_{\rm C2}(r) + V_{\rm VP}(r)) F_0(k*r, \eta') \f$
+!!             in units of fm\f$^{-1}\f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function fvf_kernel(r, k) result(fvf)
     implicit none
-    real(dp), intent(in) :: r
-    real(dp), intent(in) :: k
+    real(dp), intent(in) :: r !< radius in units of fm
+    real(dp), intent(in) :: k !< Center of mass momentum in fm\f$^{-1}\f$
 
     real(dp) :: etap, kmev, relativistic_correction
     integer, parameter :: l_max = 0
@@ -742,6 +806,33 @@ real(dp) function fvf_kernel(r, k) result(fvf)
     
 end function fvf_kernel
 
+!!
+!> @brief      C2 and VP kernel with G and F Coulomb waves
+!!
+!! Given a radius in units of fm and a center of mass momentum \f$k\f$ in units of fm\f$^{-1}\f$, 
+!! calculates one of the 3 kernels to be integrated necessary to get the full EM wave functions.
+!!
+!! The specific kernel is
+!! \f[
+!!    G_0(k*r, \eta') V(r) F_0(k*r, \eta') dr,
+!! \f]
+!! where \f$F_0\f$ is the regular Coulomb wave function, \f$G_0\f$ is the irregular Coulomb wave
+!! function, \f$\eta'\f$ is the energy dependent Sommerfeld parameter,
+!! \f[
+!!  V(r) = \frac{M_p}{k}(V_{\rm C2}(r) + V_{\rm VP}(r)),
+!! \f]
+!! where \f$ M_p \f$ is the mass of the proton, \f$V_{\rm C2}(r)\f$ and \f$V_{\rm VP}(r) \f$
+!! are the two photon exchange and vacuum polarization pp potentials.
+!!
+!! The relativistic correction that changes \f$\alpha\f$ to \f$\alpha'\f$ is also included
+!!
+!! For more details see Appendix D in Phys. Rev. C 91, 024003
+!!
+!! @return     \f$\frac{M_p}{k}  G_0(k*r, \eta') (V_{\rm C2}(r) + V_{\rm VP}(r)) F_0(k*r, \eta') \f$
+!!             in units of fm\f$^{-1}\f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function gvf_kernel(r, k) result(gvf)
     implicit none
     real(dp), intent(in) :: r
@@ -763,6 +854,33 @@ real(dp) function gvf_kernel(r, k) result(gvf)
     
 end function gvf_kernel
 
+!!
+!> @brief      C2 and VP kernel with G Coulomb waves
+!!
+!! Given a radius in units of fm and a center of mass momentum \f$k\f$ in units of fm\f$^{-1}\f$, 
+!! calculates one of the 3 kernels to be integrated necessary to get the full EM wave functions.
+!!
+!! The specific kernel is
+!! \f[
+!!    G_0(k*r, \eta') V(r) G_0(k*r, \eta') dr,
+!! \f]
+!! where \f$G_0\f$ is the irregular Coulomb wave function, \f$\eta'\f$ is the energy
+!! dependent Sommerfeld parameter,
+!! \f[
+!!  V(r) = \frac{M_p}{k}(V_{\rm C2}(r) + V_{\rm VP}(r)),
+!! \f]
+!! where \f$ M_p \f$ is the mass of the proton, \f$V_{\rm C2}(r)\f$ and \f$V_{\rm VP}(r) \f$
+!! are the two photon exchange and vacuum polarization pp potentials.
+!!
+!! The relativistic correction that changes \f$\alpha\f$ to \f$\alpha'\f$ is also included
+!!
+!! For more details see Appendix D in Phys. Rev. C 91, 024003
+!!
+!! @return     \f$\frac{M_p}{k}  G_0(k*r, \eta') (V_{\rm C2}(r) + V_{\rm VP}(r)) G_0(k*r, \eta') \f$
+!!             in units of fm\f$^{-1}\f$
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 real(dp) function gvg_kernel(r, k) result(gvg)
     implicit none
     real(dp), intent(in) :: r

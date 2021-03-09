@@ -250,6 +250,15 @@ subroutine write_phases(parameters, model, channel)
     close(unit)
 end subroutine write_phases
 
+!!
+!> @brief      Prints phases in the format of the AV18 paper.
+!!
+!! Given a nn scattering model and a set of parameters appropriate for that model,
+!! calculates pp, nn and np phase shifts and prints them in the format of tables 
+!! IV through VII in Phys. Rev. C 51, 38
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine print_phases(parameters, model)
     implicit none
     real(dp), intent(in), dimension(:) :: parameters !< potential parameters
