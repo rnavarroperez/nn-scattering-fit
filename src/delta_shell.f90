@@ -13,6 +13,7 @@ use precisions, only : dp
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use utilities, only : kronecker_delta
 use pion_exchange, only : ope_all_partial_waves
+use em_nn_potential, only : n_em_terms, em_potential
 implicit none
 
 integer, parameter :: n_waves = 5 !< number of waves per angular momentum quantum number 
@@ -666,23 +667,20 @@ subroutine add_coulomb(r, k, v_pw)
     implicit none
     real(dp), intent(in) :: r !< potential radius in fm
     real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
-    real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
-    integer :: i
-    real(dp) :: v_coul, fcoulr, br, kmev, alpha_prime
-    real(dp), parameter :: b = 4.27_dp, small = 0.e-5_dp
-    kmev = k*hbar_c
-    alpha_prime = alpha*(1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
-    br = b*r
-    if (r < small) then
-       fcoulr = 5*b/16
-    else
-        fcoulr = (1 - (1 +   11*br/16   + 3*br**2/16 + br**3/48)*exp(-br))/r
-    end if
+    real(dp), intent(inout) :: v_pw(:, :) !< pp potential for all partial waves in MeV
 
-    v_coul = alpha_prime*hbar_c*fcoulr
+    real(dp), dimension(1:n_em_terms) :: v_em
+    real(dp) :: kmev, relativistic_correction
+    integer :: i
+    kmev = k*hbar_c
+    relativistic_correction = (1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
+    v_em = em_potential(r)
+    v_em(1) = relativistic_correction*v_em(1)
+    v_em(3:4) = relativistic_correction*v_em(3:4)
+    v_pw(1, 1) = v_pw(1, 1) + v_em(3) + v_em(4)
     do i = 1, size(v_pw, 2)
-        v_pw(1:3, i) = v_pw(1:3, i) + v_coul
-        v_pw(5, i) = v_pw(5, i) + v_coul
+        v_pw(1:3, i) = v_pw(1:3, i) + v_em(1)
+        v_pw(5, i) = v_pw(5, i) + v_em(1)
     enddo
 end subroutine add_coulomb
 

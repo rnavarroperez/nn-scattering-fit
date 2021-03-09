@@ -13,11 +13,23 @@ use num_recipes, only : sphbes
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use coulombwf, only : coul90
 use delta_shell, only : nn_model, all_delta_shells
+use em_nn_potential, only : n_em_terms, em_potential
+use quadrature, only : booles_quadrature
 implicit none
 
 private
 
 public :: all_phaseshifts, eta_prime, momentum_cm
+
+interface
+
+    real(dp) function coul_v_coul_kernel(r, k) result(cvc)
+        use precisions, only : dp
+        implicit none
+        real(dp), intent(in) :: r
+        real(dp), intent(in) :: k
+    end function coul_v_coul_kernel
+end interface
 
 contains
 
@@ -604,7 +616,7 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
     real(dp), allocatable :: d_lambda(:), d_numerator(:), d_denominator(:), d_diff(:)
     integer :: l_max, l, ifail, i, lqm
     real(dp), dimension(:), allocatable :: FC, GC, FCP, GCP, jc, yc, jcp, ycp
-    real(dp) :: F, G, jh, yh, jhp, yhp, Fp, Gp
+    real(dp) :: F, G, jh, yh, jhp, yhp, Fp, Gp, tan_rhotau, s_fvf, s_gvf, s_gvg
     ifail = 0
     l_max = size(lambdas)
 
@@ -644,6 +656,16 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
             G = gc(lqm)
             Fp = fcp(lqm)
             Gp = gcp(lqm)
+            if (lqm == 0) then
+                tan_rhotau = tan_rho0_tau0(k)
+                s_fvf = c2_vp_integral(r, k, fvf_kernel)
+                s_gvf = c2_vp_integral(r, k, gvf_kernel)
+                s_gvg = c2_vp_integral(r, k, gvg_kernel)
+                F = fc(lqm)*(1 - s_gvf) + gc(lqm)*(tan_rhotau + s_fvf)
+                G = gc(lqm)*(1 + s_gvf) - fc(lqm)*(tan_rhotau + s_gvg)
+                Fp = fcp(lqm)*(1 - s_gvf) + gcp(lqm)*(tan_rhotau + s_fvf)
+                Gp = gcp(lqm)*(1 + s_gvf) - fcp(lqm)*(tan_rhotau + s_gvg)
+            endif
             diff = jh - tan_deltas(i)*yh
             d_diff = -d_tan_deltas(:, i)*yh
             numerator   =  lambda*diff*F + k*(F*jhp - jh*Fp + tan_deltas(i)*(yh*Fp - F*yhp))
@@ -657,6 +679,110 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
     enddo
 
 end subroutine match_uncoupled_waves
+
+real(dp) function tan_rho0_tau0(k) result(tan_rhotau)
+    implicit none
+    real(dp), intent(in) :: k
+
+    integer, parameter :: n_points = 4001
+    real(dp), dimension(1:n_points) :: fvf
+    real(dp) :: r_max, delta_r, r
+    integer :: i
+
+    fvf = 0._dp
+    r_max = 40*pi/k
+    delta_r = r_max/(n_points - 1._dp)
+    do i = 2, n_points
+        r = (i-1)*delta_r
+        fvf(i) = fvf_kernel(r, k)
+    enddo
+    tan_rhotau = tan(-booles_quadrature(fvf, delta_r))
+end function tan_rho0_tau0
+
+
+real(dp) function c2_vp_integral(r_min, k, cvc_kernel) result(s)
+    implicit none
+    procedure(coul_v_coul_kernel) :: cvc_kernel
+    real(dp), intent(in) :: r_min
+    real(dp), intent(in) :: k
+
+    integer, parameter :: n_points = 4001
+    real(dp), dimension(1:n_points) :: cvc
+    real(dp) :: r_max, delta_r, r
+    integer :: i
+
+    r_max = r_min + 40*pi/k
+    delta_r = (r_max-r_min)/(n_points - 1._dp)
+    do i = 1, n_points
+        r = r_min + (i-1)*delta_r
+        cvc(i) = cvc_kernel(r, k)
+    enddo
+    s = booles_quadrature(cvc, delta_r)
+
+end function c2_vp_integral
+
+real(dp) function fvf_kernel(r, k) result(fvf)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    real(dp) :: etap, kmev, relativistic_correction
+    integer, parameter :: l_max = 0
+    real(dp), dimension(0:l_max) :: fc, gc, fcp, gcp
+    real(dp), dimension(1:n_em_terms) :: v_em
+    integer :: ifail
+
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, l_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail in fvf_kernel'
+    v_em = em_potential(r)
+    kmev = k*hbar_c
+    relativistic_correction = (1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
+    fvf = m_p*fc(0)*fc(0)*relativistic_correction*(v_em(3)+v_em(4))/(k*hbar_c**2)
+    
+end function fvf_kernel
+
+real(dp) function gvf_kernel(r, k) result(gvf)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    real(dp) :: etap, kmev, relativistic_correction
+    integer, parameter :: l_max = 0
+    real(dp), dimension(0:l_max) :: fc, gc, fcp, gcp
+    real(dp), dimension(1:n_em_terms) :: v_em
+    integer :: ifail
+
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, l_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail in gvf_kernel'
+    v_em = em_potential(r)
+    kmev = k*hbar_c
+    relativistic_correction = (1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
+    gvf = m_p*gc(0)*fc(0)*relativistic_correction*(v_em(3)+v_em(4))/(k*hbar_c**2)
+    
+end function gvf_kernel
+
+real(dp) function gvg_kernel(r, k) result(gvg)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    real(dp) :: etap, kmev, relativistic_correction
+    integer, parameter :: l_max = 0
+    real(dp), dimension(0:l_max) :: fc, gc, fcp, gcp
+    real(dp), dimension(1:n_em_terms) :: v_em
+    integer :: ifail
+
+    etap = eta_prime(k)
+    call COUL90(r*k, etap, 0._dp, l_max, fc, gc, fcp, gcp, 0, ifail)
+    if (ifail /= 0) stop 'coul90 fail in gvg_kernel'
+    v_em = em_potential(r)
+    kmev = k*hbar_c
+    relativistic_correction = (1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
+    gvg = m_p*gc(0)*gc(0)*relativistic_correction*(v_em(3)+v_em(4))/(k*hbar_c**2)
+    
+end function gvg_kernel
 
 !!
 !> @brief      energy dependent Sommerfeld parameter
