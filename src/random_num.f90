@@ -1,16 +1,35 @@
-        module random_num
+!!
+!> @brief       Random Number Generator
+!! 
+!! Module to generate random numbers that follow a Gaussian distribution
+!! and the Box-Muller form. In addtion, there is a 100 number generator that
+!! writes the numbers in an external file and a subroutine to verify the
+!! Box-Muller number generator.
+!!
+!! @author      Marielle Elizabeth Duran
+!!
+      module random_num
                 use precisions, only: dp
                 use constants, only: pi
                 IMPLICIT NONE
                 PRIVATE 
-                PUBLIC box_muller_num, generator_100_num, &
-                        verify_box_muller_num
+                PUBLIC box_muller_num
                 CONTAINS
+
+!!
+!> @brief       Box-Muller random number generator
+!!
+!! Generates random numbers that fit a Gaussian distribution and the
+!! Box-Muller transform. Each value is saved so that a repeat value is
+!! rejected.
+!!
+!! @author      Marielle Elizabeth Duran
+!!
                 subroutine box_muller_num(z_1)
                         IMPLICIT NONE
                         REAL(dp), intent(out) :: z_1
                         REAL(dp) :: x, y
-                        REAL(dp), save :: z_0
+                        REAL(dp), save :: z_0 !< saved Box-Muller number
                         LOGICAL, save :: not_available = .TRUE.
                         IF (not_available) THEN
                                 not_available = .FALSE.
@@ -23,6 +42,16 @@
                                 not_available = .TRUE.
                         END IF 
                 end subroutine box_muller_num
+
+!!
+!> @brief       Generates 100 numbers with Box-Muller form
+!!
+!! Calls a random number using the box_muller_num subroutine. This
+!! subroutine generates 100 of these numbers and writes them to the
+!! external file named 'generator_info.dat'.
+!!
+!! @author      Marielle Elizabeth Duran
+!!
                 subroutine generator_100_num
                         IMPLICIT NONE
                         real(dp) :: x
@@ -37,6 +66,17 @@
                         END DO
                         close(7)
                 end subroutine generator_100_num
+
+!!
+!> @brief       Verifies the box_muller_num subroutine results
+!!
+!! Creates an array to put in random numbers from box_muller_num. This
+!! array is used to calculate the mean and standard deviation of the
+!! random numbers. These steps are completed to verify that the
+!! box_muller_num subroutine follows a Gaussian distribution.
+!!
+!! @author      Marielle Elizabeth Duran
+!!
                 subroutine verify_box_muller_num(n_samples)
                         IMPLICIT NONE
                         real(dp) :: mean, num, variance, stan_dev
