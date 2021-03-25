@@ -78,7 +78,7 @@ read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshi
 exp_data.o: exp_data.f90 precisions.o string_functions.o utilities.o
 	$(COMPILER) $(FLAGS) -c $<
 
-deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o
+deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o ode_solver.o
 	$(COMPILER) $(FLAGS) -c $<
 
 derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o delta_shell.o pion_exchange.o
@@ -91,6 +91,9 @@ optimization.o: optimization.f90 chi_square.o precisions.o exp_data.o delta_shel
 	$(COMPILER) $(FLAGS) -c $<
 
 quadrature.o: quadrature.f90 precisions.o
+	$(COMPILER) $(FLAGS) -c $<
+
+ode_solver.o: ode_solver.f90 precisions.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
 main.o: main.f90 exp_data.o

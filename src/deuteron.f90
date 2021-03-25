@@ -13,6 +13,7 @@ module deuteron
 use precisions, only : dp
 use delta_shell, only : nn_model, all_delta_shells
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
+use ode_solver, only : solve_runge_kutta_4
 implicit none
 
 private
@@ -91,6 +92,7 @@ subroutine binding_energy(model, parameters, be, dbe)
     real(dp), allocatable, dimension(:, :, :, :) :: dv_pw
 
     k = wave_number(model, parameters)
+    be = m_p + m_n - sqrt(m_p**2 - (k*hbar_c)**2) - sqrt(m_n**2 - (k*hbar_c)**2)
     be = m_p + m_n - sqrt(m_p**2 - (k*hbar_c)**2) - sqrt(m_n**2 - (k*hbar_c)**2)
     wavefunc = wave_function(k, model, parameters)
     select case(trim(model%potential_type))
@@ -434,8 +436,8 @@ real(dp) function wave_number(model, parameters, tolerance) result(r)
     end if
     k_low = k_init_l
     k_high = k_init_h
-    bs_low = irregularity(k_low, model, parameters)
-    bs_high = irregularity(k_high, model, parameters)
+    bs_low = runge_kutta_irregularity(k_low, model, parameters)
+    bs_high = runge_kutta_irregularity(k_high, model, parameters)
 
     if (sign(1._dp, bs_low) == sign(1._dp, bs_high)) then
         print*, k_low, bs_low,  k_high, bs_high     
@@ -445,7 +447,7 @@ real(dp) function wave_number(model, parameters, tolerance) result(r)
         slope = (bs_low - bs_high)/(k_low - k_high)
         dk = -bs_low/slope
         k_0 = -(bs_low - slope*k_low)/slope
-        bs_0 = irregularity(k_0, model, parameters)
+        bs_0 = runge_kutta_irregularity(k_0, model, parameters)
         if ((abs(k_low-k_0) < local_tolerance) .or. (abs(k_high-k_0) < local_tolerance)) exit
         if (sign(1._dp, bs_low) == sign(1._dp, bs_0)) then
             k_low = k_0
@@ -486,6 +488,76 @@ real(dp) function irregularity(k, model, parameters) result(r)
     deuteron_wf = wave_function(k, model, parameters)
     r = deuteron_wf%b_s(0)
 end function irregularity
+
+real(dp) function runge_kutta_irregularity(k, model, parameters) result(r)
+    implicit none
+    real(dp), intent(in) :: k !< deuteron wave number. In fm\f$^{-1}\f$ 
+    type(nn_model), intent(in) :: model !< local model for nn the interaction
+    real(dp), intent(in), dimension(:) :: parameters !< parameters of the nn interaction
+    
+    real(dp), allocatable, dimension(:) :: work
+    real(dp) :: wave_function_bc_alpha(4), wave_function_bc_beta(4)
+    real(dp), allocatable, dimension(:) :: u_variable, v_wf, w_wf
+    real(dp), allocatable, dimension(:, :) :: wave_function_alpha, wave_function_beta 
+
+    real(dp) :: h, r_inf, beta
+    integer :: i, n_points
+
+    allocate(work(1: size(parameters) + 1))
+
+    work(1) = k
+    work(2:) = parameters
+
+    
+    r_inf = model%r_max
+    n_points = int(model%r_max/model%dr)
+
+    wave_function_bc_alpha = 0._dp
+    wave_function_bc_beta = 0._dp
+    wave_function_bc_alpha(1) = v_assymptotic(k, r_inf)
+    wave_function_bc_beta(2) = w_assymptotic(k, r_inf)
+    wave_function_bc_alpha(3) = vprime_assymptotic(k, r_inf)
+    wave_function_bc_beta(4) = wprime_assymptotic(k, r_inf)
+
+    call solve_runge_kutta_4(deuteron_ode,work,model,r_inf,0._dp,n_points,wave_function_bc_alpha, u_variable, wave_function_alpha)
+    call solve_runge_kutta_4(deuteron_ode,work,model,r_inf,0._dp,n_points,wave_function_bc_beta, u_variable, wave_function_beta)
+    allocate(v_wf, w_wf, mold=u_variable)
+    beta = -wave_function_alpha(2, size(u_variable))/wave_function_beta(2, size(u_variable))
+    v_wf = wave_function_alpha(1, :) + beta*wave_function_beta(1, :) 
+    w_wf = wave_function_alpha(2, :) + beta*wave_function_beta(2, :) 
+    r = v_wf(size(u_variable))
+end function runge_kutta_irregularity
+
+function deuteron_ode(wave_functions, r, work, model) result(f)
+    implicit none
+    real(dp), intent(in), dimension(:) :: wave_functions
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: work(:)
+    type(nn_model), intent(in) :: model
+    real(dp), allocatable :: f(:)
+
+    real(dp) :: k, U_3S1, U_3D1, U_EP1, mu
+    real(dp), allocatable, dimension(:) :: parameters
+    real(dp) :: v_pw(5,2)
+    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+
+    allocate(f, mold = wave_functions)
+    allocate(parameters(1 : size(work) - 1))
+    k = work(1)
+    parameters = work(2:)
+
+    call model%potential(parameters, r, 'np', v_pw, dv_pw)
+    mu = 2*m_p*m_n/(m_p + m_n)
+    U_3S1 = v_pw(3,2)*mu/hbar_c**2
+    U_EP1 = v_pw(4,2)*mu/hbar_c**2
+    U_3D1 = v_pw(5,2)*mu/hbar_c**2
+
+    f(1) = wave_functions(3)
+    f(2) = wave_functions(4)
+    f(3) = (k**2 + u_3s1)*wave_functions(1) + u_ep1*wave_functions(2)
+    f(4) = (k**2 + u_3d1 + 6/r**2)*wave_functions(2) + u_ep1*wave_functions(1)
+
+end function deuteron_ode
 
 !!
 !> @brief      Piecewise integration of the deuteron with a local potential
@@ -712,5 +784,37 @@ real(dp) function y2_bound(x) result(r)
     real(dp), intent(in) :: x !< point at which the function is evaluted
     r = -cosh(x) + 3*sinh(x)/x -3*cosh(x)/(x**2)
 end function y2_bound
+
+real(dp) function v_assymptotic(k, r) result(v)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    v = exp(-k*r)
+end function v_assymptotic
+
+real(dp) function vprime_assymptotic(k, r) result(vp)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    vp = -k*exp(-k*r)
+end function vprime_assymptotic
+
+real(dp) function w_assymptotic(k, r) result(w)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    w = exp(-k*r)*(1 + 3/(k*r) + 3/(k*r)**2)
+end function w_assymptotic
+
+real(dp) function wprime_assymptotic(k, r) result(wp)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: k
+
+    wp = -exp(-k*r)*(6 + 6*k*r + 3*(k*r)**2 + (k*r)**3)/(k**2*r**3)
+end function wprime_assymptotic
 
 end module deuteron
