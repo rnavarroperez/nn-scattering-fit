@@ -114,6 +114,7 @@ type :: nn_model
     integer :: n_lambdas !< number of internal delta shells in a DS potential
     real(dp) :: dr_core !< Distance between the internal lambdas 
     real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
+    logical :: relativistic_deuteron !< Should relativistic kinematics be used when calculating the deuteron binding energy?
 end type nn_model
 
 !!
@@ -192,6 +193,7 @@ subroutine set_ds_potential(name, ds_potential, default_params)
         ds_potential%n_lambdas = 5
         ds_potential%dr_core = 0.6_dp
         ds_potential%dr_tail = 0.5_dp
+        ds_potential%relativistic_deuteron = .True.
     case('ds_ope30_fff')
         default_params = ds_ope30fff_params
         ds_potential%potential => ope_all_partial_waves
@@ -202,6 +204,7 @@ subroutine set_ds_potential(name, ds_potential, default_params)
         ds_potential%n_lambdas = 5
         ds_potential%dr_core = 0.6_dp
         ds_potential%dr_tail = 0.5_dp
+        ds_potential%relativistic_deuteron = .True.
     case default
         stop 'unrecognized ds potential name in set_ds_potential'
     end select

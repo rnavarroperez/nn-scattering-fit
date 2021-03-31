@@ -63,6 +63,7 @@ real(dp) function f_deuteron_binding_energy(x, data) result(r)
     model%dr = data%a
     model%r_max = data%b
     model%potential_type = 'local'
+    model%relativistic_deuteron = .False.
     i_parameter = data%i
 
     parameters(i_parameter) = x
@@ -100,6 +101,7 @@ function df_deuteron_binding_energy(data) result(r)
     model%dr = data%a
     model%r_max = data%b
     model%potential_type = 'local'
+    model%relativistic_deuteron = .False.
 
     call binding_energy(model, parameters, be, dbe)
     r = dbe
