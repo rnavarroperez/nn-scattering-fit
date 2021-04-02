@@ -52,7 +52,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     call model%display_subroutine(parameters)
     print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
         counter, 'lambda:', lambda, 'limit:', limit
-    print*,
+   ! print*,
     
     allocate(prev_parameters, source=parameters)
     allocate(prev_alpha, source=alpha)
@@ -85,7 +85,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
         call model%display_subroutine(parameters)
         print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
             counter, 'lambda:', lambda, 'limit:', limit
-        print*,
+        !print*,
     enddo
     alpha = prev_alpha
     parameters = prev_parameters

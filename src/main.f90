@@ -13,7 +13,6 @@ use av18_compatibility, only : read_marias_format
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt
-
 implicit none
 
 real(dp), parameter :: r_max = 12.5_dp
@@ -23,7 +22,6 @@ type(nn_experiment), allocatable, dimension(:) :: experiments
 real(dp), allocatable :: covariance(:,:)
 real(dp), allocatable, dimension(:) :: parameters
 logical, allocatable, dimension(:) :: mask
-integer :: n_points
 real(dp) :: chi2
 
 model%potential => av18_all_partial_waves
@@ -32,15 +30,15 @@ model%r_max = r_max
 model%dr = dr
 model%potential_type = 'local'
 
-allocate(parameters, mold=default_params)
-call read_marias_format('av18.bob.in', parameters)
+!allocate(parameters, mold=default_params)
+!call read_marias_format('av18.bob.in', parameters)
 
-allocate(experiments(1:2))
+!allocate(experiments(1:2))
 call read_database('database/granada_database.dat', experiments)
-call init_ex_em_amplitudes(experiments)
+!call init_ex_em_amplitudes(experiments)
 
-allocate(mask(1: size(parameters)))
-mask = .true.
-call lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
-print*, 'after minimization: ', chi2, n_points, chi2/n_points
+!allocate(mask(1: size(parameters)))
+!mask = .true.
+!call lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
+!print*, 'after minimization: ', chi2, n_points, chi2/n_points
 end program nn_fit
