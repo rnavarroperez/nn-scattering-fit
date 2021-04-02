@@ -1,3 +1,10 @@
+!!
+!> @brief      Solving Ordinary Differential Equations
+!!
+!! Subroutines to solve ODES with Runge Kutta
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 module ode_solver
 use precisions, only : dp
 use delta_shell, only : nn_model
@@ -6,29 +13,52 @@ private
 
 public :: solve_runge_kutta_4, solve_runge_kutta_2
 
+!!
+!> @brief      Interface for receiving the ODE to solve
+!!
+!! The ODE to solve is receiving by the Runge Kutta algorithms
+!! as a function that returns the derivative of the n_variables
+!! that are being solved numerically
+!!
+!! A small modification had to be made from the more general
+!! RK implementation to allow for a NN potential to be part 
+!! of the arguments
+!!
+!> @author     Rodrigo Navarro Perez
+!!
 interface
     function func(r, t, work, model) result(f)
         use precisions, only : dp
         use delta_shell, only : nn_model
         implicit none
-        real(dp), intent(in) :: r(:), t, work(:)
-        type(nn_model), intent(in) :: model
-        real(dp), allocatable :: f(:)
+        real(dp), intent(in) :: r(:) !< Dependent variable(s) that we are solving for
+        real(dp), intent(in) :: t !< Independent variable
+        real(dp), intent(in) :: work(:) !< Array with everything necessary to calculate the derivatives of the dependent variable
+        type(nn_model), intent(in) :: model !< NN potential (added to work with the NN scattering code)
+        real(dp), allocatable :: f(:) !< Derivative(s) of the dependent variable(s)
     end function func
 end interface
 
 contains
 
+!!
+!> @brief      4th order Runge Kutta
+!!
+!! Implementation of 4h order Runge Kutta to solve a set of Ordinary Differential Equations
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine solve_runge_kutta_4(f, work, model, t_i, t_f, n, r_i, t, r)
     implicit none
-    procedure(func) :: f
-    real(dp), intent(in) :: work(:)
-    type(nn_model), intent(in) :: model
-    real(dp), intent(in) :: t_i
-    real(dp), intent(in) :: t_f
-    integer, intent(in) :: n
-    real(dp), intent(in) :: r_i(:)
-    real(dp), intent(out), allocatable :: t(:), r(:,:)
+    procedure(func) :: f !< Function that calculates the derivatives of the dependent variable(s)
+    real(dp), intent(in) :: work(:) !< Array with everything necessary to calculate the derivatives of the dependent variable
+    type(nn_model), intent(in) :: model !< NN potential (added to work with the NN scattering code)
+    real(dp), intent(in) :: t_i !< Initial value of the independent variable
+    real(dp), intent(in) :: t_f !< Final value of the independent variable
+    integer, intent(in) :: n !< Number of points where the solution will be evaluated
+    real(dp), intent(in) :: r_i(:) !< Initial value(s) of the dependent variable(s)
+    real(dp), intent(out), allocatable :: t(:) !< Sampled values of the independent variable
+    real(dp), intent(out), allocatable :: r(:,:) !< Sampled values of the dependent variable(s). The numerical solution
 
     real(dp), allocatable :: k1(:), k2(:), k3(:), k4(:), r_sol(:)
     integer :: n_variables, i
@@ -61,16 +91,24 @@ subroutine solve_runge_kutta_4(f, work, model, t_i, t_f, n, r_i, t, r)
 
 end subroutine solve_runge_kutta_4
 
+!!
+!> @brief      2nd order Runge Kutta
+!!
+!! Implementation of 2nd order Runge Kutta to solve a set of Ordinary Differential Equations
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine solve_runge_kutta_2(f, work, model, t_i, t_f, n, r_i, t, r)
     implicit none
-    procedure(func) :: f
-    real(dp), intent(in) :: work(:)
-    type(nn_model), intent(in) :: model
-    real(dp), intent(in) :: t_i
-    real(dp), intent(in) :: t_f
-    integer, intent(in) :: n
-    real(dp), intent(in) :: r_i(:)
-    real(dp), intent(out), allocatable :: t(:), r(:,:)
+    procedure(func) :: f !< Function that calculates the derivatives of the dependent variable(s)
+    real(dp), intent(in) :: work(:) !< Array with everything necessary to calculate the derivatives of the dependent variable
+    type(nn_model), intent(in) :: model !< NN potential (added to work with the NN scattering code)
+    real(dp), intent(in) :: t_i !< Initial value of the independent variable
+    real(dp), intent(in) :: t_f !< Final value of the independent variable
+    integer, intent(in) :: n !< Number of points where the solution will be evaluated
+    real(dp), intent(in) :: r_i(:) !< Initial value(s) of the dependent variable(s)
+    real(dp), intent(out), allocatable :: t(:) !< Sampled values of the independent variable
+    real(dp), intent(out), allocatable :: r(:,:) !< Sampled values of the dependent variable(s). The numerical solution
 
     real(dp), allocatable :: k1(:), k2(:), r_sol(:)
     integer :: n_variables, i
