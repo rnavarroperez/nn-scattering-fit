@@ -52,7 +52,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     call model%display_subroutine(parameters)
     print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
         counter, 'lambda:', lambda, 'limit:', limit
-    print*,
+   ! print*,
     
     allocate(prev_parameters, source=parameters)
     allocate(prev_alpha, source=alpha)
@@ -85,14 +85,14 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
         call model%display_subroutine(parameters)
         print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
             counter, 'lambda:', lambda, 'limit:', limit
-        print*,
+        !print*,
     enddo
     alpha = prev_alpha
     parameters = prev_parameters
     covariance = covariance_matrix(alpha, mask)
     call model%display_subroutine(parameters, covariance)
 
-1 format(x,a,f15.8,2x,a,i5,2x,a,f13.8,2x,a,i5,2x,a,e11.4,2x,a,i2)
+1 format(1x,a,f15.8,2x,a,i5,2x,a,f13.8,2x,a,i5,2x,a,e11.4,2x,a,i2)
 end subroutine lavenberg_marquardt
 
 function covariance_matrix(alpha, mask) result(covariance)

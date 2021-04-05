@@ -29,9 +29,9 @@ real(dp), parameter :: hbar_c    = 197.327053_dp!< \f$\hbar c\f$ in units of MeV
 real(dp), parameter :: proton_mass  = 938.27231_dp!< proton mass in units of MeV !938.27208816_dp 
 real(dp), parameter :: neutron_mass = 939.56563_dp!< neutron mass in units of MeV !939.56542052_dp 
 real(dp), parameter :: electron_mass = 0.510999_dp!< electron mass in units of MeV! 0.51099895000_dp 
-real(dp), parameter :: mu_proton = 2.79285_dp!< proton magnetic moment in units of the nuclear magneton \f$ \mu_n \f$ !2.79284734463_dp 
-real(dp), parameter :: mu_neutron = -1.91304_dp!< neutron magnetic moment in units of the nuclear magneton \f$ \mu_n \f$! -1.91304273_dp 
-real(dp), parameter :: alpha = 1/137.03599_dp!< fine structure constant, dimensionless. !1/137.035999084_dp 
+real(dp), parameter :: mu_proton = 2.7928474_dp!< proton magnetic moment in units of the nuclear magneton \f$ \mu_n \f$ !2.79284734463_dp 
+real(dp), parameter :: mu_neutron = -1.9130427_dp!< neutron magnetic moment in units of the nuclear magneton \f$ \mu_n \f$! -1.91304273_dp 
+real(dp), parameter :: alpha = 1/137.035989_dp!< fine structure constant, dimensionless. !1/137.035999084_dp 
 
 
 ! Values from Particle Data Group (PDG)

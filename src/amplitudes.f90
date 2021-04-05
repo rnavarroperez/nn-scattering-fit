@@ -22,7 +22,7 @@ real(dp), parameter :: f_ls = -alpha*(8*mu_p - 2)/(4*m_p**2) !< spin-orbit facto
 
 private
 
-public :: saclay_amplitudes, em_amplitudes!, f_amplitudes, df_amplitudes
+public :: saclay_amplitudes, em_amplitudes, coulomb_2_phase, vacuum_polarization_phase!, f_amplitudes, df_amplitudes
 
 !!
 !> @brief      interface for S matrix subroutine
@@ -947,12 +947,25 @@ real(dp) function coulomb_sigma_l(l, eta) result(sig_l)
     sig_l = aimag(cmplx_log_gamma(z))
 end function coulomb_sigma_l
 
-! The functions below were written to test the derivatives of saclay_parameters against numerical calculations
-! and require the av18 module. All analytic calculations of the derivatives match the numerical ones.
-! since the amplitudes module should not depend on a specific module for the NN interaction the functions
-! are commented and left here for reference.
+real(dp) function coulomb_2_phase(k_cm) result(rho0)
+    implicit none
+    real(dp), intent(in) :: k_cm
+    real(dp) :: etap
 
+    etap = eta_prime(k_cm)
+    rho0 = alpha*k_cm*hbar_c/m_p*(1 - 2*pi*etap/(exp(2*pi*etap)-1))
+end function coulomb_2_phase
 
-
+real(dp) function vacuum_polarization_phase(k_cm) result(tau0)
+    implicit none
+    real(dp) :: k_cm
+    real(dp) :: eta, t_lab, nu, tau00
+    t_lab = 2/m_p*(k_cm*hbar_c)**2
+    nu = 4*m_e**2/(m_p*t_lab)
+    eta = eta_prime(k_cm)
+    tau00 = -alpha*eta/(6*pi)*(0.5_dp*(log(2._dp/nu))**2 + 1.7615_dp - 0.2804_dp*log(2._dp/nu))
+    tau0 = alpha*eta/(3*Pi)*(5.2_dp*eta - 3.83_dp*eta*sqrt(nu/2._dp) - 0.29_dp*eta**2 &
+             + (1.202_dp*eta**2 - 2.36_dp*eta*sqrt(nu/2._dp))*log(2._dp/nu)) + tau00
+end function vacuum_polarization_phase
 
 end module amplitudes

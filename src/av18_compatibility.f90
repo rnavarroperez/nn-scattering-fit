@@ -5,9 +5,92 @@ implicit none
 
 private
 
-public :: read_marias_format
+public :: read_marias_format, write_marias_format
 
 contains
+
+subroutine write_marias_format(filename, parameters)
+    implicit none
+    character(len=*), intent(in) :: filename
+    real(dp), intent(in), dimension(:)  :: parameters
+
+    integer :: unit
+
+    open(newunit=unit, file=trim(filename))
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsq0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsqc'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 2.1_dp,   'cc'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.5_dp,   'cr'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.2_dp,   'ca'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(31), 'ccI01pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(32), 'ccP01pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  0.0_dp,         'ccR01pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(33), 'ccI01np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(34), 'ccP01np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'ccR01np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(31), 'ccI01nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41) + parameters(32), 'ccP01nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp, 'ccR01nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(35), 'cl2I01'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(36), 'cl2P01'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  0.0_dp,         'cl2R01'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(37), 'ccI00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(38), 'ccP00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'ccR00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(39), 'cl2I00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(40), 'cl2P00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'cl2R00'
+    write(unit, '(1l3,1E24.9,1x,a)') .true., parameters( 1), 'ccI11pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true., parameters( 2), 'ccP11pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true., parameters( 3), 'ccR11pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1), 'ccI11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41)*0.5_dp + parameters(2), 'ccP11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3), 'ccR11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1), 'ccI11nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41) + parameters(2), 'ccP11nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3), 'ccR11nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(10), 'cl2I11'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(11), 'cl2P11'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(12), 'cl2R11'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 4), 'ctI1pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 5), 'ctQ1pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 6), 'ctR1pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 4), 'ctI1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 5), 'ctQ1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 6), 'ctR1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 4), 'ctI1nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 5), 'ctQ1nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 6), 'ctR1nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 7), 'clsI1pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 8), 'clsP1pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 9), 'clsR1pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7), 'clsI1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8), 'clsP1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9), 'clsR1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7), 'clsI1nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8), 'clsP1nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9), 'clsR1nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(13), 'cls2I1'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(14), 'cls2P1'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(15), 'cls2R1'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(16), 'ccI10'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(17), 'ccP10'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(18), 'ccR10'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(25), 'cl2I10'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(26), 'cl2P10'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(27), 'cl2R10'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(19), 'ctI0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(20), 'ctQ0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(21), 'ctR0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(22), 'clsI0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(23), 'clsP0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(24), 'clsR0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(28), 'cls2I0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(29), 'cls2P0'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(30), 'cls2R0'
+    close(unit)
+    
+end subroutine write_marias_format
 
 subroutine read_marias_format(filename, parameters)
     implicit none

@@ -83,7 +83,7 @@ subroutine observable(kinematic, params, model, obs, d_obs)
             print*, 'type:', kinematic%type
             print*, 'Printing parameters that were given:'
             do j=1, size(params)
-                print*, params(i)
+                print*, params(j)
             enddo
             print*, 'See main program for the model given'
             print*, 'Stopping program'

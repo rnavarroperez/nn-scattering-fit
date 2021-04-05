@@ -13,6 +13,7 @@ use precisions, only : dp
 use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use utilities, only : kronecker_delta
 use pion_exchange, only : ope_all_partial_waves
+use em_nn_potential, only : n_em_terms, em_potential
 implicit none
 
 integer, parameter :: n_waves = 5 !< number of waves per angular momentum quantum number 
@@ -113,6 +114,7 @@ type :: nn_model
     integer :: n_lambdas !< number of internal delta shells in a DS potential
     real(dp) :: dr_core !< Distance between the internal lambdas 
     real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
+    logical :: relativistic_deuteron !< Should relativistic kinematics be used when calculating the deuteron binding energy?
 end type nn_model
 
 !!
@@ -191,6 +193,7 @@ subroutine set_ds_potential(name, ds_potential, default_params)
         ds_potential%n_lambdas = 5
         ds_potential%dr_core = 0.6_dp
         ds_potential%dr_tail = 0.5_dp
+        ds_potential%relativistic_deuteron = .True.
     case('ds_ope30_fff')
         default_params = ds_ope30fff_params
         ds_potential%potential => ope_all_partial_waves
@@ -201,6 +204,7 @@ subroutine set_ds_potential(name, ds_potential, default_params)
         ds_potential%n_lambdas = 5
         ds_potential%dr_core = 0.6_dp
         ds_potential%dr_tail = 0.5_dp
+        ds_potential%relativistic_deuteron = .True.
     case default
         stop 'unrecognized ds potential name in set_ds_potential'
     end select
@@ -666,24 +670,20 @@ subroutine add_coulomb(r, k, v_pw)
     implicit none
     real(dp), intent(in) :: r !< potential radius in fm
     real(dp), intent(in) :: k !< center of mass momentum in fm\f$^{-1}\f$
-    real(dp), intent(out) :: v_pw(:, :) !< pp potential for all partial waves in MeV
+    real(dp), intent(inout) :: v_pw(:, :) !< pp potential for all partial waves in MeV
+
+    real(dp), dimension(1:n_em_terms) :: v_em
+    real(dp) :: kmev, relativistic_correction
     integer :: i
-    real(dp) :: v_coul, fcoulr, br, kmev, alphap
-    real(dp), parameter :: b = 4.27_dp, small = 0.e-5_dp
     kmev = k*hbar_c
-    alphap = alpha*(1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
-    br = b*r
-    if (r < small) then
-       fcoulr = 5*b/16
-    else
-        fcoulr = (1 - (1 +   11*br/16   + 3*br**2/16 + br**3/48)*exp(-br))/r
-    end if
-
-    v_coul = alphap*hbar_c*fcoulr
-
+    relativistic_correction = (1 + 2*kmev**2/m_p**2)/sqrt(1 + kmev**2/m_p**2)
+    v_em = em_potential(r)
+    v_em(1) = relativistic_correction*v_em(1)
+    v_em(3:4) = relativistic_correction*v_em(3:4)
+    v_pw(1, 1) = v_pw(1, 1) + v_em(3) + v_em(4)
     do i = 1, size(v_pw, 2)
-        v_pw(1:3, i) = v_pw(1:3, i) + v_coul
-        v_pw(5, i) = v_pw(5, i) + v_coul
+        v_pw(1:3, i) = v_pw(1:3, i) + v_em(1)
+        v_pw(5, i) = v_pw(5, i) + v_em(1)
     enddo
 end subroutine add_coulomb
 

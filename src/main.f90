@@ -13,7 +13,6 @@ use av18_compatibility, only : read_marias_format
 use delta_shell, only : nn_model
 use exp_data, only : nn_experiment, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt
-
 implicit none
 
 real(dp), parameter :: r_max = 12.5_dp
@@ -23,8 +22,8 @@ type(nn_experiment), allocatable, dimension(:) :: experiments
 real(dp), allocatable :: covariance(:,:)
 real(dp), allocatable, dimension(:) :: parameters
 logical, allocatable, dimension(:) :: mask
-integer :: n_points
 real(dp) :: chi2
+integer :: n_points
 
 model%potential => av18_all_partial_waves
 model%display_subroutine => display_parameters

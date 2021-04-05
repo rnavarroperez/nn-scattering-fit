@@ -1,6 +1,6 @@
 COMPILER = gfortran
 
-FLAGS = -O3 -fcheck=all -Wall # -fopenmp
+FLAGS = -O3 -fopenmp -fcheck=all -Wall -pedantic
 
 LAPACK = -llapack -lblas
 
@@ -48,7 +48,7 @@ constants.o: constants.f90 precisions.o
 st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o
+em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
 av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
@@ -57,13 +57,13 @@ av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_w
 av18_compatibility.o: av18_compatibility.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-pion_exchange.o : pion_exchange.f90 precisions.o em_nn_potential.o
+pion_exchange.o : pion_exchange.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
 	$(COMPILER) $(FLAGS) -c $<
 
 delta_shell.o: delta_shell.f90 precisions.o constants.o utilities.o pion_exchange.o
 	$(COMPILER) $(FLAGS) -c $<
 
-nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o
+nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o em_nn_potential.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
 amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recipes.o utilities.o
@@ -75,25 +75,37 @@ observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisi
 read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o utilities.o
 	$(COMPILER) $(FLAGS) -c $<
 
-exp_data.o: exp_data.f90 precisions.o string_functions.o utilities.o
+exp_data.o: exp_data.f90 precisions.o string_functions.o utilities.o amplitudes.o
 	$(COMPILER) $(FLAGS) -c $<
 
-deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o
+deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o ode_solver.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
-derivatives.o: derivatives.f90 av18.o num_recipes.o nn_phaseshifts.o amplitudes.o observables.o deuteron.o delta_shell.o pion_exchange.o
+derivatives.o: derivatives.f90 precisions.o num_recipes.o av18.o delta_shell.o observables.o
 	$(COMPILER) $(FLAGS) -c $<
 
 chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-optimization.o: optimization.f90 chi_square.o precisions.o exp_data.o delta_shell.o
+optimization.o: optimization.f90 precisions.o exp_data.o delta_shell.o chi_square.o
 	$(COMPILER) $(FLAGS) -c $<
 
-main.o: main.f90 exp_data.o
+quadrature.o: quadrature.f90 precisions.o
+	$(COMPILER) $(FLAGS) -c $<
+
+ode_solver.o: ode_solver.f90 precisions.o delta_shell.o
+	$(COMPILER) $(FLAGS) -c $<
+
+main.o: main.f90 precisions.o av18.o av18_compatibility.o delta_shell.o exp_data.o optimization.o
 	$(COMPILER) $(FLAGS) -c $<
 
 mc_phases.o: mc_phases.f90 precisions.o delta_shell.o read_write.o
+	$(COMPILER) $(FLAGS) -c $<
+
+random_num.o: random_num.f90 constants.o precisions.o
+	$(COMPILER) $(FLAGS) -c $<
+
+randomize_exp.o: randomize_exp.f90 exp_data.o precisions.o random_num.o
 	$(COMPILER) $(FLAGS) -c $<
 
 clean:
