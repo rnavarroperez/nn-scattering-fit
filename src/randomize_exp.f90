@@ -13,9 +13,12 @@
                 use exp_data
                 use precisions, only: dp
                 use random_num, only: box_muller_num
+                use optimization
+                use delta_shell, only: nn_model
                 implicit none
                 private
-                public randomize_experiment, randomize_database
+                public randomize_experiment, randomize_database, &
+                        bootstrap
                 contains
 
 !!
@@ -70,6 +73,38 @@
                          new_data(i) = randomize_experiment(old_data(i))
                         end do
                 end function randomize_database
+
+!!
+!> @brief       Readjusts parameters with a randomized database
+!!
+!! Subroutine to readjust parameters using the lavenberg_marquardt 
+!! subroutine. Parameters are readjusted with a randomized database 
+!! from the randomize_database function.  new_parameters and new_exp
+!! are allocated based on the size of parameters and experiments. 
+!!
+!! @author      Marielle Elizabeth Duran
+!!
+                subroutine bootstrap(experiments, mask, model, &
+                                parameters, new_parameters, chi2,&
+                                n_points)
+                        implicit none
+            type(nn_experiment), intent(in), dimension(:) :: experiments
+            type(nn_experiment), allocatable, dimension(:) :: new_exp
+                        logical, intent(in), dimension(:) :: mask
+                        type(nn_model), intent(in) :: model
+                        real(dp), intent(in) :: parameters(:)
+                 real(dp), allocatable, intent(out) :: new_parameters(:)
+                        real(dp), intent(out) :: chi2
+                        integer, intent(out) :: n_points
+                        real(dp), allocatable :: covariance(:,:)
+                        allocate(new_parameters(1:SIZE(parameters)))
+                        allocate(new_exp(1:SIZE(experiments)))
+                        new_exp = randomize_database(experiments)
+                        new_parameters = parameters
+                        call lavenberg_marquardt(new_exp, mask, model,&
+                                new_parameters, n_points, chi2, &
+                                covariance)
+                end subroutine bootstrap
 
 !!
 !> @brief       Calculates mean value

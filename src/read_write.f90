@@ -281,7 +281,7 @@ subroutine print_phases(parameters, model)
         print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
             phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
     enddo
-    print*, 
+!    print*, 
 
     do i = 1, size(energies)
         call all_phaseshifts(model, parameters, energies(i), 'nn', phases(:, :, i), d_phases)
@@ -293,7 +293,7 @@ subroutine print_phases(parameters, model)
         print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
             phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
     enddo
-    print*, 
+  !  print*, 
 
     do i = 1, size(energies)
         call all_phaseshifts(model, parameters, energies(i), 'np', phases(:, :, i), d_phases)
@@ -305,7 +305,7 @@ subroutine print_phases(parameters, model)
         print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
             phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
     enddo
-    print*, 
+ !   print*, 
     print*, 'Reproducing np, T=0 phases (Table VII in WSS paper)'
     print '(10a9)', 'T_lab', '1P1', '1F3', '3S1', 'Ep1', '3D1', '3D2', '3D3', 'Ep3', '3G3'
     do i = 1, size(energies)
