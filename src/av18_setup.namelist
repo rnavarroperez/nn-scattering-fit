@@ -1,0 +1,87 @@
+&data_base
+    database_file = 'database/granada_database.dat'
+/
+
+&nn_potential
+    name = 'AV18', ! Available names 'AV18', 'ds_ope30', 'ds_ope30_fff'
+    type = 'local' ! 'local' or 'delta_shell'
+/
+
+&local_integration
+    r_max = 12.5,  ! Maximum integration radius
+    delta_r = 0.0078125 ! Integration step
+/
+
+&deuteron
+    relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
+/
+
+&potential_parameters !Potential parameters
+!                 I_11_c     P_11_c         R_11_c
+    parameters = -7.627010,  1815.492000, 1847.805900, 
+!                 I_11_t     Q_11_t         R_11_t
+                  1.079850,  -190.094900, -811.204000, 
+!                 I_11_ls    P_11_ls        R_11_ls
+                 -0.626970,  -570.557100,  819.122200, 
+!                 I_11_l2    P_11_l2        R_11_l2
+                  0.067090,   342.066900, -615.233900, 
+!                 I_11_ls2   P_11_ls2       R_11_ls2
+                  0.741290,     9.341800, -376.438400, 
+!                 I_10_c     P_10_c         R_10_c
+                 -8.627700,  2605.268200,  441.973300, 
+!                 I_10_t     Q_10_t         R_10_t
+                  1.485601, -1126.835900,  370.132400, 
+!                 I_10_ls    P_10_ls        R_10_ls
+                  0.101800,    86.065800, -356.517500, 
+!                 I_10_l2    P_10_l2        R_10_l2
+                 -0.132010,   253.435000,   -1.007600, 
+!                 I_10_ls2   P_10_ls2       R_10_ls2
+                  0.073570,  -217.579100,   18.393500, 
+!                 I_01 c pp  P_01 c pp
+                -11.270280,  3346.687400, 
+!                 I_01 c np  P_01 c np
+                -10.667880,  3126.554200, 
+!                 I_01_l2    P_01_l2
+                  0.124720,    16.778000, 
+!                 I_00_c     P_00_c
+                 -2.099710,  1204.430100, 
+!                 I_00_l2    P_00_l2
+                 -0.314520,   217.455900, 
+!                 P_CD_c
+                 -3.921000 
+/
+
+&adjust_parameter ! Parameters with .false. are kept fixed during the optimization
+!           I_11_c      P_11_c      R_11_c
+    mask =  .true.,     .true.,     .true.,
+!           I_11_t      Q_11_t      R_11_t
+            .true.,     .true.,     .true.,
+!           I_11_ls2    P_11_ls     R_11_ls
+            .true.,     .true.,     .true.,
+!           I_11_l2     P_11_l2     R_11_l2
+            .true.,     .true.,     .true.,
+!           I_11_ls2    P_11_ls2    R_11_ls2
+            .true.,     .true.,     .true.,
+!           I_10_c      P_10_c      R_10_c
+            .true.,     .true.,     .true.,
+!           I_10_t      Q_10_t      R_10_t
+            .true.,     .true.,    .true.,
+!           I_10_ls     P_10_ls     R_10_ls
+            .true.,     .true.,     .true.,
+!           I_10_l2     P_10_l2     R_10_l2
+            .true.,     .true.,     .true.,
+!           I_10_ls2    P_10_ls2    R_10_ls2
+            .true.,     .true.,     .true.,
+!           I_01 c pp   P_01 c pp
+            .true.,     .true.,
+!           I_01 c np   P_01 c np
+            .true.,     .true.,
+!           I_01_l2     P_01_l2
+            .true.,     .true.,
+!           I_00_c      P_00_c
+            .true.,     .true.,
+!           I_00_l2     P_00_l2
+            .true.,     .true.,
+!           P_CD_c
+            .true.
+/
