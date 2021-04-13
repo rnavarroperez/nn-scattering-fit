@@ -15,16 +15,19 @@ use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_ma
     pi
 use em_nn_potential, only : n_em_terms, em_potential, add_em_potential
 use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot
+use delta_shell, only : nn_model
+use string_functions, only : mask_to_string
 
 implicit none
 
 private 
 
-public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators, display_parameters
+public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators, display_parameters, set_av18_potential
 
 integer, parameter :: n_parameters = 41 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 18  !< Number of operators in the AV18 basis
-! integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
+real(dp), parameter :: r_max = 12.5_dp !< Maximum integration radius for phase-shifts. In units of fm
+real(dp), parameter :: delta_r = 1/128._dp !< Integration step for phases and the dueteron. In units of fm
 
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
     [  -7.627010_dp,  1815.492000_dp, 1847.805900_dp, & ! S=1, T=1 c
@@ -45,6 +48,26 @@ real(dp), parameter, dimension(1:n_parameters) :: default_params = &
        -3.921000_dp & ! P CD c term 
     ] !< default parameters in the AV18 potential
 contains
+
+subroutine set_av18_potential(potential, parameters)
+    implicit none
+    type(nn_model), intent(out) :: potential
+    real(dp), intent(out), allocatable, dimension(:) :: parameters
+
+    allocate(parameters, source = default_params)
+    potential%potential => av18_all_partial_waves
+    potential%display_subroutine => display_parameters
+    potential%r_max = r_max
+    potential%dr = delta_r
+    potential%potential_type = 'local'
+    potential%name = 'AV18'
+    potential%relativistic_deuteron = .False.
+
+    ! Properties of a delta-shell potential. We set them to zero
+    potential%n_lambdas = 0
+    potential%dr_core = 0._dp
+    potential%dr_tail = 0._dp
+end subroutine set_av18_potential
 
 !!
 !> @brief      av18 potential in all partial waves
@@ -552,45 +575,48 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
 
 end subroutine av18_operator
 
-subroutine display_parameters(ap, cv)
+subroutine display_parameters(ap, mask, cv)
     implicit none
     real(dp), intent(in), dimension(:) :: ap
+    logical, intent(in), dimension(:) :: mask
     real(dp), intent(in), optional, dimension(:, :) :: cv
 
+    character(len=size(ap)) :: s1
     integer :: i
 
-    print'(3(2x,a,f15.8))', 'I_11    c:', ap( 1), 'P_11    c:', ap( 2), 'R_11    c:', ap( 3)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=1, 3)
-    print'(3(2x,a,f15.8))', 'I_11    t:', ap( 4), 'Q_11    t:', ap( 5), 'R_11    t:', ap( 6)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=4, 6)
-    print'(3(2x,a,f15.8))', 'I_11   ls:', ap( 7), 'P_11   ls:', ap( 8), 'R_11   ls:', ap( 9)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=7, 9)
-    print'(3(2x,a,f15.8))', 'I_11   l2:', ap(10), 'P_11   l2:', ap(11), 'R_11   l2:', ap(12)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=10, 12)
-    print'(3(2x,a,f15.8))', 'I_11  ls2:', ap(13), 'P_11  ls2:', ap(14), 'R_11  ls2:', ap(15)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=13, 15)
-    print'(3(2x,a,f15.8))', 'I_10    c:', ap(16), 'P_10    c:', ap(17), 'R_10    c:', ap(18)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=16, 18)
-    print'(3(2x,a,f15.8))', 'I_10    t:', ap(19), 'Q_10    t:', ap(20), 'R_10    t:', ap(21)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=19, 21)
-    print'(3(2x,a,f15.8))', 'I_10   ls:', ap(22), 'P_10   ls:', ap(23), 'R_10   ls:', ap(24)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=22, 24)
-    print'(3(2x,a,f15.8))', 'I_10   l2:', ap(25), 'P_10   l2:', ap(26), 'R_10   l2:', ap(27)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=25, 27)
-    print'(3(2x,a,f15.8))', 'I_10  ls2:', ap(28), 'P_10  ls2:', ap(29), 'R_10  ls2:', ap(30)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=28, 30)
-    print'(2(2x,a,f15.8))', 'I_01 c pp:', ap(31), 'P_01 c pp:', ap(32)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=31, 32)
-    print'(2(2x,a,f15.8))', 'I_01 c np:', ap(33), 'P_01 c np:', ap(34)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=33, 34)
-    print'(2(2x,a,f15.8))', 'I_01   l2:', ap(35), 'P_01   l2:', ap(36)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=35, 36)
-    print'(2(2x,a,f15.8))', 'I_00    c:', ap(37), 'P_00    c:', ap(38)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=37, 38)
-    print'(2(2x,a,f15.8))', 'I_00   l2:', ap(39), 'P_00   l2:', ap(40)
-    if(present(cv)) print'(3(12x,f15.8))', (sqrt(cv(i,i)), i=39, 40)
-    print'(1(2x,a,f15.8))', 'P CD    c:', ap(41) 
-    if(present(cv)) print'(3(12x,f15.8))', sqrt(cv(41,41))
+    s1 = mask_to_string(mask, ' ', '*')
+    print'(3(2x,a,f15.8,a1))', 'I_11    c:', ap( 1), s1(1:1), 'P_11    c:', ap( 2), s1(2:2), 'R_11    c:', ap( 3), s1(3:3)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=1, 3)
+    print'(3(2x,a,f15.8,a1))', 'I_11    t:', ap( 4), s1(4:4), 'Q_11    t:', ap( 5), s1(5:5), 'R_11    t:', ap( 6), s1(6:6)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=4, 6)
+    print'(3(2x,a,f15.8,a1))', 'I_11   ls:', ap( 7), s1(7:7), 'P_11   ls:', ap( 8), s1(8:8), 'R_11   ls:', ap( 9), s1(9:9)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=7, 9)
+    print'(3(2x,a,f15.8,a1))', 'I_11   l2:', ap(10), s1(10:10), 'P_11   l2:', ap(11), s1(11:11), 'R_11   l2:', ap(12), s1(12:12)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=10, 12)
+    print'(3(2x,a,f15.8,a1))', 'I_11  ls2:', ap(13), s1(13:13), 'P_11  ls2:', ap(14), s1(14:14), 'R_11  ls2:', ap(15), s1(15:15)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=13, 15)
+    print'(3(2x,a,f15.8,a1))', 'I_10    c:', ap(16), s1(16:16), 'P_10    c:', ap(17), s1(17:17), 'R_10    c:', ap(18), s1(18:18)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=16, 18)
+    print'(3(2x,a,f15.8,a1))', 'I_10    t:', ap(19), s1(19:19), 'Q_10    t:', ap(20), s1(20:20), 'R_10    t:', ap(21), s1(21:21)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=19, 21)
+    print'(3(2x,a,f15.8,a1))', 'I_10   ls:', ap(22), s1(22:22), 'P_10   ls:', ap(23), s1(23:23), 'R_10   ls:', ap(24), s1(24:24)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=22, 24)
+    print'(3(2x,a,f15.8,a1))', 'I_10   l2:', ap(25), s1(25:25), 'P_10   l2:', ap(26), s1(26:26), 'R_10   l2:', ap(27), s1(27:27)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=25, 27)
+    print'(3(2x,a,f15.8,a1))', 'I_10  ls2:', ap(28), s1(28:28), 'P_10  ls2:', ap(29), s1(29:29), 'R_10  ls2:', ap(30), s1(30:30)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=28, 30)
+    print'(2(2x,a,f15.8,a1))', 'I_01 c pp:', ap(31), s1(31:31), 'P_01 c pp:', ap(32), s1(32:32)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=31, 32)
+    print'(2(2x,a,f15.8,a1))', 'I_01 c np:', ap(33), s1(33:33), 'P_01 c np:', ap(34), s1(34:34)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=33, 34)
+    print'(2(2x,a,f15.8,a1))', 'I_01   l2:', ap(35), s1(35:35), 'P_01   l2:', ap(36), s1(36:36)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=35, 36)
+    print'(2(2x,a,f15.8,a1))', 'I_00    c:', ap(37), s1(37:37), 'P_00    c:', ap(38), s1(38:38)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=37, 38)
+    print'(2(2x,a,f15.8,a1))', 'I_00   l2:', ap(39), s1(39:39), 'P_00   l2:', ap(40), s1(40:40)
+    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=39, 40)
+    print'(1(2x,a,f15.8,a1))', 'P CD    c:', ap(41), s1(41:41) 
+    if(present(cv)) print'(3(12x,f15.8,1x))', sqrt(cv(41,41))
 
 end subroutine display_parameters
 

@@ -15,12 +15,14 @@ use nn_phaseshifts, only: all_phaseshifts
 use delta_shell, only: nn_model
 use constants, only: pi
 use utilities, only : double_2darray_allocation, trim_2d_array
+use av18, only : set_av18_potential
+use delta_shell, only : set_ds_potential
 implicit none
 
 private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
-    write_montecarlo_phases, print_phases
+    write_montecarlo_phases, print_phases, print_potential_setup, setup_from_namelist
 
 contains
 
@@ -281,7 +283,7 @@ subroutine print_phases(parameters, model)
         print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
             phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
     enddo
-    print*, 
+    print*, ''
 
     do i = 1, size(energies)
         call all_phaseshifts(model, parameters, energies(i), 'nn', phases(:, :, i), d_phases)
@@ -293,7 +295,7 @@ subroutine print_phases(parameters, model)
         print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
             phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
     enddo
-    print*, 
+    print*, ''
 
     do i = 1, size(energies)
         call all_phaseshifts(model, parameters, energies(i), 'np', phases(:, :, i), d_phases)
@@ -305,15 +307,160 @@ subroutine print_phases(parameters, model)
         print '(9f9.2)', energies(i), phases(1, 1, i), phases(1, 3, i), phases(5, 1, i), phases(2, 2, i), &
             phases(3, 3, i), phases(4, 3, i), phases(5, 3, i), phases(2, 4, i)
     enddo
-    print*, 
+    print*, ''
     print*, 'Reproducing np, T=0 phases (Table VII in WSS paper)'
     print '(10a9)', 'T_lab', '1P1', '1F3', '3S1', 'Ep1', '3D1', '3D2', '3D3', 'Ep3', '3G3'
     do i = 1, size(energies)
         print '(10f9.2)', energies(i), phases(1, 2, i), phases(1, 4, i), phases(3, 2, i), phases(4, 2, i), &
             phases(5, 2, i), phases(2, 3, i), phases(3, 4, i), phases(4, 4, i), phases(5, 4, i)
     enddo
-
-    
 end subroutine print_phases
+
+subroutine print_potential_setup(potential, parameters, mask)
+    implicit none
+    type(nn_model), intent(in) :: potential
+    real(dp), intent(in), dimension(:) :: parameters
+    logical, intent(in), dimension(:) :: mask
+
+    print*, 'Characteristics of the potential being used'
+    print*, 'Name:', potential%name
+    print*, 'Maximum integration radius:', potential%r_max
+    select case(trim(potential%potential_type))
+    case ('local')
+        print*, 'Integration step:', potential%dr
+    case ('delta_shell')
+        print*, 'Number of internal delta shells:', potential%n_lambdas
+        print*, 'Distance between internal delta shells:', potential%dr_core
+        print*, 'Distance between external delta shells:', potential%dr_tail
+    case default
+        stop 'Unrecognized potential type in print_potential_setup'
+    end select
+    if (potential%relativistic_deuteron) then
+        print*, 'The deuteron will be calculated with RELATIVISITC kinematics'
+    else
+        print*, 'The deuteron will be calculated with NON-RELATIVISITC kinematics'
+    endif
+    print*, 'Displaying potential parameters'
+    print*, '* indicates that a parameter is kept fixed during the optimization'
+    call potential%display_subroutine(parameters, mask)
+    print*, ''
+end subroutine print_potential_setup
+
+subroutine setup_from_namelist(namelist_file, potential, parameters, mask, database_file)
+    implicit none
+    character(len=*), intent(in) :: namelist_file
+    type(nn_model), intent(out) :: potential
+    real(dp), intent(out), allocatable, dimension(:) :: parameters
+    logical, intent(out), allocatable, dimension(:) :: mask
+    character(len=*), intent(out) :: database_file
+
+    character(len=1024) :: name, type
+    real(dp) :: r_max, delta_r, dr_core, dr_tail
+    integer :: n_lambdas
+    logical :: relativistic
+
+    logical :: file_exists
+    integer :: unit, ierror
+
+    namelist /data_base/ database_file
+    namelist /nn_potential/ name, type
+    namelist /local_integration/ r_max, delta_r
+    namelist /delta_shell_integration/ r_max, n_lambdas, dr_core, dr_tail
+    namelist /deuteron/ relativistic
+    namelist /potential_parameters/ parameters
+    namelist /adjust_parameter/ mask
+
+
+    !setting up default values in namelists
+    name = 'AV18'
+    type = 'local'
+    r_max = 12.5_dp
+    delta_r = 1/128._dp
+    n_lambdas = 5
+    dr_core = 0.6_dp
+    dr_tail = 0.5_dp
+    relativistic = .false.
+
+
+    inquire(file=trim(namelist_file), exist = file_exists)
+    if (file_exists) then
+        print*, 'Setting up potential as specified in: ', trim(namelist_file)
+        print*, ''
+        open(newunit = unit, file = namelist_file )
+
+        read(unit, nml = data_base, iostat = ierror)
+        if(ierror /= 0) then
+            stop 'Error reading data_base namelist'
+        endif
+
+        read(unit, nml = nn_potential, iostat = ierror)
+        if(ierror /= 0) then
+            stop 'Error reading nn_potential namelist'
+        endif
+
+        select case(trim(type))
+        case ('local')
+            read(unit, nml = local_integration, iostat = ierror)
+            if(ierror /= 0) then
+                stop 'Error reading local_integration namelist'
+            endif
+        case ('delta_shell')
+            read(unit, nml = delta_shell_integration, iostat = ierror)
+            if(ierror /= 0) then
+                stop 'Error reading delta_shell_integration namelist'
+            endif
+        case default
+            stop 'Unrecognized type in potential namelist'
+        end select
+
+        select case(trim(name))
+            ! These subroutines setup the default versions and parameters,
+            ! including allocating the correct size for the parameters array,
+            ! those are later replaced by whatever is read in the namelist file
+        case ('AV18')
+            call set_av18_potential(potential, parameters)
+        case ('ds_ope30')
+            call set_ds_potential(name, potential, parameters)
+        case ('ds_ope30_fff')
+            call set_ds_potential(name, potential, parameters)
+        case default
+            stop 'Unrecognized name in potential namelist'
+        end select
+        
+        read(unit, nml = deuteron, iostat = ierror)
+        if(ierror /= 0) then
+            stop 'Error reading deuteron namelist'
+        endif
+        
+        read(unit, nml = potential_parameters, iostat = ierror)
+        if(ierror /= 0) then
+            stop 'Error reading potential_parameters namelist'
+        endif
+        
+        allocate(mask(1:size(parameters)))
+        read(unit, nml = adjust_parameter, iostat = ierror)
+        if(ierror /= 0) then
+            stop 'Error reading adjust_parameter namelist'
+        endif
+        close(unit)
+    else
+        print*, 'Namelist file, ', trim(namelist_file)
+        print*, 'does not exist. Ending program'
+        stop
+    endif
+
+    potential%name = trim(name)
+    potential%potential_type = trim(type)
+
+    potential%r_max = r_max
+    potential%dr = delta_r
+
+    potential%n_lambdas = n_lambdas
+    potential%dr_core = dr_core
+    potential%dr_tail = dr_tail
+
+    potential%relativistic_deuteron = relativistic
+  
+end subroutine setup_from_namelist
 
 end module read_write

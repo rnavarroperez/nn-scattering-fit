@@ -176,4 +176,23 @@ DO i = 1,LEN(s1)
 END DO
 END FUNCTION Lower
 
+function mask_to_string(mask, true_char, false_char) result(string)
+    implicit none
+    logical, intent(in), dimension(:) :: mask
+    character(len=1), intent(in) :: true_char
+    character(len=1), intent(in) :: false_char
+    character(len=size(mask)) :: string
+
+    integer :: i
+
+    do i = 1, len(string)
+        if (mask(i)) then
+            string(i:i) = true_char
+        else
+            string(i:i) = false_char
+        endif
+    enddo
+    
+end function mask_to_string
+
 END MODULE String_Functions

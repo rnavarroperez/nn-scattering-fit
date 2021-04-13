@@ -89,10 +89,11 @@ interface
 end interface
 
 interface
-    subroutine display_parameters(ap, cv)
+    subroutine display_parameters(ap, mask, cv)
         use precisions, only : dp
         implicit none
         real(dp), intent(in), dimension(:) :: ap !< potential parameters
+        logical, intent(in), dimension(:) :: mask !< which parameters are kept fixed during the optimization
         real(dp), intent(in), optional, dimension(:, :) :: cv !< covariance matrix
     end subroutine display_parameters
 end interface
@@ -176,18 +177,17 @@ contains
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine set_ds_potential(name, ds_potential, default_params)
+subroutine set_ds_potential(name, ds_potential, parameters)
     implicit none
     character(len=*), intent(in) :: name
     type(nn_model), intent(out) :: ds_potential
-    real(dp), intent(out), allocatable, dimension(:) :: default_params
-    allocate(default_params(1:n_ds_parameters))
+    real(dp), intent(out), allocatable, dimension(:) :: parameters
+    allocate(parameters(1:n_ds_parameters))
     select case(trim(name))
     case('ds_ope30')
-        default_params = ds_ope30_params
+        parameters = ds_ope30_params
         ds_potential%potential => ope_all_partial_waves
         ds_potential%r_max = 13.0_dp
-        ds_potential%dr = 0._dp
         ds_potential%potential_type = 'delta_shell'
         ds_potential%name = name
         ds_potential%n_lambdas = 5
@@ -195,10 +195,9 @@ subroutine set_ds_potential(name, ds_potential, default_params)
         ds_potential%dr_tail = 0.5_dp
         ds_potential%relativistic_deuteron = .True.
     case('ds_ope30_fff')
-        default_params = ds_ope30fff_params
+        parameters = ds_ope30fff_params
         ds_potential%potential => ope_all_partial_waves
         ds_potential%r_max = 13.0_dp
-        ds_potential%dr = 0._dp
         ds_potential%potential_type = 'delta_shell'
         ds_potential%name = name
         ds_potential%n_lambdas = 5
@@ -208,6 +207,10 @@ subroutine set_ds_potential(name, ds_potential, default_params)
     case default
         stop 'unrecognized ds potential name in set_ds_potential'
     end select
+
+    ! Property of a local potential. We set it to zero
+    ds_potential%dr = 0._dp
+
 end subroutine set_ds_potential
 
 !!
