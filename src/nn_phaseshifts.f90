@@ -447,6 +447,14 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = d_argument/denominator
     ps_eigen(1) = -atan(argument)
     d_ps_eigen(:, 1) = -1/(1 + argument**2)*d_argument
+    ! In some very rare occasions the denominator can be exactly equal to zero
+    ! which leads to NaNs in the derivatives. It is not an issue for 
+    ! the phase-shift due to the arctan function.
+    ! In those cases we use a (analytically) simplified formula for the 
+    ! derivatives which avoids the division by zero
+    if (denominator == 0 .and. abs(numerator) > 0) then
+        d_ps_eigen(:, 1) = d_denominator/numerator
+    endif
 
     numerator = d1 + alfa_1*d2
     denominator = b1 + alfa_1*b2
@@ -457,6 +465,14 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = d_argument/denominator
     ps_eigen(2) =  atan(argument)
     d_ps_eigen(:, 2) = 1/(1 + argument**2)*d_argument
+    ! In some very rare occasions the denominator can be exactly equal to zero
+    ! which leads to NaNs in the derivatives. It is not an issue for 
+    ! the phase-shift due to the arctan function.
+    ! In those cases we use a (analytically) simplified formula for the 
+    ! derivatives which avoids the division by zero
+    if (denominator == 0 .and. abs(numerator) > 0) then
+        d_ps_eigen(:, 2) = -d_denominator/numerator
+    endif
 
     numerator = d1 + alfa_2*d2
     denominator = c1 + alfa_2*c2
@@ -467,6 +483,14 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = d_argument/denominator
     ps_eigen(3) = -atan(argument)
     d_ps_eigen(:, 3) = -1/(1 + argument**2)*d_argument
+    ! In some very rare occasions the denominator can be exactly equal to zero
+    ! which leads to NaNs in the derivatives. It is not an issue for 
+    ! the phase-shift due to the arctan function.
+    ! In those cases we use a (analytically) simplified formula for the 
+    ! derivatives which avoids the division by zero
+    if (denominator == 0 .and. abs(numerator) > 0) then
+        d_ps_eigen(:, 3) = d_denominator/numerator
+    endif
 end subroutine eigen_phases
 
 !!
