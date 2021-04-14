@@ -15,10 +15,11 @@
                 use random_num, only: box_muller_num
                 use optimization
                 use delta_shell, only: nn_model
+                use chi_square, only : total_chi_square
                 implicit none
                 private
                 public randomize_experiment, randomize_database, &
-                        bootstrap
+                        bootstrap, full_bootstrap
                 contains
 
 !!
@@ -89,7 +90,7 @@
                                 n_points)
                         implicit none
             type(nn_experiment), intent(in), dimension(:) :: experiments
-            type(nn_experiment), allocatable, dimension(:) :: new_exp
+      type(nn_experiment), allocatable,  dimension(:) :: new_exp
                         logical, intent(in), dimension(:) :: mask
                         type(nn_model), intent(in) :: model
                         real(dp), intent(in) :: parameters(:)
@@ -105,6 +106,61 @@
                                 new_parameters, n_points, chi2, &
                                 covariance)
                 end subroutine bootstrap
+
+!!
+!> @brief       Implements full bootstrap method 
+!!
+!! Subroutine to implement the entire bootstrap method using the 
+!! lavenberg-marquardt method and the total_chi_square subroutine. This
+!! follows the same steps as the botstrap subroutine listed above,
+!! except this subroutine uses the total_chi_square subroutine to 
+!! find the chi square values. It also puts values of new parameters,
+!! chi square, and number of points into three separate arrays.
+!!
+!! @author      Marielle Duran
+!! 
+                subroutine full_bootstrap(old_exp, mask, model, &
+                                parameters, new_parameters, chi2, &
+                                n_points, n_runs, all_chi2, &
+                                all_npoints, all_parameters, &
+                                alpha, beta)
+                        implicit none
+                type(nn_experiment), intent(in), dimension(:) :: old_exp
+               type(nn_experiment), allocatable, dimension(:) :: new_exp
+                        logical, intent(in), dimension(:) :: mask
+                        type(nn_model), intent(in) :: model
+                        real(dp), intent(in) :: parameters(:)
+                 real(dp), allocatable, intent(out) :: new_parameters(:)
+                        real(dp), intent(out) :: chi2
+                        integer, intent(out) :: n_points
+                        real(dp), allocatable :: covariance(:,:)
+
+           real(dp), allocatable, intent(out), dimension(:) :: all_chi2
+          integer, allocatable, intent(out), dimension(:) :: all_npoints
+               real(dp), allocatable, intent(out) :: all_parameters(:,:)
+                        real(dp), intent(out), allocatable ::alpha(:,:)
+                        real(dp), intent(out), allocatable :: beta(:)
+                        integer :: i
+                        integer, intent(in) :: n_runs
+                        allocate(new_parameters(1:SIZE(parameters)))
+                        allocate(new_exp(1:SIZE(old_exp)))
+                        allocate(all_chi2(1:n_runs))
+                        allocate(all_npoints(1:n_runs))
+                   allocate(all_parameters(1:SIZE(parameters),1:n_runs))
+                        do i = 1, n_runs
+                        new_exp = randomize_database(old_exp)
+                        new_parameters = parameters
+                        call lavenberg_marquardt(new_exp, mask, model, &
+                                new_parameters, n_points, chi2, &
+                                covariance)
+                        call total_chi_square(old_exp, new_parameters, &
+                                mask, model, n_points, chi2, alpha, &
+                                beta)
+                        all_parameters(:,i) = new_parameters
+                        all_chi2(i) = chi2
+                        all_npoints(i) = n_points
+                        end do
+                end subroutine full_bootstrap
 
 !!
 !> @brief       Calculates mean value

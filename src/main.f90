@@ -26,6 +26,12 @@ real(dp), allocatable, dimension(:) :: new_parameters
 logical, allocatable, dimension(:) :: mask
 real(dp) :: chi2
 integer :: n_points
+integer, parameter :: n_runs = 5
+real(dp), allocatable, dimension(:) :: all_chi2
+integer, allocatable, dimension(:) :: all_npoints
+real(dp), allocatable :: all_parameters(:,:)
+real(dp), allocatable ::alpha(:,:)
+real(dp), allocatable :: beta(:)
 
 model%potential => av18_all_partial_waves
 model%display_subroutine => display_parameters
@@ -41,7 +47,9 @@ call init_ex_em_amplitudes(experiments)
 
 allocate(mask(1: size(parameters)))
 mask = .true.
-call bootstrap(experiments, mask, model, parameters, new_parameters, chi2, n_points) 
+call full_bootstrap(experiments, mask, model, parameters, new_parameters, chi2, n_points, n_runs,&
+       all_chi2, all_npoints, all_parameters, alpha, beta)
+!call bootstrap(experiments, mask, model, parameters, new_parameters, chi2, n_points) 
 !call lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
 print*, 'after minimization: ', chi2, n_points, chi2/n_points
 end program nn_fit
