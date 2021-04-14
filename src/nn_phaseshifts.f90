@@ -434,33 +434,63 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     real(dp), intent(out) :: ps_eigen(1:3) !< eigen phaseshifts in a coupled channel
     real(dp), intent(out) :: d_ps_eigen(:, :) !< derivatives of the eigen phaseshifts in a coupled channel
     real(dp) :: numerator, denominator, argument
-    real(dp), allocatable, dimension(:) :: d_numerator, d_denominator
+    real(dp), allocatable, dimension(:) :: d_numerator, d_denominator, d_argument
     allocate(d_numerator, mold = d_a1)
     d_numerator = 0
-    allocate(d_denominator, source = d_numerator)
+    allocate(d_denominator, d_argument, source = d_numerator)
     numerator = b1 + alfa_1*b2
     denominator = a1 + alfa_1*a2
     argument = numerator/denominator
     d_numerator = d_b1 + d_alfa_1*b2 + alfa_1*d_b2
     d_denominator = d_a1 + d_alfa_1*a2 + alfa_1*d_a2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_argument = d_argument/denominator
     ps_eigen(1) = -atan(argument)
-    d_ps_eigen(:, 1) = -(d_numerator*denominator - numerator*d_denominator)/(numerator**2 + denominator**2)
+    d_ps_eigen(:, 1) = -1/(1 + argument**2)*d_argument
+    ! In some very rare occasions the denominator can be exactly equal to zero
+    ! which leads to NaNs in the derivatives. It is not an issue for 
+    ! the phase-shift due to the arctan function.
+    ! In those cases we use a (analytically) simplified formula for the 
+    ! derivatives which avoids the division by zero
+    if (denominator == 0 .and. abs(numerator) > 0) then
+        d_ps_eigen(:, 1) = d_denominator/numerator
+    endif
 
     numerator = d1 + alfa_1*d2
     denominator = b1 + alfa_1*b2
     argument = numerator/denominator
     d_numerator = d_d1 + d_alfa_1*d2 + alfa_1*d_d2
     d_denominator = d_b1 + d_alfa_1*b2 + alfa_1*d_b2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_argument = d_argument/denominator
     ps_eigen(2) =  atan(argument)
-    d_ps_eigen(:, 2) = (d_numerator*denominator - numerator*d_denominator)/(numerator**2 + denominator**2)
+    d_ps_eigen(:, 2) = 1/(1 + argument**2)*d_argument
+    ! In some very rare occasions the denominator can be exactly equal to zero
+    ! which leads to NaNs in the derivatives. It is not an issue for 
+    ! the phase-shift due to the arctan function.
+    ! In those cases we use a (analytically) simplified formula for the 
+    ! derivatives which avoids the division by zero
+    if (denominator == 0 .and. abs(numerator) > 0) then
+        d_ps_eigen(:, 2) = -d_denominator/numerator
+    endif
 
     numerator = d1 + alfa_2*d2
     denominator = c1 + alfa_2*c2
     argument = numerator/denominator
     d_numerator = d_d1 + d_alfa_2*d2 + alfa_2*d_d2
     d_denominator = d_c1 + d_alfa_2*c2 + alfa_2*d_c2
+    d_argument = (d_numerator*denominator - numerator*d_denominator)/denominator
+    d_argument = d_argument/denominator
     ps_eigen(3) = -atan(argument)
-    d_ps_eigen(:, 3) = -(d_numerator*denominator - numerator*d_denominator)/(numerator**2 + denominator**2)
+    d_ps_eigen(:, 3) = -1/(1 + argument**2)*d_argument
+    ! In some very rare occasions the denominator can be exactly equal to zero
+    ! which leads to NaNs in the derivatives. It is not an issue for 
+    ! the phase-shift due to the arctan function.
+    ! In those cases we use a (analytically) simplified formula for the 
+    ! derivatives which avoids the division by zero
+    if (denominator == 0 .and. abs(numerator) > 0) then
+        d_ps_eigen(:, 3) = d_denominator/numerator
+    endif
 end subroutine eigen_phases
 
 !!
