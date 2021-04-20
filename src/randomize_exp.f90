@@ -115,38 +115,38 @@
 !! follows the same steps as the botstrap subroutine listed above,
 !! except this subroutine uses the total_chi_square subroutine to 
 !! find the chi square values. It also puts values of new parameters,
-!! chi square, and number of points into three separate arrays.
+!! chi square, and number of points into three separate arrays. These
+!! three arrays are written into the file, all_arrays.
 !!
 !! @author      Marielle Duran
 !! 
                 subroutine full_bootstrap(old_exp, mask, model, &
-                                parameters, new_parameters, chi2, &
-                                n_points, n_runs, all_chi2, &
-                                all_npoints, all_parameters, &
-                                alpha, beta)
+                                parameters, n_runs, all_chi2, &
+                                all_npoints, all_parameters)
                         implicit none
                 type(nn_experiment), intent(in), dimension(:) :: old_exp
                type(nn_experiment), allocatable, dimension(:) :: new_exp
                         logical, intent(in), dimension(:) :: mask
                         type(nn_model), intent(in) :: model
                         real(dp), intent(in) :: parameters(:)
-                 real(dp), allocatable, intent(out) :: new_parameters(:)
-                        real(dp), intent(out) :: chi2
-                        integer, intent(out) :: n_points
+                        real(dp), allocatable :: new_parameters(:)
+                        real(dp) :: chi2
+                        integer :: n_points
                         real(dp), allocatable :: covariance(:,:)
 
            real(dp), allocatable, intent(out), dimension(:) :: all_chi2
           integer, allocatable, intent(out), dimension(:) :: all_npoints
                real(dp), allocatable, intent(out) :: all_parameters(:,:)
-                        real(dp), intent(out), allocatable ::alpha(:,:)
-                        real(dp), intent(out), allocatable :: beta(:)
-                        integer :: i
+                        real(dp), allocatable ::alpha(:,:)
+                        real(dp), allocatable :: beta(:)
+                        integer :: i, unit
                         integer, intent(in) :: n_runs
                         allocate(new_parameters(1:SIZE(parameters)))
                         allocate(new_exp(1:SIZE(old_exp)))
                         allocate(all_chi2(1:n_runs))
                         allocate(all_npoints(1:n_runs))
                    allocate(all_parameters(1:SIZE(parameters),1:n_runs))
+                 open(newunit=unit, file='all_arrays', status='unknown')
                         do i = 1, n_runs
                         new_exp = randomize_database(old_exp)
                         new_parameters = parameters
@@ -159,7 +159,9 @@
                         all_parameters(:,i) = new_parameters
                         all_chi2(i) = chi2
                         all_npoints(i) = n_points
+          write(unit,*) all_parameters(:,i), all_chi2(i), all_npoints(i)
                         end do
+                        close(unit)
                 end subroutine full_bootstrap
 
 !!

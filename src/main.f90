@@ -47,9 +47,9 @@ call init_ex_em_amplitudes(experiments)
 
 allocate(mask(1: size(parameters)))
 mask = .true.
-call full_bootstrap(experiments, mask, model, parameters, new_parameters, chi2, n_points, n_runs,&
-       all_chi2, all_npoints, all_parameters, alpha, beta)
+call full_bootstrap(experiments, mask, model, parameters, n_runs,&
+       all_chi2, all_npoints, all_parameters)
 !call bootstrap(experiments, mask, model, parameters, new_parameters, chi2, n_points) 
 !call lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
-print*, 'after minimization: ', chi2, n_points, chi2/n_points
+!print*, 'after minimization: ', chi2, n_points, chi2/n_points
 end program nn_fit
