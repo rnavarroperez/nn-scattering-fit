@@ -172,9 +172,41 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
             call eigen_2_bar(ps_eigen, d_ps_eigen, phases(3:5, ij), d_phases(:, 3:5, ij))
         endif
     enddo
-
+    call verify_phase_derivatives(t_lab, reaction, d_phases)
 end subroutine all_phaseshifts
 
+subroutine verify_phase_derivatives(t_lab, reaction, d_phases)
+    use ieee_arithmetic, only : ieee_is_finite, ieee_is_nan
+    implicit none
+    real(dp), intent(in) :: t_lab
+    character(len=2), intent(in) :: reaction
+    real(dp), intent(inout), dimension(:,:,:) :: d_phases
+
+    logical :: non_float_present
+    integer :: i, j, k
+
+    non_float_present = .false.
+
+    do k = 1, size(d_phases, 3)
+        do j = 1, size(d_phases, 2)
+            do i = 1, size(d_phases, 1)
+                if(ieee_is_nan(d_phases(i,j,k)) .or. .not. ieee_is_finite(d_phases(i, j, k))) then
+                    non_float_present = .true.
+                    d_phases(i,j,k) = 0._dp
+                endif
+            enddo
+        enddo
+    enddo
+    
+    if (non_float_present) then
+        print*, 'WARNING: some derivatives in all_phaseshifts were either NaN or infinity'
+        print*, 'Those derivatives were set to zero'
+        print*, 'T_lab in MeV:', t_lab
+        print*, 'channel: ', reaction
+        print*, 'As long as T_lab was small (less than 0.01 MeV) it should not be an issue'
+    endif
+
+end subroutine verify_phase_derivatives
 
 !!
 !> @brief      variable phase equation integration in coupled channels
@@ -447,14 +479,6 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = d_argument/denominator
     ps_eigen(1) = -atan(argument)
     d_ps_eigen(:, 1) = -1/(1 + argument**2)*d_argument
-    ! In some very rare occasions the denominator can be exactly equal to zero
-    ! which leads to NaNs in the derivatives. It is not an issue for 
-    ! the phase-shift due to the arctan function.
-    ! In those cases we use a (analytically) simplified formula for the 
-    ! derivatives which avoids the division by zero
-    if (denominator == 0 .and. abs(numerator) > 0) then
-        d_ps_eigen(:, 1) = d_denominator/numerator
-    endif
 
     numerator = d1 + alfa_1*d2
     denominator = b1 + alfa_1*b2
@@ -465,14 +489,6 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = d_argument/denominator
     ps_eigen(2) =  atan(argument)
     d_ps_eigen(:, 2) = 1/(1 + argument**2)*d_argument
-    ! In some very rare occasions the denominator can be exactly equal to zero
-    ! which leads to NaNs in the derivatives. It is not an issue for 
-    ! the phase-shift due to the arctan function.
-    ! In those cases we use a (analytically) simplified formula for the 
-    ! derivatives which avoids the division by zero
-    if (denominator == 0 .and. abs(numerator) > 0) then
-        d_ps_eigen(:, 2) = -d_denominator/numerator
-    endif
 
     numerator = d1 + alfa_2*d2
     denominator = c1 + alfa_2*c2
@@ -483,14 +499,6 @@ subroutine eigen_phases(a1, b1, c1, d1, a2, b2, c2, d2, d_a1, d_b1, d_c1, d_d1, 
     d_argument = d_argument/denominator
     ps_eigen(3) = -atan(argument)
     d_ps_eigen(:, 3) = -1/(1 + argument**2)*d_argument
-    ! In some very rare occasions the denominator can be exactly equal to zero
-    ! which leads to NaNs in the derivatives. It is not an issue for 
-    ! the phase-shift due to the arctan function.
-    ! In those cases we use a (analytically) simplified formula for the 
-    ! derivatives which avoids the division by zero
-    if (denominator == 0 .and. abs(numerator) > 0) then
-        d_ps_eigen(:, 3) = d_denominator/numerator
-    endif
 end subroutine eigen_phases
 
 !!
@@ -507,7 +515,6 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
     real(dp), intent(in) :: d_ps_eigen(:, :) !< derivatives of the eigen phaseshifts in a coupled channel
     real(dp), intent(out) :: ps_bar(1:3) !< nuclear bar phaseshifts in a coupled channel
     real(dp), intent(out) :: d_ps_bar(:, :) !< derivatives of the nuclear bar phaseshifts in a coupled channel
-
     real(dp) :: sin_2eps, sin_diff, arg_arcsin, numerator, denominator, fraction
     real(dp), allocatable, dimension(:) :: d_sin_2eps, d_sin_diff, d_arg_arcsin, d_numerator, &
         d_denominator, d_fraction
@@ -534,6 +541,8 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
     d_fraction = (d_numerator*denominator - numerator*d_denominator)/denominator
     d_fraction = d_fraction/denominator
 
+    if (fraction >= 1._dp) fraction = 1 - tiny(1._dp)
+
     if (ps_eigen(1) - ps_eigen(3) > pi/2) then
         ps_bar(1) = (ps_eigen(1) + ps_eigen(3) + pi - asin(fraction))/2
         ps_bar(3) = (ps_eigen(1) + ps_eigen(3) - pi + asin(fraction))/2
@@ -545,7 +554,6 @@ subroutine eigen_2_bar(ps_eigen, d_ps_eigen, ps_bar, d_ps_bar)
     endif
     d_ps_bar(: ,1) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) + sign/sqrt(1 - fraction**2)*d_fraction)/2
     d_ps_bar(: ,3) = (d_ps_eigen(:, 1) + d_ps_eigen(:, 3) - sign/sqrt(1 - fraction**2)*d_fraction)/2
-
 end subroutine eigen_2_bar
 
 !!

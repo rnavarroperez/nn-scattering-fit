@@ -56,6 +56,7 @@ contains
 !! @author     Rodrigo Navarro Perez
 !!
 subroutine observable(kinematic, params, model, obs, d_obs)
+    use ieee_arithmetic, only : ieee_is_finite, ieee_is_nan
     implicit none
     type(kinematics), intent(in) :: kinematic !< kinematic variables
     real(dp), intent(in) :: params(:) !< adjustable parameters
@@ -74,8 +75,9 @@ subroutine observable(kinematic, params, model, obs, d_obs)
         call scattering_obs(kinematic, params, model, obs, d_obs)
     end select
     do i= 1, size(d_obs)
-        if (d_obs(i) /= d_obs(i)) then
-            print*, 'Derivative of the observable contains NaN'
+        if (ieee_is_nan(d_obs(i)) .or. .not. ieee_is_finite(d_obs(i))) then
+            print*, 'Derivative of the observable contains non float values'
+            print*, i, d_obs(i)
             print*, 'Kinematics given were'
             print*, 'lab energy:', kinematic%t_lab
             print*, 'angle:', kinematic%angle
