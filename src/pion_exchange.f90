@@ -261,7 +261,7 @@ subroutine set_pion_couplings(fpi, f2c, f2pp, f2nn, f2np, df2c, df2pp, df2nn, df
         f2c  =  0.075_dp
         f2pp =  0.075_dp
         f2nn =  0.075_dp
-        f2np = -0.75_dp
+        f2np = -0.075_dp
     case(1)
         f2c  =  fpi(1)**2
         f2pp =  f2c
