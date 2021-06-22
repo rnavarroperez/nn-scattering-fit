@@ -64,6 +64,7 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     !$omp do schedule(dynamic)
     do i = 1, size(experiments) ! calculate chi-square, alpha, and beta for each experiment
         if (experiments(i)%rejected) cycle
+        if (experiments(i)%channel == 'nn' .and. model%potential_type == 'delta_shell') cycle ! delta-shell potentials don't have a nn channel (yet)
         call experiment_chi_square(experiments(i), parameters, mask, model, chi2, alpha, beta, n_points)
         all_chi(i) = chi2
         all_n_points(i) = n_points
