@@ -340,6 +340,11 @@ subroutine print_potential_setup(potential, parameters, mask)
     else
         print*, 'The deuteron will be calculated with NON-RELATIVISITC kinematics'
     endif
+    if (potential%full_em_wave) then
+        print*, '1S0 pp phases will be calculated against the full EM wave function'
+    else
+        print*, '1S0 pp phases will be calculated against the Coulomb wave function'
+    endif
     print*, 'Displaying potential parameters'
     print*, '* indicates that a parameter is kept fixed during the optimization'
     call potential%display_subroutine(parameters, mask)

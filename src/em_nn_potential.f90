@@ -30,11 +30,12 @@ contains
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine add_em_potential(reaction, s, v_em, v_st)
+subroutine add_em_potential(reaction, s, v_em, full_pp, v_st)
     implicit none
     character(len=2), intent(in) :: reaction !< reaction channel, 'pp', 'np' or 'nn'
     integer, intent(in) :: s !< spin quantum number
     real(dp), intent(in) :: v_em(1:n_em_terms) !< EM potential as defined in AV18 paper
+    logical, intent(in) :: full_pp
     real(dp), intent(inout) :: v_st(1:n_st_terms) !< Strong potential in spin-isospin basis
 
     integer :: s1ds2
@@ -42,7 +43,11 @@ subroutine add_em_potential(reaction, s, v_em, v_st)
     s1ds2 = 4*s - 3
     select case (trim(reaction))
     case ('pp')
-        v_st(1) = v_st(1) + v_em(1)*0 + v_em(2) + v_em(3)*0 + v_em(4)*0 + s1ds2*v_em(6)
+        if (full_pp) then
+            v_st(1) = v_st(1) + v_em(2) + v_em(3) + v_em(4) + s1ds2*v_em(6)    
+        else
+            v_st(1) = v_st(1) + v_em(2) + s1ds2*v_em(6)
+        endif
         v_st(2) = v_st(2) + v_em(9)
         v_st(3) = v_st(3) + v_em(12)
     case ('np')

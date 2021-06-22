@@ -62,6 +62,7 @@ subroutine set_av18_potential(potential, parameters)
     potential%potential_type = 'local'
     potential%name = 'AV18'
     potential%relativistic_deuteron = .False.
+    potential%full_em_wave = .true.
 
     ! Properties of a delta-shell potential. We set them to zero
     potential%n_lambdas = 0
@@ -98,6 +99,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     real(dp) :: v_em(1:n_em_terms)
     integer :: n_jwaves, n_waves
     integer :: tz1, tz2, ij, l, s, j, t, ip
+    logical, parameter :: full_pp = .false.
 
     if (size(ap) /= n_parameters) stop 'incorrect number of parameters for v_pw in av18_all_partial_waves'
 
@@ -129,7 +131,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
 
     v_01 = operator_2_st_basis(tz1, tz2, 0, 1, v_nn)
     v_01_p_em = v_01
-    call add_em_potential(reaction, 0, v_em, v_01_p_em)
+    call add_em_potential(reaction, 0, v_em, full_pp, v_01_p_em)
     v_11 = operator_2_st_basis(tz1, tz2, 1, 1, v_nn)
     dv_01 = d_operator_2_st_basis(tz1, tz2, 0, 1, dv_nn)
     dv_11 = d_operator_2_st_basis(tz1, tz2, 1, 1, dv_nn)
@@ -138,7 +140,7 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
         v_00 = operator_2_st_basis(tz1, tz2, 0, 0, v_nn)
         v_10 = operator_2_st_basis(tz1, tz2, 1, 0, v_nn)
         v_10_p_em = v_10
-        call add_em_potential(reaction, 1, v_em, v_10_p_em)
+        call add_em_potential(reaction, 1, v_em, full_pp, v_10_p_em)
         dv_00 = d_operator_2_st_basis(tz1, tz2, 0, 0, dv_nn)
         dv_10 = d_operator_2_st_basis(tz1, tz2, 1, 0, dv_nn)
     endif

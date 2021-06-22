@@ -49,6 +49,8 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     integer :: n_waves, j_max, n_parameters, s, t, l, j, ij, ip
     real(dp) :: v_em(1:n_em_terms)
 
+    logical, parameter :: full_pp = .true.
+
 
     n_waves = size(v_pw, 1)
     j_max = size(v_pw, 2)
@@ -72,7 +74,7 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
 
     v_em = em_potential(r)
     v_01_p_em = v_01
-    call add_em_potential(reaction, 0, v_em, v_01_p_em)
+    call add_em_potential(reaction, 0, v_em, full_pp, v_01_p_em)
     ! 1s0
     l = 0
     s = 0
