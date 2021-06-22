@@ -359,7 +359,7 @@ subroutine partial_wave_lamba(s, t, j, l1, l2, channel, lwaves, lambda, dlambda)
         n_parameters = size(dlambda)
         allocate(dvc(1:n_parameters, 0:1, 0:1))
         dvc = 0._dp
-        allocate(dvt, dvl2, dvls, dvls2, mold = dvc)
+        allocate(dvt, dvl2, dvls, dvls2, source = dvc)
         vc(0, 0) = (6*lwaves%l1p1 - lwaves%l1f3)/5
         vc(1, 0) = lwaves%l3s1
         vc(0, 1) = lwaves%l1s0

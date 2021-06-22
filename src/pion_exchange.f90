@@ -55,6 +55,7 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     n_parameters = size(parameters)
 
     allocate(dv_pw(1:n_parameters, 1:n_waves, 1:j_max))
+    dv_pw = 0._dp
 
     s = 0
     t = 0
