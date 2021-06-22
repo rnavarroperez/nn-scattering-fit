@@ -129,7 +129,6 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
         znum = znum + (exp_values(i)*theory_values(i))/sigmas(i)**2
         zden = zden + (theory_values(i)/sigmas(i))**2
     enddo
-
     call calc_z_scale(sys_error, znum, zden, z_scale, chi2_sys_error, float)
 
     call calculate_alpha_beta(exp_values, theory_values, sigmas, all_derivatives, z_scale, mask, alpha, beta)
@@ -205,9 +204,11 @@ subroutine calc_z_scale(sys_error, znum, zden, z_scale, chi_sys_error_cont, floa
     if(sys_error == 0) then ! check if data is absolute
         z_scale = 1._dp
         float = .false.
+        chi_sys_error_cont = 0._dp
     else if (sys_error > 0.25_dp) then ! check for large systematic error
         z_scale = znum/zden
         float = .false.
+        chi_sys_error_cont = 0._dp
     else ! if systematic error is greater than 0 but less than 0.25
         num = znum + 1._dp/(sys_error)**2
         den = zden + 1._dp/(sys_error)**2
