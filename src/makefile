@@ -51,7 +51,7 @@ st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
 em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
+av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 av18_compatibility.o: av18_compatibility.f90 precisions.o
@@ -60,7 +60,7 @@ av18_compatibility.o: av18_compatibility.f90 precisions.o
 pion_exchange.o : pion_exchange.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
 	$(COMPILER) $(FLAGS) -c $<
 
-delta_shell.o: delta_shell.f90 precisions.o constants.o utilities.o pion_exchange.o
+delta_shell.o: delta_shell.f90 precisions.o constants.o utilities.o pion_exchange.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o em_nn_potential.o quadrature.o

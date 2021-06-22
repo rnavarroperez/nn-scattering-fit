@@ -575,11 +575,24 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
 
 end subroutine av18_operator
 
+!!
+!> @brief      Display the AV18 parameters
+!!
+!! Given a set of parameters for the AV18 potential with
+!! the corresponding mask to indicate fixed parameters, displays
+!! the parameters to screen.
+!!
+!! When the optional argument for the covariance matrix is given, 
+!! the uncertainty for each parameter is display right below the 
+!! parameter.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 subroutine display_parameters(ap, mask, cv)
     implicit none
-    real(dp), intent(in), dimension(:) :: ap
-    logical, intent(in), dimension(:) :: mask
-    real(dp), intent(in), optional, dimension(:, :) :: cv
+    real(dp), intent(in), dimension(:) :: ap !< parameters for the AV18 potential
+    logical, intent(in), dimension(:) :: mask !< Indicates which parameters are optimized
+    real(dp), intent(in), optional, dimension(:, :) :: cv !< Covariance matrix of the parameters
 
     character(len=size(ap)) :: s1
     integer :: i
