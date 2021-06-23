@@ -359,7 +359,7 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     logical, intent(out), allocatable, dimension(:) :: mask
     character(len=*), intent(out) :: database_file
 
-    character(len=1024) :: name, type
+    character(len=1024) :: name
     real(dp) :: r_max, delta_r, dr_core, dr_tail
     integer :: n_lambdas
     logical :: relativistic
@@ -368,7 +368,7 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     integer :: unit, ierror
 
     namelist /data_base/ database_file
-    namelist /nn_potential/ name, type
+    namelist /nn_potential/ name
     namelist /local_integration/ r_max, delta_r
     namelist /delta_shell_integration/ r_max, n_lambdas, dr_core, dr_tail
     namelist /deuteron/ relativistic
@@ -378,7 +378,6 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
 
     !setting up default values in namelists
     name = 'AV18'
-    type = 'local'
     r_max = 12.5_dp
     delta_r = 1/128._dp
     n_lambdas = 5
@@ -403,21 +402,6 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
             stop 'Error reading nn_potential namelist'
         endif
 
-        select case(trim(type))
-        case ('local')
-            read(unit, nml = local_integration, iostat = ierror)
-            if(ierror /= 0) then
-                stop 'Error reading local_integration namelist'
-            endif
-        case ('delta_shell')
-            read(unit, nml = delta_shell_integration, iostat = ierror)
-            if(ierror /= 0) then
-                stop 'Error reading delta_shell_integration namelist'
-            endif
-        case default
-            stop 'Unrecognized type in potential namelist'
-        end select
-
         select case(trim(name))
             ! These subroutines setup the default versions and parameters,
             ! including allocating the correct size for the parameters array,
@@ -431,6 +415,21 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
         case default
             stop 'Unrecognized name in potential namelist'
         end select
+
+        select case(trim(potential%potential_type))
+        case ('local')
+            read(unit, nml = local_integration, iostat = ierror)
+            if(ierror /= 0) then
+                stop 'Error reading local_integration namelist'
+            endif
+        case ('delta_shell')
+            read(unit, nml = delta_shell_integration, iostat = ierror)
+            if(ierror /= 0) then
+                stop 'Error reading delta_shell_integration namelist'
+            endif
+        case default
+            stop 'Unrecognized type in potential namelist'
+        end select
         
         read(unit, nml = deuteron, iostat = ierror)
         if(ierror /= 0) then
@@ -443,6 +442,12 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
         endif
         
         allocate(mask(1:size(parameters)))
+        where (parameters == 0)
+            mask = .false.
+        else where
+            mask = .true.
+        end where
+        
         read(unit, nml = adjust_parameter, iostat = ierror)
         if(ierror /= 0) then
             stop 'Error reading adjust_parameter namelist'
@@ -455,7 +460,6 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     endif
 
     potential%name = trim(name)
-    potential%potential_type = trim(type)
 
     potential%r_max = r_max
     potential%dr = delta_r
