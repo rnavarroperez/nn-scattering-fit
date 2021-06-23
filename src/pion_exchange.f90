@@ -10,7 +10,7 @@
 module pion_exchange
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, &
-    pi
+    pi, f_pi_n_2
 use em_nn_potential, only : n_em_terms, em_potential, add_em_potential
 use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot
 
@@ -261,10 +261,10 @@ subroutine set_pion_couplings(fpi, f2c, f2pp, f2nn, f2np, df2c, df2pp, df2nn, df
 
     select case(n_active)
     case(0)
-        f2c  =  0.075_dp
-        f2pp =  0.075_dp
-        f2nn =  0.075_dp
-        f2np = -0.075_dp
+        f2c  =  f_pi_n_2 !Historic, charge independent, recommended value. Imported from constants module
+        f2pp =  f_pi_n_2
+        f2nn =  f_pi_n_2
+        f2np = -f_pi_n_2
     case(1)
         f2c  =  fpi(1)**2
         f2pp =  f2c
