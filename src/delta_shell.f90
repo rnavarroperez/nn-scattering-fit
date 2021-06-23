@@ -193,7 +193,7 @@ subroutine set_ds_potential(name, ds_potential, parameters)
     select case(trim(name))
     case('ds_ope30')
         parameters = ds_ope30_params
-        ds_potential%potential => ope_all_partial_waves
+        ds_potential%potential => ds_potential_tail_all_waves
         ds_potential%display_subroutine => display_ds_parameters
         ds_potential%r_max = 13.0_dp
         ds_potential%potential_type = 'delta_shell'
@@ -205,7 +205,7 @@ subroutine set_ds_potential(name, ds_potential, parameters)
         ds_potential%full_em_wave = .false.
     case('ds_ope30_fff')
         parameters = ds_ope30fff_params
-        ds_potential%potential => ope_all_partial_waves
+        ds_potential%potential => ds_potential_tail_all_waves
         ds_potential%display_subroutine => display_ds_parameters
         ds_potential%r_max = 13.0_dp
         ds_potential%potential_type = 'delta_shell'
@@ -763,5 +763,35 @@ subroutine add_coulomb(r, k, v_pw)
         v_pw(5, i) = v_pw(5, i) + v_em(1)
     enddo
 end subroutine add_coulomb
+
+subroutine ds_potential_tail_all_waves(parameters, r, reaction, v_pw, dv_pw)
+    implicit none
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    real(dp), intent(in) :: r !< Radius at which the potential is calculated
+    character(len=*), intent(in) :: reaction !< reaction channel ('pp', 'nn', or 'np')
+    real(dp), intent(out), dimension(:, :) :: v_pw !< OPE potential in all partial waves
+    real(dp), intent(out), allocatable, dimension(:, :, :) :: dv_pw !< derivatives of the OPE potential with respect of the pion couplings
+    
+    real(dp) :: v_em(1:n_em_terms)
+    integer :: s, s1ds2
+
+    call ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
+
+    ! Adding EM potential (sans coulomb) to the 1S0 partial wave
+    v_em = em_potential(r)
+    s = 0
+    s1ds2 = 4*s - 3
+    select case (trim(reaction))
+    case ('pp')
+        v_pw(1, 1) = v_pw(1, 1) + v_em(2) + v_em(3) + v_em(4) + s1ds2*v_em(6)
+    case ('np')
+        v_pw(1, 1) = v_pw(1, 1) + v_em(5) + s1ds2*v_em(8)
+    case ('nn')
+        v_pw(1, 1) = v_pw(1, 1) + s1ds2*v_em(7)
+    case default
+        stop 'incorrect reaction channel in ds_potential_tail_all_waves'
+    end select
+    
+end subroutine ds_potential_tail_all_waves
 
 end module delta_shell

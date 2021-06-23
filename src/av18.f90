@@ -13,8 +13,8 @@ module av18
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, f2=>f_pi_n_2, &
     pi
-use em_nn_potential, only : n_em_terms, em_potential, add_em_potential
-use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot
+use em_nn_potential, only : n_em_terms, em_potential, em_potential_in_st_basis
+use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot, st_2_pw_basis
 use delta_shell, only : nn_model
 use string_functions, only : mask_to_string
 
@@ -92,14 +92,13 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of v_nn with respect to the parameters in ap
 
     real(dp) :: v_nn(1:n_operators), dv_nn(1:n_operators, 1:n_parameters)
-    real(dp) :: v_00(1:n_st_terms), v_01(1:n_st_terms), v_10(1:n_st_terms), v_11(1:n_st_terms)
+    real(dp) :: v_00(1:n_st_terms), v_01(1:n_st_terms), v_10(1:n_st_terms), v_11(1:n_st_terms), &
+                v_em_st(1:n_st_terms)
     real(dp) :: dv_00(1:n_st_terms, 1:n_parameters), dv_01(1:n_st_terms, 1:n_parameters), &
-                dv_10(1:n_st_terms, 1:n_parameters), dv_11(1:n_st_terms, 1:n_parameters), &
-                v_01_p_em(1:n_st_terms), v_10_p_em(1:n_st_terms)
+                dv_10(1:n_st_terms, 1:n_parameters), dv_11(1:n_st_terms, 1:n_parameters)
     real(dp) :: v_em(1:n_em_terms)
     integer :: n_jwaves, n_waves
-    integer :: tz1, tz2, ij, l, s, j, t, ip
-    logical, parameter :: full_pp = .false.
+    integer :: tz1, tz2, l, s, j
 
     if (size(ap) /= n_parameters) stop 'incorrect number of parameters for v_pw in av18_all_partial_waves'
 
@@ -130,91 +129,40 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     end select
 
     v_01 = operator_2_st_basis(tz1, tz2, 0, 1, v_nn)
-    v_01_p_em = v_01
-    call add_em_potential(reaction, 0, v_em, full_pp, v_01_p_em)
     v_11 = operator_2_st_basis(tz1, tz2, 1, 1, v_nn)
     dv_01 = d_operator_2_st_basis(tz1, tz2, 0, 1, dv_nn)
     dv_11 = d_operator_2_st_basis(tz1, tz2, 1, 1, dv_nn)
 
+    v_00 = 0._dp
+    v_10 = 0._dp
+    dv_00 = 0._dp
+    dv_10 = 0._dp
     if (tz1*tz2 == -1) then
         v_00 = operator_2_st_basis(tz1, tz2, 0, 0, v_nn)
         v_10 = operator_2_st_basis(tz1, tz2, 1, 0, v_nn)
-        v_10_p_em = v_10
-        call add_em_potential(reaction, 1, v_em, full_pp, v_10_p_em)
         dv_00 = d_operator_2_st_basis(tz1, tz2, 0, 0, dv_nn)
         dv_10 = d_operator_2_st_basis(tz1, tz2, 1, 0, dv_nn)
     endif
 
-    ! 1s0
+    call st_2_pw_basis(reaction, v_00, v_01, v_10, v_11, dv_00, dv_01, dv_10, dv_11, v_pw, dv_pw)
+
+    ! Adding EM terms to the 1S0 partial wave
+    v_em = em_potential(r)
     l = 0
     s = 0
     j = 0
-    v_pw(1, 1) = uncoupled_pot(l, s, j, v_01_p_em)
-    do ip = 1, n_parameters
-        dv_pw(ip, 1, 1) = uncoupled_pot(l, s, j, dv_01(:, ip))
-    enddo
-    ! 3p0
-    l = 1
-    s = 1
-    j = 0
-    v_pw(5, 1) = uncoupled_pot(l, s, j, v_11)
-    do ip = 1, n_parameters
-        dv_pw(ip, 5, 1) = uncoupled_pot(l, s, j, dv_11(:, ip))
-    enddo
-    ! everything with j >= 1
-    do ij = 2, n_jwaves
-        j = ij - 1
-        l = j
+    call em_potential_in_st_basis(reaction, s, v_em, v_em_st)
+    v_pw(1, 1) = v_pw(1, 1) + uncoupled_pot(l, s, j, v_em_st)
 
-        ! singlets
-        s = 0
-        t = 1 - mod(l+s, 2)
-        if (t == 1) then
-            v_pw(1, ij) = uncoupled_pot(l, s, j, v_01)
-            do ip = 1, n_parameters
-                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_01(:, ip))
-            enddo
-        elseif (tz1*tz2 == -1) then ! only present in np
-            v_pw(1, ij) = uncoupled_pot(l, s, j, v_00)
-            do ip = 1, n_parameters
-                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_00(:, ip))
-            enddo
-        endif
-
-        ! triplets
+    if (n_jwaves > 1) then
+        ! Adding EM terms to the 3S1-3D1 coupled channel
         s = 1
-        t = 1 - mod(l+s, 2)
-        if (t == 1) then
-            v_pw(2, ij) = uncoupled_pot(l, s, j, v_11)
-            do ip = 1, n_parameters
-                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_11(:, ip))
-            enddo
-        elseif (tz1*tz2 == -1) then !only present in np
-            v_pw(2, ij) = uncoupled_pot(l, s, j, v_10)
-            do ip = 1, n_parameters
-                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_10(:, ip))
-            enddo
-        endif
+        j = 1
+        v_10 = 0._dp
+        call em_potential_in_st_basis(reaction, s, v_em, v_em_st)
+        v_pw(3:5, 2) = v_pw(3:5, 2) + coupled_pot(j, v_em_st)
+    endif
 
-        ! coupled channels
-        t = 1 - mod(j,2)
-        if (t == 1) then
-            v_pw(3:5, ij) = coupled_pot(j, v_11)
-            do ip = 1, n_parameters
-                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_11(:, ip))
-            enddo
-        elseif (tz1*tz2 == -1) then !only present in np
-            if (j == 1 ) then
-                v_pw(3:5, ij) = coupled_pot(j, v_10_p_em)
-            else
-                v_pw(3:5, ij) = coupled_pot(j, v_10)
-            endif
-            do ip = 1, n_parameters
-                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_10(:, ip))
-            enddo
-        endif
-    enddo
-   
 end subroutine av18_all_partial_waves
 
 !!

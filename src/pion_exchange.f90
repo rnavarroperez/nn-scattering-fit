@@ -11,8 +11,7 @@ module pion_exchange
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, &
     pi, f_pi_n_2
-use em_nn_potential, only : n_em_terms, em_potential, add_em_potential
-use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot
+use st_basis_2_partial_waves, only : n_st_terms, st_2_pw_basis!, uncoupled_pot, coupled_pot
 
 implicit none
 
@@ -43,11 +42,10 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     real(dp), intent(out), dimension(:, :) :: v_pw !< OPE potential in all partial waves
     real(dp), intent(out), allocatable, dimension(:, :, :) :: dv_pw !< derivatives of the OPE potential with respect of the pion couplings
 
-    real(dp), dimension(1:n_st_terms) :: v_00, v_10, v_01, v_11, v_01_p_em
+    real(dp), dimension(1:n_st_terms) :: v_00, v_10, v_01, v_11
     real(dp), allocatable, dimension(:, :) :: dv_00, dv_10, dv_01, dv_11
 
-    integer :: n_waves, j_max, n_parameters, s, t, l, j, ij, ip
-    real(dp) :: v_em(1:n_em_terms)
+    integer :: n_waves, j_max, n_parameters, s, t
 
     logical, parameter :: full_pp = .true.
 
@@ -72,71 +70,7 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     t = 1
     call ope_st_basis(parameters, r, reaction, s, t, v_11, dv_11)
 
-    v_em = em_potential(r)
-    v_01_p_em = v_01
-    call add_em_potential(reaction, 0, v_em, full_pp, v_01_p_em)
-    ! 1s0
-    l = 0
-    s = 0
-    j = 0
-    v_pw(1, 1) = uncoupled_pot(l, s, j, v_01_p_em)
-    do ip = 1, n_parameters
-        dv_pw(ip, 1, 1) = uncoupled_pot(l, s, j, dv_01(:, ip))
-    enddo
-    ! 3p0
-    l = 1
-    s = 1
-    j = 0
-    v_pw(5, 1) = uncoupled_pot(l, s, j, v_11)
-    do ip = 1, n_parameters
-        dv_pw(ip, 5, 1) = uncoupled_pot(l, s, j, dv_11(:, ip))
-    enddo
-    ! everything with j >= 1
-    do ij = 2, j_max
-        j = ij - 1
-        l = j
-        ! singlets
-        s = 0
-        t = 1 - mod(l+s, 2)
-        if (t == 1) then
-            v_pw(1, ij) = uncoupled_pot(l, s, j, v_01)
-            do ip = 1, n_parameters
-                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_01(:, ip))
-            enddo
-        elseif (trim(reaction) == 'np') then ! only present in np
-            v_pw(1, ij) = uncoupled_pot(l, s, j, v_00)
-            do ip = 1, n_parameters
-                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_00(:, ip))
-            enddo
-        endif
-        ! triplets
-        s = 1
-        t = 1 - mod(l+s, 2)
-        if (t == 1) then
-            v_pw(2, ij) = uncoupled_pot(l, s, j, v_11)
-            do ip = 1, n_parameters
-                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_11(:, ip))
-            enddo
-        elseif (trim(reaction) == 'np') then !only present in np
-            v_pw(2, ij) = uncoupled_pot(l, s, j, v_10)
-            do ip = 1, n_parameters
-                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_10(:, ip))
-            enddo
-        endif
-        ! coupled channels
-        t = 1 - mod(j,2)
-        if (t == 1) then
-            v_pw(3:5, ij) = coupled_pot(j, v_11)
-            do ip = 1, n_parameters
-                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_11(:, ip))
-            enddo
-        elseif (trim(reaction) == 'np') then !only present in np
-            v_pw(3:5, ij) = coupled_pot(j, v_10)
-            do ip = 1, n_parameters
-                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_10(:, ip))
-            enddo
-        endif
-    enddo
+    call st_2_pw_basis(reaction, v_00, v_01, v_10, v_11, dv_00, dv_01, dv_10, dv_11, v_pw, dv_pw)
 end subroutine ope_all_partial_waves
 
 !!
