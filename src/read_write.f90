@@ -396,11 +396,13 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
         if(ierror /= 0) then
             stop 'Error reading data_base namelist'
         endif
+        rewind(unit)
 
         read(unit, nml = nn_potential, iostat = ierror)
         if(ierror /= 0) then
             stop 'Error reading nn_potential namelist'
         endif
+        rewind(unit)
 
         select case(trim(name))
             ! These subroutines setup the default versions and parameters,
@@ -430,16 +432,19 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
         case default
             stop 'Unrecognized type in potential namelist'
         end select
-        
+        rewind(unit)
+
         read(unit, nml = deuteron, iostat = ierror)
         if(ierror /= 0) then
             stop 'Error reading deuteron namelist'
         endif
+        rewind(unit)
         
         read(unit, nml = potential_parameters, iostat = ierror)
         if(ierror /= 0) then
             stop 'Error reading potential_parameters namelist'
         endif
+        rewind(unit)
         
         allocate(mask(1:size(parameters)))
         where (parameters == 0)
