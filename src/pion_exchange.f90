@@ -47,9 +47,6 @@ subroutine ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
 
     integer :: n_waves, j_max, n_parameters, s, t
 
-    logical, parameter :: full_pp = .true.
-
-
     n_waves = size(v_pw, 1)
     j_max = size(v_pw, 2)
     n_parameters = size(parameters)
@@ -180,7 +177,6 @@ subroutine set_pion_couplings(fpi, f2c, f2pp, f2nn, f2np, df2c, df2pp, df2nn, df
     real(dp), intent(out), dimension(1:n_fpis) :: df2nn !< derivatives of \f$f_{nn}^2\f$ coupling constant with respect of \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$
     real(dp), intent(out), dimension(1:n_fpis) :: df2np !< derivatives of \f$f_{np}^2\f$ coupling constant with respect of \f$f_c\f$, \f$f_{p}\f$, and \f$f_{n}\f$
 
-    real(dp), parameter :: small = 1.e-12_dp
     integer :: i, n_active
 
     df2c = 0._dp
@@ -190,7 +186,7 @@ subroutine set_pion_couplings(fpi, f2c, f2pp, f2nn, f2np, df2c, df2pp, df2nn, df
 
     n_active = 0
     do i = 1, n_fpis
-        if (abs(fpi(i)) > epsilon(fpi(i))) n_active = n_active + 1
+        if (abs(fpi(i)) > tiny(fpi(i))) n_active = n_active + 1
     enddo
 
     select case(n_active)
