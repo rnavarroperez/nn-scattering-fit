@@ -1,0 +1,59 @@
+&data_base
+    database_file = 'database/granada_database.dat' ! File containing the experimental database.
+/
+
+&nn_potential
+    name = 'ds_ope30' ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff'
+/
+
+&delta_shell_integration !r_max, n_lambdas, dr_core, dr_tail
+    r_max = 13.0  ! Maximum integration radius
+    n_lambdas = 5 ! Number of inner lambdas per partial wave
+    dr_core = 0.6 ! Distance between lambdas 
+    dr_tail = 0.5 ! Distance between sampling point in the potential tail
+/
+
+&deuteron
+    relativistic = .true. ! Whether to use relativistic kinematics for the deuteron or not
+/
+
+&potential_parameters !Potential parameters
+    parameters =  1.31304950  -0.71836850  -0.19077786   0.00000000  -0.02111031  !1S0 pp
+                 -0.15213746  -0.05274411   0.03818241   0.00000000  -0.00298297  !1S0(np - pp)
+                  0.00000000   0.95038079  -0.32392986  -0.05939468  -0.02387808  !3P0
+                  0.00000000   1.19613616   0.00000000   0.07545449   0.00000000  !1P1
+                  0.00000000   1.35473545   0.00000000   0.05784667   0.00000000  !3P1
+                  1.79352488  -0.47504116   0.00000000  -0.07391203   0.00000000  !3S1
+                  0.00000000  -1.64436516  -0.33262344  -0.22945708  -0.02140123  !EP1
+                  0.00000000   0.00000000   0.40821749   0.06725153   0.02237340  !3D1
+                  0.00000000  -0.20284762  -0.20418276   0.00000000  -0.01918031  !1D2
+                  0.00000000  -1.01484880  -0.17088142  -0.23607873  -0.01882201  !3D2
+                  0.00000000  -0.48384594   0.00000000  -0.02803913  -0.00414759  !3P2
+                  0.00000000   0.29466313   0.19428354   0.04806034   0.01333910  !EP2
+                  0.00000000   3.45507794  -0.22580425   0.00000000  -0.01421141  !3F2
+                  0.00000000   0.00000000   0.11350103   0.09267627   0.00000000  !1F3
+                  0.00000000   0.53601375   0.00000000   0.00000000   0.00000000  !3D3
+                  0.00000000   0.00000000   0.00000000                            !c1, c3, c4
+                  0.00000000   0.00000000   0.00000000                            !fc, fp, fn
+/
+
+&adjust_parameter ! Parameters with .false. are kept fixed during the optimization.
+                  ! If left empty only non-zero parameters will be adjusted.
+    mask =  .true.    .true.    .true.    .false.   .true.   !1S0 pp
+            .true.    .true.    .true.    .false.   .true.   !1S0(np - pp)
+            .false.   .true.    .true.    .true.    .true.   !3P0
+            .false.   .true.    .false.   .true.    .false.  !1P1
+            .false.   .true.    .false.   .true.    .false.  !3P1
+            .true.    .true.    .false.   .true.    .false.  !3S1
+            .false.   .true.    .true.    .true.    .true.   !EP1
+            .false.   .false.   .true.    .true.    .true.   !3D1
+            .false.   .true.    .true.    .false.   .true.   !1D2
+            .false.   .true.    .true.    .true.    .true.   !3D2
+            .false.   .true.    .false.   .true.    .true.   !3P2
+            .false.   .true.    .true.    .true.    .true.   !EP2
+            .false.   .true.    .true.    .false.   .true.   !3F2
+            .false.   .false.   .true.    .true.    .false.  !1F3
+            .false.   .true.    .false.   .false.   .false.  !3D3
+            .false.   .false.   .false.                      !c1, c3, c4
+            .false.   .false.   .false.                      !fc, fp, fn
+/
