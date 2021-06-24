@@ -1,6 +1,8 @@
 COMPILER = gfortran
 
-FLAGS = -O3 -fopenmp -fcheck=all -Wall -pedantic
+FLAGS = -O3 -fopenmp -fcheck=all -Wall -pedantic -fimplicit-none -std=f2008 -fwhole-file -march=native
+
+#FLAGS = -g -O0 -fcheck=all -Wall -Wextra -Wconversion -pedantic -fimplicit-none -fbacktrace -std=f2008 -fwhole-file
 
 LAPACK = -llapack -lblas
 
