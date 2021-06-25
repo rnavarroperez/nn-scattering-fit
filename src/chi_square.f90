@@ -131,7 +131,6 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
         zden = zden + (theory_values(i)/sigmas(i))**2
     enddo
     call calc_z_scale(sys_error, znum, zden, z_scale, chi2_sys_error, float)
-
     call calculate_alpha_beta(exp_values, theory_values, sigmas, all_derivatives, z_scale, mask, alpha, beta)
 
     ! calculate chi-square for sinlge experiment
