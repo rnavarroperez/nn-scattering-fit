@@ -13,7 +13,7 @@
                 use constants, only: pi
                 IMPLICIT NONE
                 PRIVATE 
-                PUBLIC box_muller_num
+                PUBLIC box_muller_num, generator_100_num, verify_box_muller_num
                 CONTAINS
 
 !!
@@ -79,9 +79,9 @@
 !!
                 subroutine verify_box_muller_num(n_samples)
                         IMPLICIT NONE
-                        real(dp) :: mean, num, variance, stan_dev
-                        real, dimension(n_samples) :: random_numbers 
                         integer, intent(in) :: n_samples
+                        real(dp) :: mean, num, variance, stan_dev
+                        real(dp), dimension(n_samples) :: random_numbers 
                         integer :: i
                         DO i = 1, n_samples
                         call box_muller_num(num)
@@ -102,5 +102,5 @@
                         stan_dev = SQRT(variance)
                         print*, mean
                         print*, stan_dev
-                end subroutine verify_box_muller_num       
-        end module random_num  
+                end subroutine verify_box_muller_num
+        end module random_num

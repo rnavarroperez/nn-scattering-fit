@@ -15,7 +15,7 @@
                 use random_num, only: box_muller_num
                 implicit none
                 private
-                public randomize_experiment, randomize_database
+                public randomize_experiment, randomize_database, calc_stan_dev
                 contains
 
 !!
