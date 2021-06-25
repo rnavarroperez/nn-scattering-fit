@@ -17,7 +17,7 @@ module derivatives
 
 use precisions, only : dp
 use num_recipes, only : context
-use av18, only : av18_all_partial_waves
+use av18, only : av18_all_partial_waves, set_av18_potential
 use delta_shell, only : nn_model
 use observables, only : kinematics
 
@@ -216,13 +216,10 @@ real(dp) function f_observable(x, data) result(r)
                  'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
                  'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
-    allocate(ap, source = data%x)
-    model%potential => av18_all_partial_waves
+    call set_av18_potential(model, ap)
+    ap = data%x
     kinematic%t_lab = data%a
-    model%r_max = data%b
-    model%dr = data%c
-    model%potential_type = 'local'
-    kinematic%angle = data%d
+    kinematic%angle = data%b
     kinematic%channel = trim(data%string)
     kinematic%em_amplitude = 0._dp
     i_parameter = data%i
@@ -265,13 +262,10 @@ function df_observable(data) result(r)
                  'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
                  'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
-    allocate(ap, source = data%x)
-    model%potential => av18_all_partial_waves
+    call set_av18_potential(model, ap)
+    ap = data%x
     kinematic%t_lab = data%a
-    model%r_max = data%b
-    model%dr = data%c
-    model%potential_type = 'local'
-    kinematic%angle = data%d
+    kinematic%angle = data%b
     kinematic%channel = trim(data%string)
     kinematic%em_amplitude = 0._dp
     i_parameter = data%i
@@ -296,7 +290,7 @@ end function df_observable
 !!
 real(dp) function f_observable_ds(x, data) result(r)
     use observables, only : observable
-    use pion_exchange, only : ope_all_partial_waves
+    use delta_shell, only : set_ds_potential
     implicit none
     real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
     type(context), intent(in) :: data !< data structure with all the arguments for observable
@@ -314,21 +308,16 @@ real(dp) function f_observable_ds(x, data) result(r)
                  'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
                  'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
-    allocate(ap, source = data%x)
-    model%potential => ope_all_partial_waves
+    call set_ds_potential(data%string, model, ap)
+    ap = data%x
     kinematic%t_lab = data%a
-    model%r_max = data%b
-    model%dr_core = data%c
-    model%dr_tail = data%d
-    model%potential_type = 'delta_shell'
-    model%n_lambdas = data%k
-    kinematic%angle = data%e
-    kinematic%channel = trim(data%string)
+    kinematic%angle = data%b
+    kinematic%channel = trim(data%string_2)
     kinematic%em_amplitude = 0._dp
     i_parameter = data%i
     i_target = data%j
-
     kinematic%type = obs_types(i_target)
+
     ap(i_parameter) = x
     call observable(kinematic, ap, model, obs, d_obs)
     r = obs
@@ -348,7 +337,7 @@ end function f_observable_ds
 !!
 function df_observable_ds(data) result(r)
     use observables, only : observable
-    use pion_exchange, only : ope_all_partial_waves
+    use delta_shell, only : set_ds_potential
     implicit none
     type(context), intent(in) :: data !< data structure with all the arguments for observable
     real(dp), allocatable :: r(:)
@@ -366,21 +355,16 @@ function df_observable_ds(data) result(r)
                  'axx ', 'ckp ', 'rp  ', 'mssn', 'mskn', 'azx ', 'ap  ', 'dtrt', &
                  'sgt ', 'sgtt', 'sgtl', 'asl ', 'dbe ']
 
-    allocate(ap, source = data%x)
-    model%potential => ope_all_partial_waves
+    call set_ds_potential(data%string, model, ap)
+    ap = data%x
     kinematic%t_lab = data%a
-    model%r_max = data%b
-    model%dr_core = data%c
-    model%dr_tail = data%d
-    model%potential_type = 'delta_shell'
-    model%n_lambdas = data%k
-    kinematic%angle = data%e
-    kinematic%channel = trim(data%string)
+    kinematic%angle = data%b
+    kinematic%channel = trim(data%string_2)
     kinematic%em_amplitude = 0._dp
     i_parameter = data%i
     i_target = data%j
-
     kinematic%type = obs_types(i_target)
+
     call observable(kinematic, ap, model, obs, d_obs)
     r = d_obs
 end function df_observable_ds
