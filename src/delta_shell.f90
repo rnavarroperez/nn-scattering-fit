@@ -251,39 +251,39 @@ subroutine display_ds_parameters(ap, mask, cv)
     print*, ' '
     print'(a15,4a16)', 'lambda_1', 'lambda_2', 'lambda_3', 'lambda_4', 'lambda_5'
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i = 1, 5), ' 1S0_pp'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 1, 5)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 1, 5)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i = 6,10), ' 1S0_np - 1S0_pp'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 6, 10)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 6, 10)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =11,15), ' 3P0'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 11, 15)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 11, 15)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =16,20), ' 1P1'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 16, 20)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 16, 20)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =21,25), ' 3P1'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 21, 25)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 21, 25)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =26,30), ' 3S1'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 26, 30)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 26, 30)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =31,35), ' Ep1'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 31, 35)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 31, 35)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =36,40), ' 3D1'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 36, 40)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 36, 40)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =41,45), ' 1D2'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 41, 45)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 41, 45)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =46,50), ' 3D2'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 46, 50)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 46, 50)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =51,55), ' 3P2'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 51, 55)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 51, 55)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =56,60), ' Ep2'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 56, 60)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 56, 60)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =61,65), ' 3F2'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 61, 65)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 61, 65)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =66,70), ' 1F3'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 66, 70)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 66, 70)
     print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =71,75), ' 3D3'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 71, 75)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 71, 75)
     print'(3(f15.8,a1),a)', (ap(i), s1(i:i), i =76,78), ' c_1, c_3, c_4'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 76, 78)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 76, 78)
     print'(3(f15.8,a1),a)', (ap(i), s1(i:i), i =79,81), ' f_c, f_p, f_n'
-    if(present(cv)) print'(5(f15.8,1x))', (cv(i,i), i= 79, 81)
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 79, 81)
 
 end subroutine display_ds_parameters
 
