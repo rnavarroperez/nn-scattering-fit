@@ -37,6 +37,7 @@ type context
     real(dp), allocatable :: x(:) !< an array of reals
     integer, allocatable :: i_x(:) !< an array of integers
     character(len=1024) :: string !< a string
+    character(len=1024) :: string_2 !< a second string
     logical :: log !< a logical variable
     procedure(), pointer, nopass :: proc
 end type

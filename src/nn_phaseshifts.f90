@@ -59,7 +59,11 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
     real(dp), allocatable :: a1(:), a2(:), b1(:), b2(:), c1(:), c2(:), d1(:), d2(:)
     real(dp), allocatable, dimension(:, :) :: d_a1, d_a2, d_b1, d_b2, d_c1, d_c2, d_d1, d_d2, d_ps_eigen
     real(dp), allocatable, dimension(:) :: d_alfa_1, d_alfa_2
+    logical :: full_em_wave
 
+
+
+    full_em_wave = model%full_em_wave
 
     n_params = size(params)
     n_waves = size(phases, 1)
@@ -137,8 +141,8 @@ subroutine all_phaseshifts(model, params, t_lab, reaction, phases, d_phases)
         r = radii(i_cut)
         v_pw(2, 1, i_cut) = v_pw(5, 1, i_cut)
         dv_pw(:, 2 , 1, i_cut) = dv_pw(:, 5, 1, i_cut)
-        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :, i_cut), dv_pw(:, 1, :, i_cut), singlets, d_singlets)
-        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :, i_cut), dv_pw(:, 2, :, i_cut), triplets, d_triplets)
+        call match_uncoupled_waves(0, k_cm, r, v_pw(1, :, i_cut), dv_pw(:, 1, :, i_cut), full_em_wave, singlets, d_singlets)
+        call match_uncoupled_waves(1, k_cm, r, v_pw(2, :, i_cut), dv_pw(:, 2, :, i_cut), full_em_wave, triplets, d_triplets)
         call match_coupled_waves(k_cm, r, v_pw(3:5, :, i_cut), dv_pw(:, 3:5, :, i_cut), a1, b1, c1, d1, d_a1, d_b1, d_c1, d_d1)
         call match_coupled_waves(k_cm, r, v_pw(3:5, :, i_cut), dv_pw(:, 3:5, :, i_cut), a2, b2, c2, d2, d_a2, d_b2, d_c2, d_d2)
         do i = i_cut + 1, n_radii
@@ -590,7 +594,7 @@ subroutine coulomb_uncoupled_phases(s, k, r, lambdas, d_lambdas, tan_deltas, d_t
     allocate(d_numerator, d_denominator, d_diff, source = d_lambda)
 
     if (l_max /= size(tan_deltas)) then
-        stop 'lambdas and tan_deltas must have the same size in match_uncoupled_waves'
+        stop 'lambdas and tan_deltas must have the same size in coulomb_uncoupled_phases'
     endif
 
     allocate(FC(0:l_max))
@@ -635,13 +639,14 @@ end subroutine coulomb_uncoupled_phases
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_deltas)
+subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, full_em_wave, tan_deltas, d_tan_deltas)
     implicit none
     integer, intent(in) :: s !< spin quantum number
     real(dp), intent(in) :: k !< center of mass momentum (in units of fm\f$^{-1}\f$)
     real(dp), intent(in) :: r !< integration radius in fm
     real(dp), intent(in) :: lambdas(:) !< lambda strength coefficients for all uncoupled waves in fm\f$^{-2}\f$
     real(dp), intent(in) :: d_lambdas(:, :)  !< derivatives of lambda strength coefficients for all uncoupled waves
+    logical, intent(in) :: full_em_wave !< Should the full EM wave (with 2 photon exchange and vacuum polarization) calculated for the 1S0 partial wave
     real(dp), intent(inout) :: tan_deltas(:) !< tangent of the phase shift for all uncoupled waves
     real(dp), intent(inout) :: d_tan_deltas(:, :) !< derivatives of the tangent of the phase shift for all uncoupled waves
     real(dp) :: etap, lambda, eta0, numerator, denominator, diff
@@ -689,7 +694,7 @@ subroutine match_uncoupled_waves(s, k, r, lambdas, d_lambdas, tan_deltas, d_tan_
             Fp = fcp(lqm)
             Gp = gcp(lqm)
             ! Calculating full EM waves for the 1S0 case
-            if (lqm == 0) then
+            if (lqm == 0 .and. full_em_wave) then
                 tan_rhotau = tan_rho0_tau0(k)
                 s_fvf = c2_vp_integral(r, k, fvf_kernel)
                 s_gvf = c2_vp_integral(r, k, gvf_kernel)
@@ -985,12 +990,12 @@ subroutine coulomb_coupled_phases(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b
     j_max = size(lambdas, 2)
 
     if (size(a) /= size(b) .or. size(a) /= size(c) .or. size(a) /= size(d)) then
-        stop 'incorrect array size in match_coupled_waves'
+        stop 'incorrect array size in coulomb_coupled_phases'
     endif
 
-    if (j_max /= size(a) + 1 ) stop 'incorrect array size in match_coupled_waves'
+    if (j_max /= size(a) + 1 ) stop 'incorrect array size in coulomb_coupled_phases'
 
-    if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in match_uncoupled_waves'
+    if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in coulomb_coupled_phases'
 
     allocate(FC(0:j_max))
     FC = 0
@@ -1078,7 +1083,7 @@ subroutine match_coupled_waves(k, r, lambdas, d_lambdas, a, b, c, d, d_a, d_b, d
 
     if (j_max /= size(a) + 1 ) stop 'incorrect array size in match_coupled_waves'
 
-    if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in match_uncoupled_waves'
+    if (size(lambdas,1) /= 3) stop 'incorrect size for lambdas in match_coupled_waves'
 
     allocate(FC(0:j_max))
     FC = 0

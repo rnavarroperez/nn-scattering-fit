@@ -41,7 +41,7 @@ real(dp), parameter :: pion_c_mass =  139.57039_dp!< charged pion_mass in units 
 real(dp), parameter :: pion_0_mass =  134.9768_dp!< neutral pion_mass in units of MeV
 real(dp), parameter :: pion_mass = (2*pion_c_mass + pion_0_mass)/3  !< average pion mass in units of MeV
 
-! Historic, charge independent, recommended value. Might be modified later
+! Historic, charge independent, recommended value.
 real(dp), parameter :: f_pi_n_2 = 0.075_dp !< pion nucleon coupling constant \f$ f^2 \f$. Dimensionless
 
 

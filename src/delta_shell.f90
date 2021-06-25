@@ -14,6 +14,7 @@ use constants, only : hbar_c, m_p=>proton_mass, m_n=>neutron_mass, pi, alpha
 use utilities, only : kronecker_delta
 use pion_exchange, only : ope_all_partial_waves
 use em_nn_potential, only : n_em_terms, em_potential
+use string_functions, only : mask_to_string
 implicit none
 
 integer, parameter :: n_waves = 5 !< number of waves per angular momentum quantum number 
@@ -88,6 +89,11 @@ interface
     end subroutine local_potential
 end interface
 
+!!
+!> @brief      interface for subroutines that display potential parameters
+!!
+!! @author     Rodrigo Navarro Perez
+!!
 interface
     subroutine display_parameters(ap, mask, cv)
         use precisions, only : dp
@@ -116,6 +122,7 @@ type :: nn_model
     real(dp) :: dr_core !< Distance between the internal lambdas 
     real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
     logical :: relativistic_deuteron !< Should relativistic kinematics be used when calculating the deuteron binding energy?
+    logical :: full_em_wave !< Should the full EM wave (with 2 photon exchange and vacuum polarization) calculated for the 1S0 partial wave
 end type nn_model
 
 !!
@@ -186,7 +193,8 @@ subroutine set_ds_potential(name, ds_potential, parameters)
     select case(trim(name))
     case('ds_ope30')
         parameters = ds_ope30_params
-        ds_potential%potential => ope_all_partial_waves
+        ds_potential%potential => ds_potential_tail_all_waves
+        ds_potential%display_subroutine => display_ds_parameters
         ds_potential%r_max = 13.0_dp
         ds_potential%potential_type = 'delta_shell'
         ds_potential%name = name
@@ -194,9 +202,11 @@ subroutine set_ds_potential(name, ds_potential, parameters)
         ds_potential%dr_core = 0.6_dp
         ds_potential%dr_tail = 0.5_dp
         ds_potential%relativistic_deuteron = .True.
+        ds_potential%full_em_wave = .false.
     case('ds_ope30_fff')
         parameters = ds_ope30fff_params
-        ds_potential%potential => ope_all_partial_waves
+        ds_potential%potential => ds_potential_tail_all_waves
+        ds_potential%display_subroutine => display_ds_parameters
         ds_potential%r_max = 13.0_dp
         ds_potential%potential_type = 'delta_shell'
         ds_potential%name = name
@@ -204,6 +214,7 @@ subroutine set_ds_potential(name, ds_potential, parameters)
         ds_potential%dr_core = 0.6_dp
         ds_potential%dr_tail = 0.5_dp
         ds_potential%relativistic_deuteron = .True.
+        ds_potential%full_em_wave = .false.
     case default
         stop 'unrecognized ds potential name in set_ds_potential'
     end select
@@ -212,6 +223,69 @@ subroutine set_ds_potential(name, ds_potential, parameters)
     ds_potential%dr = 0._dp
 
 end subroutine set_ds_potential
+
+!!
+!> @brief      Display the DS parameters
+!!
+!! Given a set of parameters for a delta shell potential with
+!! the corresponding mask to indicate fixed parameters, displays
+!! the parameters to screen.
+!!
+!! When the optional argument for the covariance matrix is given, 
+!! the uncertainty for each parameter is display right below the 
+!! parameter.
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine display_ds_parameters(ap, mask, cv)
+    implicit none
+    real(dp), intent(in), dimension(:) :: ap !< parameters for the Delta-Shell potential
+    logical, intent(in), dimension(:) :: mask !< Indicates which parameters are optimized
+    real(dp), intent(in), optional, dimension(:, :) :: cv !< Covariance matrix of the parameters
+
+    character(len=size(ap)) :: s1
+    integer :: i
+
+    s1 = mask_to_string(mask, ' ', '*')
+
+    print*, ' '
+    print'(a15,4a16)', 'lambda_1', 'lambda_2', 'lambda_3', 'lambda_4', 'lambda_5'
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i = 1, 5), ' 1S0_pp'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 1, 5)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i = 6,10), ' 1S0_np - 1S0_pp'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 6, 10)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =11,15), ' 3P0'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 11, 15)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =16,20), ' 1P1'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 16, 20)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =21,25), ' 3P1'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 21, 25)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =26,30), ' 3S1'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 26, 30)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =31,35), ' Ep1'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 31, 35)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =36,40), ' 3D1'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 36, 40)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =41,45), ' 1D2'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 41, 45)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =46,50), ' 3D2'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 46, 50)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =51,55), ' 3P2'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 51, 55)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =56,60), ' Ep2'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 56, 60)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =61,65), ' 3F2'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 61, 65)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =66,70), ' 1F3'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 66, 70)
+    print'(5(f15.8,a1),a)', (ap(i), s1(i:i), i =71,75), ' 3D3'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 71, 75)
+    print'(3(f15.8,a1),a)', (ap(i), s1(i:i), i =76,78), ' c_1, c_3, c_4'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 76, 78)
+    print'(3(f15.8,a1),a)', (ap(i), s1(i:i), i =79,81), ' f_c, f_p, f_n'
+    if(present(cv)) print'(5(f15.8,1x))', (sqrt(cv(i,i)), i= 79, 81)
+
+end subroutine display_ds_parameters
 
 !!
 !> @brief      delta shells in all partial waves
@@ -359,7 +433,7 @@ subroutine partial_wave_lamba(s, t, j, l1, l2, channel, lwaves, lambda, dlambda)
         n_parameters = size(dlambda)
         allocate(dvc(1:n_parameters, 0:1, 0:1))
         dvc = 0._dp
-        allocate(dvt, dvl2, dvls, dvls2, mold = dvc)
+        allocate(dvt, dvl2, dvls, dvls2, source = dvc)
         vc(0, 0) = (6*lwaves%l1p1 - lwaves%l1f3)/5
         vc(1, 0) = lwaves%l3s1
         vc(0, 1) = lwaves%l1s0
@@ -689,5 +763,35 @@ subroutine add_coulomb(r, k, v_pw)
         v_pw(5, i) = v_pw(5, i) + v_em(1)
     enddo
 end subroutine add_coulomb
+
+subroutine ds_potential_tail_all_waves(parameters, r, reaction, v_pw, dv_pw)
+    implicit none
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    real(dp), intent(in) :: r !< Radius at which the potential is calculated
+    character(len=*), intent(in) :: reaction !< reaction channel ('pp', 'nn', or 'np')
+    real(dp), intent(out), dimension(:, :) :: v_pw !< OPE potential in all partial waves
+    real(dp), intent(out), allocatable, dimension(:, :, :) :: dv_pw !< derivatives of the OPE potential with respect of the pion couplings
+    
+    real(dp) :: v_em(1:n_em_terms)
+    integer :: s, s1ds2
+
+    call ope_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
+
+    ! Adding EM potential (sans coulomb) to the 1S0 partial wave
+    v_em = em_potential(r)
+    s = 0
+    s1ds2 = 4*s - 3
+    select case (trim(reaction))
+    case ('pp')
+        v_pw(1, 1) = v_pw(1, 1) + v_em(2) + v_em(3) + v_em(4) + s1ds2*v_em(6)
+    case ('np')
+        v_pw(1, 1) = v_pw(1, 1) + v_em(5) + s1ds2*v_em(8)
+    case ('nn')
+        v_pw(1, 1) = v_pw(1, 1) + s1ds2*v_em(7)
+    case default
+        stop 'incorrect reaction channel in ds_potential_tail_all_waves'
+    end select
+    
+end subroutine ds_potential_tail_all_waves
 
 end module delta_shell

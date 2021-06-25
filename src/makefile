@@ -1,6 +1,8 @@
 COMPILER = gfortran
 
-FLAGS = -O3 -fopenmp -fcheck=all -Wall -pedantic
+FLAGS = -O3 -fopenmp -fcheck=all -Wall -pedantic -fimplicit-none -std=f2008 -fwhole-file -march=native
+
+#FLAGS = -g -O0 -fcheck=all -Wall -Wextra -Wconversion -pedantic -fimplicit-none -fbacktrace -std=f2008 -fwhole-file
 
 LAPACK = -llapack -lblas
 
@@ -51,16 +53,16 @@ st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
 em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
+av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 av18_compatibility.o: av18_compatibility.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-pion_exchange.o : pion_exchange.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o
+pion_exchange.o : pion_exchange.f90 precisions.o constants.o st_basis_2_partial_waves.o
 	$(COMPILER) $(FLAGS) -c $<
 
-delta_shell.o: delta_shell.f90 precisions.o constants.o utilities.o pion_exchange.o
+delta_shell.o: delta_shell.f90 precisions.o constants.o utilities.o em_nn_potential.o pion_exchange.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 nn_phaseshifts.o: nn_phaseshifts.f90 precisions.o num_recipes.o constants.o coul90.o delta_shell.o em_nn_potential.o quadrature.o
@@ -87,7 +89,7 @@ derivatives.o: derivatives.f90 precisions.o num_recipes.o av18.o delta_shell.o o
 chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-optimization.o: optimization.f90 precisions.o exp_data.o delta_shell.o chi_square.o
+optimization.o: optimization.f90 precisions.o exp_data.o delta_shell.o chi_square.o av18.o
 	$(COMPILER) $(FLAGS) -c $<
 
 quadrature.o: quadrature.f90 precisions.o

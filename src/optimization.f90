@@ -237,13 +237,13 @@ function invert_alpha(alpha) result(alpha_inv)
     ! check if call was successful
     if(info /= 0) then
         print*, 'Error calling dportf: ', info
-        call exit(0)
+        stop
     end if
     call dpotri('U', n_param, alpha_inv, n_param, info)
     ! check if call was successful
     if(info /= 0) then
         print*, 'Error calling dpotri: ', info
-        call exit(0)
+        stop
     end if
 
     ! rebuild the matrix from upper triangular half

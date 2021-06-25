@@ -3,7 +3,7 @@ use precisions, only : dp
 implicit none
 private
 
-public :: n_st_terms, uncoupled_pot, coupled_pot
+public :: n_st_terms, uncoupled_pot, coupled_pot, st_2_pw_basis
 
 
 integer, parameter :: n_st_terms = 5 !< Number of terms in the spin-isospin basis
@@ -78,5 +78,96 @@ function coupled_pot(j, v_st) result(v_pw)
     v_pw(3) = v_st(1) + s_12p*v_st(2) + lsp*v_st(3) + lp2*v_st(4) + lsp**2*v_st(5)
 
 end function coupled_pot
+
+subroutine st_2_pw_basis(reaction, v_00, v_01, v_10, v_11, dv_00, dv_01, dv_10, dv_11, v_pw, dv_pw)
+    implicit none
+    character(len=2), intent(in) :: reaction
+    real(dp), intent(in), dimension(:) :: v_00
+    real(dp), intent(in), dimension(:) :: v_01
+    real(dp), intent(in), dimension(:) :: v_10
+    real(dp), intent(in), dimension(:) :: v_11
+    real(dp), intent(in), dimension(:, :) :: dv_00
+    real(dp), intent(in), dimension(:, :) :: dv_01
+    real(dp), intent(in), dimension(:, :) :: dv_10
+    real(dp), intent(in), dimension(:, :) :: dv_11
+    real(dp), intent(out), dimension(:, :) :: v_pw
+    real(dp), intent(out), allocatable, dimension(:, :, :) :: dv_pw
+
+    integer :: l, s, j, t, ip, ij
+    integer :: n_waves, j_max, n_parameters
+
+    n_waves = size(v_pw, 1)
+    j_max = size(v_pw, 2)
+    n_parameters = size(dv_00, 2)
+
+    allocate(dv_pw(1:n_parameters, 1:n_waves, 1:j_max))
+    dv_pw = 0
+
+    ! 1s0
+    l = 0
+    s = 0
+    j = 0
+    v_pw(1, 1) = uncoupled_pot(l, s, j, v_01)
+    do ip = 1, n_parameters
+        dv_pw(ip, 1, 1) = uncoupled_pot(l, s, j, dv_01(:, ip))
+    enddo
+
+    ! 3p0
+    l = 1
+    s = 1
+    j = 0
+    v_pw(5, 1) = uncoupled_pot(l, s, j, v_11)
+    do ip = 1, n_parameters
+        dv_pw(ip, 5, 1) = uncoupled_pot(l, s, j, dv_11(:, ip))
+    enddo
+
+    ! everything with j >= 1
+    do ij = 2, j_max
+        j = ij - 1
+        l = j
+        ! singlets
+        s = 0
+        t = 1 - mod(l+s, 2)
+        if (t == 1) then
+            v_pw(1, ij) = uncoupled_pot(l, s, j, v_01)
+            do ip = 1, n_parameters
+                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_01(:, ip))
+            enddo
+        elseif (trim(reaction) == 'np') then ! only present in np
+            v_pw(1, ij) = uncoupled_pot(l, s, j, v_00)
+            do ip = 1, n_parameters
+                dv_pw(ip, 1, ij) = uncoupled_pot(l, s, j, dv_00(:, ip))
+            enddo
+        endif
+        ! triplets
+        s = 1
+        t = 1 - mod(l+s, 2)
+        if (t == 1) then
+            v_pw(2, ij) = uncoupled_pot(l, s, j, v_11)
+            do ip = 1, n_parameters
+                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_11(:, ip))
+            enddo
+        elseif (trim(reaction) == 'np') then !only present in np
+            v_pw(2, ij) = uncoupled_pot(l, s, j, v_10)
+            do ip = 1, n_parameters
+                dv_pw(ip, 2, ij) = uncoupled_pot(l, s, j, dv_10(:, ip))
+            enddo
+        endif
+        ! coupled channels
+        t = 1 - mod(j,2)
+        if (t == 1) then
+            v_pw(3:5, ij) = coupled_pot(j, v_11)
+            do ip = 1, n_parameters
+                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_11(:, ip))
+            enddo
+        elseif (trim(reaction) == 'np') then !only present in np
+            v_pw(3:5, ij) = coupled_pot(j, v_10)
+            do ip = 1, n_parameters
+                dv_pw(ip, 3:5, ij) = coupled_pot(j, dv_10(:, ip))
+            enddo
+        endif
+    enddo
+   
+end subroutine st_2_pw_basis
     
 end module st_basis_2_partial_waves

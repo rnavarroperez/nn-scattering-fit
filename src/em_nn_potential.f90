@@ -17,46 +17,52 @@ implicit none
 
 private
 
-public :: n_em_terms, add_em_potential, em_potential, vacuum_polarization_integral
+public :: n_em_terms, em_potential_in_st_basis, em_potential, vacuum_polarization_integral
 
 integer, parameter :: n_em_terms = 14 !< Number of terms in the EM potential
 contains
 
 !!
-!> @brief      Adds EM potential to strong potential in basis
+!> @brief      EM potential in the spin-isospin basis
 !!
-!! Given an already calculated EM potential, reaction channel and spin quantum number, adds the 
-!! EM potential to the strong potential in the spin-isospin channel
+!! Given an already calculated EM potential, reaction channel and spin quantum number, 
+!! returns that potential (sans Coulomb, two-photon Coulomb, and vacuum polarization) 
+!! in the spin-isospin basis
+!!
+!! The terms with an energy dependent relativistic correction factor (Coulomb, two-photon
+!! Coulomb, and vacuum polarization) are not included here and should be added as necessary
+!! elsewhere.
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine add_em_potential(reaction, s, v_em, v_st)
+subroutine em_potential_in_st_basis(reaction, s, v_em, v_st)
     implicit none
     character(len=2), intent(in) :: reaction !< reaction channel, 'pp', 'np' or 'nn'
     integer, intent(in) :: s !< spin quantum number
     real(dp), intent(in) :: v_em(1:n_em_terms) !< EM potential as defined in AV18 paper
-    real(dp), intent(inout) :: v_st(1:n_st_terms) !< Strong potential in spin-isospin basis
+    real(dp), intent(out) :: v_st(1:n_st_terms) !< Strong potential in spin-isospin basis
 
     integer :: s1ds2
 
     s1ds2 = 4*s - 3
+    v_st = 0._dp
     select case (trim(reaction))
     case ('pp')
-        v_st(1) = v_st(1) + v_em(1)*0 + v_em(2) + v_em(3)*0 + v_em(4)*0 + s1ds2*v_em(6)
-        v_st(2) = v_st(2) + v_em(9)
-        v_st(3) = v_st(3) + v_em(12)
+        v_st(1) = v_em(2) + s1ds2*v_em(6)
+        v_st(2) = v_em(9)
+        v_st(3) = v_em(12)
     case ('np')
-        v_st(1) = v_st(1) + v_em(5) + s1ds2*v_em(8)
-        v_st(2) = v_st(2) + v_em(11)
-        v_st(3) = v_st(3) + v_em(14)
+        v_st(1) = v_em(5) + s1ds2*v_em(8)
+        v_st(2) = v_em(11)
+        v_st(3) = v_em(14)
     case ('nn')
-        v_st(1) = v_st(1) + s1ds2*v_em(7)
-        v_st(2) = v_st(2) + v_em(10)
+        v_st(1) = s1ds2*v_em(7)
+        v_st(2) = v_em(10)
     case default
-        stop 'incorrect reaction channel in add_em_potential'
+        stop 'incorrect reaction channel in em_potential_in_st_basis'
     end select
 
-end subroutine add_em_potential
+end subroutine em_potential_in_st_basis
 
 !!
 !> @brief      electromagnetic potential in NN scattering
