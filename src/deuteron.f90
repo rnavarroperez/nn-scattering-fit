@@ -840,7 +840,7 @@ subroutine scale_derivatives(is_relativistic, k, dbe)
     real(dp), intent(inout), dimension(:) :: dbe !< In input, derivatives of \f$-k^2\f$. On output, derivatives of \f$B(k)\f$
 
     if (is_relativistic) then
-        dbe = -0.5_dp*(1/sqrt(m_p**2 - (k*hbar_c)**2) + 1/sqrt(m_p**2 - (k*hbar_c)**2))*hbar_c**2*dbe
+        dbe = -0.5_dp*(1/sqrt(m_p**2 - (k*hbar_c)**2) + 1/sqrt(m_n**2 - (k*hbar_c)**2))*hbar_c**2*dbe
     else
         dbe = -(hbar_c)**2/(2*reduced_mass)*dbe
     endif
