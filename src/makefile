@@ -89,7 +89,7 @@ derivatives.o: derivatives.f90 precisions.o num_recipes.o av18.o delta_shell.o o
 chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-optimization.o: optimization.f90 precisions.o exp_data.o delta_shell.o chi_square.o av18.o
+optimization.o: optimization.f90 precisions.o exp_data.o delta_shell.o chi_square.o av18.o read_write.o
 	$(COMPILER) $(FLAGS) -c $<
 
 quadrature.o: quadrature.f90 precisions.o

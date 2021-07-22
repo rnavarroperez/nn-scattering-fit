@@ -12,19 +12,22 @@ use exp_data, only: nn_experiment, read_database, init_ex_em_amplitudes
 use delta_shell, only: nn_model
 use av18, only: set_av18_potential
 use chi_square, only: total_chi_square
-use read_write, only: print_potential_setup, setup_from_namelist
+use read_write, only: write_potential_setup, setup_from_namelist
 implicit none
 
 private
 public :: lavenberg_marquardt, invert_alpha, setup_optimization
 contains
 
-subroutine setup_optimization(model, parameters, mask, database)
+subroutine setup_optimization(model, parameters, mask, database, save_results, output_file)
+    use iso_fortran_env, only : output_unit
     implicit none
     type(nn_model), intent(out) :: model
     real(dp), intent(out), allocatable, dimension(:) ::  parameters
     logical, intent(out), allocatable, dimension(:) :: mask
     type(nn_experiment), intent(out), allocatable, dimension(:) :: database
+    logical, intent(out) :: save_results
+    character(len=*), intent(out) :: output_file
     
     integer :: n_arguments
     character(len=1024) :: namelist_file
@@ -35,21 +38,24 @@ subroutine setup_optimization(model, parameters, mask, database)
     if (n_arguments == 0) then
         print*, 'No namelist file was given as an argument, using default setup'
         print*, ''
+        save_results = .true.
+        output_file = 'results.txt'
         call set_av18_potential(model, parameters)
         allocate(mask(1:size(parameters)))
         mask = .true.
     else if(n_arguments == 1) then
         call get_command_argument(1, namelist_file)
-        call setup_from_namelist(namelist_file, model, parameters, mask, database_file)
+        call setup_from_namelist(namelist_file, model, parameters, mask, database_file, &
+            save_results, output_file)
     else
         ! print error and stop
     endif
-    call print_potential_setup(model, parameters, mask)
+    call write_potential_setup(model, parameters, mask, output_unit)
     print*, 'Reading database from: ', trim(database_file)
     print*, ''
     call read_database(database_file, database)
     print*, 'Calculating EM amplitudes for each experimental point ...'
-    call init_ex_em_amplitudes(database)
+    !call init_ex_em_amplitudes(database)
     print*, '... done'
     print*, 'Optimization setup finished'
     print*, ''
@@ -65,6 +71,7 @@ end subroutine setup_optimization
 !! @author Raul L Bernal-Gonzalez
 !!
 subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, chi2, covariance)
+    use iso_fortran_env, only : output_unit
     implicit none
     type(nn_experiment), intent(in), dimension(:) :: experiments !< input experiment data
     logical, intent(in), dimension(:) :: mask
@@ -87,7 +94,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
     chi_ratio = chi2/n_points
     
-    call model%display_subroutine(parameters, mask)
+    call model%display_subroutine(parameters, mask, output_unit)
     print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
         counter, 'lambda:', lambda, 'limit:', limit
    ! print*,
@@ -120,7 +127,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
             prev_chi_ratio = chi_ratio
         end if
         counter = counter + 1
-        call model%display_subroutine(parameters, mask)
+        call model%display_subroutine(parameters, mask, output_unit)
         print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
             counter, 'lambda:', lambda, 'limit:', limit
         !print*,
@@ -128,7 +135,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     alpha = prev_alpha
     parameters = prev_parameters
     covariance = covariance_matrix(alpha, mask)
-    call model%display_subroutine(parameters, mask, covariance)
+    call model%display_subroutine(parameters, mask, output_unit, covariance)
 
 1 format(1x,a,f15.8,2x,a,i5,2x,a,f13.8,2x,a,i5,2x,a,e11.4,2x,a,i2)
 end subroutine lavenberg_marquardt
