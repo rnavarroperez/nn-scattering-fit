@@ -22,7 +22,8 @@ implicit none
 private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
-    write_montecarlo_phases, print_phases, print_potential_setup, setup_from_namelist
+    write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
+    write_optimization_results
 
 contains
 
@@ -316,48 +317,52 @@ subroutine print_phases(parameters, model)
     enddo
 end subroutine print_phases
 
-subroutine print_potential_setup(potential, parameters, mask)
+subroutine write_potential_setup(potential, parameters, mask, unit)
     implicit none
     type(nn_model), intent(in) :: potential
     real(dp), intent(in), dimension(:) :: parameters
     logical, intent(in), dimension(:) :: mask
+    integer, intent(in) :: unit !< Unit where the output is sent to. Either and already opened file or output_unit from iso_fortran_env
 
-    print*, 'Characteristics of the potential being used'
-    print*, 'Name:', potential%name
-    print*, 'Maximum integration radius:', potential%r_max
+    write(unit, *) 'Characteristics of the potential'
+    write(unit, *) 'Name:', potential%name
+    write(unit, *) 'Maximum integration radius:', potential%r_max
     select case(trim(potential%potential_type))
     case ('local')
-        print*, 'Integration step:', potential%dr
+        write(unit, *) 'Integration step:', potential%dr
     case ('delta_shell')
-        print*, 'Number of internal delta shells:', potential%n_lambdas
-        print*, 'Distance between internal delta shells:', potential%dr_core
-        print*, 'Distance between external delta shells:', potential%dr_tail
+        write(unit, *) 'Number of internal delta shells:', potential%n_lambdas
+        write(unit, *) 'Distance between internal delta shells:', potential%dr_core
+        write(unit, *) 'Distance between external delta shells:', potential%dr_tail
     case default
-        stop 'Unrecognized potential type in print_potential_setup'
+        stop 'Unrecognized potential type in write_potential_setup'
     end select
     if (potential%relativistic_deuteron) then
-        print*, 'The deuteron will be calculated with RELATIVISITC kinematics'
+        write(unit, *) 'The deuteron is calculated with RELATIVISITC kinematics'
     else
-        print*, 'The deuteron will be calculated with NON-RELATIVISITC kinematics'
+        write(unit, *) 'The deuteron is calculated with NON-RELATIVISITC kinematics'
     endif
     if (potential%full_em_wave) then
-        print*, '1S0 pp phases will be calculated against the full EM wave function'
+        write(unit, *) '1S0 pp phases are calculated against the full EM wave function'
     else
-        print*, '1S0 pp phases will be calculated against the Coulomb wave function'
+        write(unit, *) '1S0 pp phases are calculated against the Coulomb wave function'
     endif
-    print*, 'Displaying potential parameters'
-    print*, '* indicates that a parameter is kept fixed during the optimization'
-    call potential%display_subroutine(parameters, mask)
-    print*, ''
-end subroutine print_potential_setup
+    write(unit, *) 'Displaying potential parameters'
+    write(unit, *) '* indicates that a parameter is kept fixed during the optimization'
+    call potential%display_subroutine(parameters, mask, unit)
+    write(unit, *) ''
+end subroutine write_potential_setup
 
-subroutine setup_from_namelist(namelist_file, potential, parameters, mask, database_file)
+subroutine setup_from_namelist(namelist_file, potential, parameters, mask, database_file, &
+    save_results, output_file)
     implicit none
     character(len=*), intent(in) :: namelist_file
     type(nn_model), intent(out) :: potential
     real(dp), intent(out), allocatable, dimension(:) :: parameters
     logical, intent(out), allocatable, dimension(:) :: mask
     character(len=*), intent(out) :: database_file
+    logical, intent(out) :: save_results
+    character(len=*), intent(out) :: output_file
 
     character(len=1024) :: name
     real(dp) :: r_max, delta_r, dr_core, dr_tail
@@ -374,10 +379,13 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     namelist /deuteron/ relativistic
     namelist /potential_parameters/ parameters
     namelist /adjust_parameter/ mask
+    namelist /output/ save_results, output_file
 
 
     database_file = 'database/granada_database.dat'
     name = 'AV18'
+    save_results = .true.
+    output_file = 'results.txt'
 
     inquire(file=trim(namelist_file), exist = file_exists)
     if (file_exists) then
@@ -388,6 +396,12 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
         read(unit, nml = data_base, iostat = ierror)
         if(ierror /= 0) then
             stop 'Error reading data_base namelist'
+        endif
+        rewind(unit)
+
+        read(unit, nml = output, iostat = ierror)
+        if(ierror /= 0) then
+            stop 'Error reading output namelist'
         endif
         rewind(unit)
 
@@ -493,4 +507,31 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
   
 end subroutine setup_from_namelist
 
+
+subroutine write_optimization_results(model, initial_parameters, parameters, mask, chi2, n_points, &
+        covariance, output_file)
+    implicit none
+    type(nn_model), intent(in) :: model
+    real(dp), intent(in), dimension(:) :: initial_parameters
+    real(dp), intent(in), dimension(:) :: parameters
+    logical, intent(in), dimension(:) :: mask
+    real(dp), intent(in) :: chi2
+    integer, intent(in) :: n_points
+    real(dp), intent(in), dimension(:, :) :: covariance
+    character(len=*), intent(in) :: output_file
+
+    character(len=31), parameter :: format = '(1x,a,f15.8,2x,a,i5,2x,a,f13.8)'
+
+    integer :: unit
+
+    open(newunit=unit, file=output_file)
+        write(unit, *) 'Potential setup and initial parameters:'
+        call write_potential_setup(model, initial_parameters, mask, unit)
+        write(unit, *)
+        write(unit, *) 'Final paramters:'
+        call model%display_subroutine(parameters, mask, unit, covariance)
+        write(unit, format) 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi2/n_points
+    close(unit)
+    
+end subroutine write_optimization_results
 end module read_write

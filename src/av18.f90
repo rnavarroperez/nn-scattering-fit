@@ -538,48 +538,54 @@ end subroutine av18_operator
 !!
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine display_parameters(ap, mask, cv)
+subroutine display_parameters(ap, mask, unit, cv)
     implicit none
     real(dp), intent(in), dimension(:) :: ap !< parameters for the AV18 potential
     logical, intent(in), dimension(:) :: mask !< Indicates which parameters are optimized
+    integer, intent(in) :: unit !< Unit where the output is sent to. Either and already opened file or output_unit from iso_fortran_env
     real(dp), intent(in), optional, dimension(:, :) :: cv !< Covariance matrix of the parameters
+
+    character(len=18), parameter :: format_1 = '(1(2x,a,f15.8,a1))'
+    character(len=18), parameter :: format_2 = '(2(2x,a,f15.8,a1))'
+    character(len=18), parameter :: format_3 = '(3(2x,a,f15.8,a1))'
+    character(len=17), parameter :: format_4 = '(3(12x,f15.8,1x))'
 
     character(len=size(ap)) :: s1
     integer :: i
 
     s1 = mask_to_string(mask, ' ', '*')
-    print'(3(2x,a,f15.8,a1))', 'I_11    c:', ap( 1), s1(1:1), 'P_11    c:', ap( 2), s1(2:2), 'R_11    c:', ap( 3), s1(3:3)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=1, 3)
-    print'(3(2x,a,f15.8,a1))', 'I_11    t:', ap( 4), s1(4:4), 'Q_11    t:', ap( 5), s1(5:5), 'R_11    t:', ap( 6), s1(6:6)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=4, 6)
-    print'(3(2x,a,f15.8,a1))', 'I_11   ls:', ap( 7), s1(7:7), 'P_11   ls:', ap( 8), s1(8:8), 'R_11   ls:', ap( 9), s1(9:9)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=7, 9)
-    print'(3(2x,a,f15.8,a1))', 'I_11   l2:', ap(10), s1(10:10), 'P_11   l2:', ap(11), s1(11:11), 'R_11   l2:', ap(12), s1(12:12)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=10, 12)
-    print'(3(2x,a,f15.8,a1))', 'I_11  ls2:', ap(13), s1(13:13), 'P_11  ls2:', ap(14), s1(14:14), 'R_11  ls2:', ap(15), s1(15:15)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=13, 15)
-    print'(3(2x,a,f15.8,a1))', 'I_10    c:', ap(16), s1(16:16), 'P_10    c:', ap(17), s1(17:17), 'R_10    c:', ap(18), s1(18:18)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=16, 18)
-    print'(3(2x,a,f15.8,a1))', 'I_10    t:', ap(19), s1(19:19), 'Q_10    t:', ap(20), s1(20:20), 'R_10    t:', ap(21), s1(21:21)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=19, 21)
-    print'(3(2x,a,f15.8,a1))', 'I_10   ls:', ap(22), s1(22:22), 'P_10   ls:', ap(23), s1(23:23), 'R_10   ls:', ap(24), s1(24:24)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=22, 24)
-    print'(3(2x,a,f15.8,a1))', 'I_10   l2:', ap(25), s1(25:25), 'P_10   l2:', ap(26), s1(26:26), 'R_10   l2:', ap(27), s1(27:27)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=25, 27)
-    print'(3(2x,a,f15.8,a1))', 'I_10  ls2:', ap(28), s1(28:28), 'P_10  ls2:', ap(29), s1(29:29), 'R_10  ls2:', ap(30), s1(30:30)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=28, 30)
-    print'(2(2x,a,f15.8,a1))', 'I_01 c pp:', ap(31), s1(31:31), 'P_01 c pp:', ap(32), s1(32:32)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=31, 32)
-    print'(2(2x,a,f15.8,a1))', 'I_01 c np:', ap(33), s1(33:33), 'P_01 c np:', ap(34), s1(34:34)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=33, 34)
-    print'(2(2x,a,f15.8,a1))', 'I_01   l2:', ap(35), s1(35:35), 'P_01   l2:', ap(36), s1(36:36)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=35, 36)
-    print'(2(2x,a,f15.8,a1))', 'I_00    c:', ap(37), s1(37:37), 'P_00    c:', ap(38), s1(38:38)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=37, 38)
-    print'(2(2x,a,f15.8,a1))', 'I_00   l2:', ap(39), s1(39:39), 'P_00   l2:', ap(40), s1(40:40)
-    if(present(cv)) print'(3(12x,f15.8,1x))', (sqrt(cv(i,i)), i=39, 40)
-    print'(1(2x,a,f15.8,a1))', 'P CD    c:', ap(41), s1(41:41) 
-    if(present(cv)) print'(3(12x,f15.8,1x))', sqrt(cv(41,41))
+    write(unit, format_3) 'I_11    c:', ap( 1), s1(1:1), 'P_11    c:', ap( 2), s1(2:2), 'R_11    c:', ap( 3), s1(3:3)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=1, 3)
+    write(unit, format_3) 'I_11    t:', ap( 4), s1(4:4), 'Q_11    t:', ap( 5), s1(5:5), 'R_11    t:', ap( 6), s1(6:6)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=4, 6)
+    write(unit, format_3) 'I_11   ls:', ap( 7), s1(7:7), 'P_11   ls:', ap( 8), s1(8:8), 'R_11   ls:', ap( 9), s1(9:9)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=7, 9)
+    write(unit, format_3) 'I_11   l2:', ap(10), s1(10:10), 'P_11   l2:', ap(11), s1(11:11), 'R_11   l2:', ap(12), s1(12:12)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=10, 12)
+    write(unit, format_3) 'I_11  ls2:', ap(13), s1(13:13), 'P_11  ls2:', ap(14), s1(14:14), 'R_11  ls2:', ap(15), s1(15:15)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=13, 15)
+    write(unit, format_3) 'I_10    c:', ap(16), s1(16:16), 'P_10    c:', ap(17), s1(17:17), 'R_10    c:', ap(18), s1(18:18)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=16, 18)
+    write(unit, format_3) 'I_10    t:', ap(19), s1(19:19), 'Q_10    t:', ap(20), s1(20:20), 'R_10    t:', ap(21), s1(21:21)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=19, 21)
+    write(unit, format_3) 'I_10   ls:', ap(22), s1(22:22), 'P_10   ls:', ap(23), s1(23:23), 'R_10   ls:', ap(24), s1(24:24)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=22, 24)
+    write(unit, format_3) 'I_10   l2:', ap(25), s1(25:25), 'P_10   l2:', ap(26), s1(26:26), 'R_10   l2:', ap(27), s1(27:27)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=25, 27)
+    write(unit, format_3) 'I_10  ls2:', ap(28), s1(28:28), 'P_10  ls2:', ap(29), s1(29:29), 'R_10  ls2:', ap(30), s1(30:30)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=28, 30)
+    write(unit, format_2) 'I_01 c pp:', ap(31), s1(31:31), 'P_01 c pp:', ap(32), s1(32:32)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=31, 32)
+    write(unit, format_2) 'I_01 c np:', ap(33), s1(33:33), 'P_01 c np:', ap(34), s1(34:34)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=33, 34)
+    write(unit, format_2) 'I_01   l2:', ap(35), s1(35:35), 'P_01   l2:', ap(36), s1(36:36)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=35, 36)
+    write(unit, format_2) 'I_00    c:', ap(37), s1(37:37), 'P_00    c:', ap(38), s1(38:38)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=37, 38)
+    write(unit, format_2) 'I_00   l2:', ap(39), s1(39:39), 'P_00   l2:', ap(40), s1(40:40)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=39, 40)
+    write(unit, format_1) 'P CD    c:', ap(41), s1(41:41) 
+    if(present(cv)) write(unit, format_4) sqrt(cv(41,41))
 
 end subroutine display_parameters
 
