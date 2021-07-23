@@ -15,6 +15,11 @@
     relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
 /
 
+&output
+    save_results = .true.
+    output_file = 'av18_leastparameters_results.txt'
+/
+
 &potential_parameters !Potential parameters
     parameters = -7.43873702    1925.78586701    1527.84417642  ! I_11_c      P_11_c      R_11_c
                   0.64978411       0.00000000    -690.58777520  ! I_11_t      Q_11_t      R_11_t

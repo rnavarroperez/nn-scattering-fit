@@ -48,14 +48,17 @@ subroutine setup_optimization(model, parameters, mask, database, save_results, o
         call setup_from_namelist(namelist_file, model, parameters, mask, database_file, &
             save_results, output_file)
     else
-        ! print error and stop
+        print*, 'The program takes either zero or one argument.'
+        print*, 'See documentation for details.'
+        print*, 'Stopping the program'
+        stop
     endif
     call write_potential_setup(model, parameters, mask, output_unit)
     print*, 'Reading database from: ', trim(database_file)
     print*, ''
     call read_database(database_file, database)
     print*, 'Calculating EM amplitudes for each experimental point ...'
-    !call init_ex_em_amplitudes(database)
+    call init_ex_em_amplitudes(database)
     print*, '... done'
     print*, 'Optimization setup finished'
     print*, ''

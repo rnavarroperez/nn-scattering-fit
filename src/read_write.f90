@@ -22,7 +22,8 @@ implicit none
 private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
-    write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist
+    write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
+    write_optimization_results
 
 contains
 
@@ -506,4 +507,31 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
   
 end subroutine setup_from_namelist
 
+
+subroutine write_optimization_results(model, initial_parameters, parameters, mask, chi2, n_points, &
+        covariance, output_file)
+    implicit none
+    type(nn_model), intent(in) :: model
+    real(dp), intent(in), dimension(:) :: initial_parameters
+    real(dp), intent(in), dimension(:) :: parameters
+    logical, intent(in), dimension(:) :: mask
+    real(dp), intent(in) :: chi2
+    integer, intent(in) :: n_points
+    real(dp), intent(in), dimension(:, :) :: covariance
+    character(len=*), intent(in) :: output_file
+
+    character(len=31), parameter :: format = '(1x,a,f15.8,2x,a,i5,2x,a,f13.8)'
+
+    integer :: unit
+
+    open(newunit=unit, file=output_file)
+        write(unit, *) 'Potential setup and initial parameters:'
+        call write_potential_setup(model, initial_parameters, mask, unit)
+        write(unit, *)
+        write(unit, *) 'Final paramters:'
+        call model%display_subroutine(parameters, mask, unit, covariance)
+        write(unit, format) 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi2/n_points
+    close(unit)
+    
+end subroutine write_optimization_results
 end module read_write

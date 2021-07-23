@@ -17,6 +17,11 @@
     relativistic = .true. ! Whether to use relativistic kinematics for the deuteron or not
 /
 
+&output
+    save_results = .true.
+    output_file = 'ds_ope30_results.txt'
+/
+
 &potential_parameters !Potential parameters
     parameters =  1.31304950  -0.71836850  -0.19077786   0.00000000  -0.02111031  !1S0 pp
                  -0.15213746  -0.05274411   0.03818241   0.00000000  -0.00298297  !1S0(np - pp)
