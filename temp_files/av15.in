@@ -1,0 +1,121 @@
+F         0.750000000E-01 cfsq0
+F         0.750000000E-01 cfsqc
+F         0.150000000E+01 cc
+F         0.575000000E+00 cr
+F         0.230000000E+00 ca
+F         -.133718000E+02 ccI01pp
+F         0.132833758E+04 ccP01pp
+F         0.543478794E+02 ccR01pp
+F         -.161414225E+02 ccI01np
+F         0.149190018E+04 ccP01np
+F         0.501075984E+03 ccR01np
+F         -.133720920E+02 ccI01nn
+F         0.132596080E+04 ccP01nn
+F         0.544136000E+02 ccR01nn
+F         0.202599319E+00 cl2I01
+F         0.144668692E+02 cl2P01
+F         -.189172735E+02 cl2R01
+F         -.213703644E+01 ccI00
+F         0.677282877E+03 ccP00
+F         -.248799373E+03 ccR00
+F         -.273672196E+00 cl2I00
+F         0.104032950E+03 cl2P00
+F         -.388911765E+02 cl2R00
+T         -.977409384E+01 ccI11pp
+T         0.106581209E+04 ccP11pp
+T         0.447360779E+03 ccR11pp
+F         -.980945946E+01 ccI11np
+F         0.106461642E+04 ccP11np
+F         0.447312857E+03 ccR11np
+F         -.969239900E+01 ccI11nn
+F         0.106343090E+04 ccP11nn
+F         0.447259200E+03 ccR11nn
+F         0.598098970E+00 cl2I11
+F         0.718470506E+02 cl2P11
+F         -.229805830E+03 cl2R11
+F         0.166604240E+01 ctI1pp
+F         -.309790324E+03 ctQ1pp
+F         -.130239249E+03 ctR1pp
+F         0.154846820E+01 ctI1np
+F         -.309760332E+03 ctQ1np
+F         -.130349474E+03 ctR1np
+F         0.161846800E+01 ctI1nn
+F         -.309784400E+03 ctQ1nn
+F         -.130275000E+03 ctR1nn
+F         -.360350625E+01 clsI1pp
+F         -.220952012E+03 clsP1pp
+F         0.906425239E+03 clsR1pp
+F         -.403779322E+01 clsI1np
+F         -.168265059E+03 clsP1np
+F         0.927056919E+03 clsR1np
+F         -.406360700E+01 clsI1nn
+F         -.168242100E+03 clsP1nn
+F         0.927150700E+03 clsR1nn
+F         0.256390117E+00 cls2I1
+F         -.408719131E+02 cls2P1
+F         0.398344648E+02 cls2R1
+F         -.103037555E+02 ccI10
+F         0.116434393E+04 ccP10
+F         0.119704847E+02 ccR10
+F         -.480713194E-02 cl2I10
+F         0.145635739E+03 cl2P10
+F         -.763802119E+02 cl2R10
+F         0.134734291E+01 ctI0
+F         -.644439796E+03 ctQ0
+F         0.357089124E+03 ctR0
+F         0.511737863E+00 clsI0
+F         -.314908848E+02 clsP0
+F         -.119377637E+03 clsR0
+F         0.120865408E+00 cls2I0
+F         -.131819189E+03 cls2P0
+F         0.582633937E+02 cls2R0
+     ifit=3
+     nolb=44
+    lsobs=App
+    lsobs=CKPpp
+    lsobs=Rpp
+    lsobs=RPpp
+    lsobs=APpp
+    lsobs=MSKNpp
+    lsobs=MSSNpp
+    lsobs=DSGpp
+    lsobs=Ppp
+    lsobs=AYYpp
+    lsobs=AZZpp
+    lsobs=Dpp
+    lsobs=AXXpp
+    lsobs=AZXpp
+    lsobs=AXX1pp
+    lsobs=AYY1pp
+    lsobs=DSG1pp
+    lsobs=RPTnp
+    lsobs=Rnp
+    lsobs=RTnp
+    lsobs=ATnp
+    lsobs=D0SKnp 
+    lsobs=NNKKnp
+    lsobs=NSKNnp
+    lsobs=NSSNnp
+    lsobs=DSGnp
+    lsobs=Pnp
+    lsobs=AYYnp
+    lsobs=AZZnp
+    lsobs=Dnp
+    lsobs=SGTTnp
+    lsobs=SGTLnp
+    lsobs=DTnp
+    lsobs=Anp
+    lsobs=SGTnp
+    lsobs=BO61np
+    lsobs=BR70np
+    lsobs=CL72np
+    lsobs=DA71np
+    lsobs=GR66np
+    lsobs=GR85np
+    lsobs=KE82np
+    lsobs=LI82np
+    lsobs=SH65np
+    lsobs=GR82np
+
+ 
+   
