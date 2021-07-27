@@ -80,8 +80,8 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     logical, intent(in), dimension(:) :: mask
     type(nn_model), intent(in) :: model !< potential model
     real(dp), intent(inout) :: parameters(:) !< potential model parameters
-    integer, intent(out) :: n_points !< number of data points in the total chi-square
-    real(dp), intent(out) :: chi2 !< chi square for given parameters and model
+    integer, intent(out), dimension(:) :: n_points !< number of data points in the total chi-square
+    real(dp), intent(out), dimension(:) :: chi2 !< chi square for given parameters and model
     real(dp), intent(out), allocatable :: covariance(:,:) !< estimated covariance
 
     real(dp), allocatable :: alpha(:, :), beta(:)
@@ -95,10 +95,10 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     counter = 0
     lambda = 1.e-3_dp
     call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
-    chi_ratio = chi2/n_points
+    chi_ratio = sum(chi2)/sum(n_points)
     
     call model%display_subroutine(parameters, mask, output_unit)
-    print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
+    print 1, 'chi^2:', sum(chi2), 'N_data:', sum(n_points), 'chi^2/N_data:', chi_ratio, 'counter:', &
         counter, 'lambda:', lambda, 'limit:', limit
    ! print*,
     
@@ -106,35 +106,35 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     allocate(prev_alpha, source=alpha)
     allocate(prev_beta, source=beta)
     allocate(alpha_prime, mold=alpha)
-    prev_chi_ratio = chi2/n_points
-    do
-        if(limit == 5) exit
-        alpha_prime = set_alpha_prime(prev_alpha, lambda)
-        parameters = get_new_parameters(alpha_prime, prev_beta, prev_parameters, mask)
-        call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
-        chi_ratio = chi2/n_points
-        ! determined whether to raise or lower lambda
-        if(chi_ratio >= prev_chi_ratio) then
-            lambda = lambda*factor
-        else if(chi_ratio < prev_chi_ratio) then
-            lambda = lambda/factor
-            if((prev_chi_ratio - chi_ratio)*n_points <= delta) then
-                ! increase limit by 1 if there is a negligible difference
-                limit = limit + 1
-            else ! we want consecutive negligible differences
-                limit = 0
-            end if
-            prev_alpha = alpha
-            prev_beta = beta
-            prev_parameters = parameters
-            prev_chi_ratio = chi_ratio
-        end if
-        counter = counter + 1
-        call model%display_subroutine(parameters, mask, output_unit)
-        print 1, 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi_ratio, 'counter:', &
-            counter, 'lambda:', lambda, 'limit:', limit
-        !print*,
-    enddo
+    prev_chi_ratio = sum(chi2)/sum(n_points)
+    ! do
+    !     if(limit == 5) exit
+    !     alpha_prime = set_alpha_prime(prev_alpha, lambda)
+    !     parameters = get_new_parameters(alpha_prime, prev_beta, prev_parameters, mask)
+    !     call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
+    !     chi_ratio = sum(chi2)/sum(n_points)
+    !     ! determined whether to raise or lower lambda
+    !     if(chi_ratio >= prev_chi_ratio) then
+    !         lambda = lambda*factor
+    !     else if(chi_ratio < prev_chi_ratio) then
+    !         lambda = lambda/factor
+    !         if((prev_chi_ratio - chi_ratio)*sum(n_points) <= delta) then
+    !             ! increase limit by 1 if there is a negligible difference
+    !             limit = limit + 1
+    !         else ! we want consecutive negligible differences
+    !             limit = 0
+    !         end if
+    !         prev_alpha = alpha
+    !         prev_beta = beta
+    !         prev_parameters = parameters
+    !         prev_chi_ratio = chi_ratio
+    !     end if
+    !     counter = counter + 1
+    !     call model%display_subroutine(parameters, mask, output_unit)
+    !     print 1, 'chi^2:', sum(chi2), 'N_data:', sum(n_points), 'chi^2/N_data:', chi_ratio, 'counter:', &
+    !         counter, 'lambda:', lambda, 'limit:', limit
+    !     !print*,
+    ! enddo
     alpha = prev_alpha
     parameters = prev_parameters
     covariance = covariance_matrix(alpha, mask)

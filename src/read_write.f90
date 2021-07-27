@@ -515,8 +515,8 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
     real(dp), intent(in), dimension(:) :: initial_parameters
     real(dp), intent(in), dimension(:) :: parameters
     logical, intent(in), dimension(:) :: mask
-    real(dp), intent(in) :: chi2
-    integer, intent(in) :: n_points
+    real(dp), intent(in), dimension(:) :: chi2
+    integer, intent(in), dimension(:) :: n_points
     real(dp), intent(in), dimension(:, :) :: covariance
     character(len=*), intent(in) :: output_file
 
@@ -530,7 +530,18 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
         write(unit, *)
         write(unit, *) 'Final paramters:'
         call model%display_subroutine(parameters, mask, unit, covariance)
-        write(unit, format) 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi2/n_points
+        write(unit, *) 'pp data:'
+        write(unit, format) 'chi^2:', chi2(1), 'N_data:', n_points(1), 'chi^2/N_data:', chi2(1)/n_points(1)
+        write(unit, *) 'np data:'
+        write(unit, format) 'chi^2:', chi2(2), 'N_data:', n_points(2), 'chi^2/N_data:', chi2(2)/n_points(2)
+        write(unit, *) 'deuteron:'
+        write(unit, format) 'chi^2:', chi2(3), 'N_data:', n_points(3), 'chi^2/N_data:', chi2(3)/n_points(3)
+        write(unit, *) 'np scattering length:'
+        write(unit, format) 'chi^2:', chi2(4), 'N_data:', n_points(4), 'chi^2/N_data:', chi2(4)/n_points(4)
+        write(unit, *) 'nn scattering length:'
+        write(unit, format) 'chi^2:', chi2(5), 'N_data:', n_points(5), 'chi^2/N_data:', chi2(5)/n_points(5)
+        write(unit, *) 'all data:'
+        write(unit, format) 'chi^2:', sum(chi2), 'N_data:', sum(n_points), 'chi^2/N_data:', sum(chi2)/sum(n_points)
     close(unit)
     
 end subroutine write_optimization_results

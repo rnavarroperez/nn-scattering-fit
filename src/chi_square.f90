@@ -34,12 +34,12 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     real(dp), intent(in), dimension(:) :: parameters !< potential model parameters
     logical, intent(in), dimension(:) :: mask
     type(nn_model), intent(in) :: model !< potential model
-    integer, intent(out) :: n_points !< number of data points in the total chi-square
-    real(dp), intent(out) :: chi2 !< chi square for given parameters and model
+    integer, intent(out), dimension(:) :: n_points !< number of data points in the total chi-square
+    real(dp), intent(out), dimension(:) :: chi2 !< chi square for given parameters and model
     real(dp), intent(out), allocatable :: alpha(:,:), beta(:) !< matrices to minimize chi-square
 
-    real(dp), allocatable :: all_chi(:)
-    integer, allocatable :: all_n_points(:)
+    real(dp), allocatable :: all_chi(:, :)
+    integer, allocatable :: all_n_points(:, :)
     real(dp), allocatable :: all_alpha(:,:,:), all_beta(:,:)
     integer :: i, n_exps, n_active_parameters
     
@@ -49,8 +49,8 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     ! get the number of parameters
     n_active_parameters = count(mask)
     ! allocate memory
-    allocate(all_chi(n_exps))
-    allocate(all_n_points(n_exps))
+    allocate(all_chi(1:size(chi2), n_exps))
+    allocate(all_n_points(1:size(chi2), n_exps))
     allocate(all_beta(n_active_parameters, n_exps), all_alpha(n_active_parameters, n_active_parameters, n_exps))
     ! initialize all_alpha and all_beta
     all_alpha = 0
@@ -66,8 +66,8 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
         if (experiments(i)%rejected) cycle
         if (experiments(i)%channel == 'nn' .and. model%potential_type == 'delta_shell') cycle ! delta-shell potentials don't have a nn channel (yet)
         call experiment_chi_square(experiments(i), parameters, mask, model, chi2, alpha, beta, n_points)
-        all_chi(i) = chi2
-        all_n_points(i) = n_points
+        all_chi(:, i) = chi2
+        all_n_points(:, i) = n_points
         all_alpha(:, :, i) = alpha
         all_beta(:, i) = beta
     end do
@@ -79,8 +79,8 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     allocate(alpha(1:n_active_parameters, 1:n_active_parameters))
     allocate(beta(1:n_active_parameters))
     ! sum all experiments
-    chi2 = sum(all_chi)
-    n_points = sum(all_n_points)
+    chi2 = sum(all_chi, dim=2)
+    n_points = sum(all_n_points, dim=2)
     alpha = sum(all_alpha, dim=3)!, mask=.not.isnan(all_alpha))
     beta = sum(all_beta, dim=2)!, mask=.not.isnan(all_beta))
 end subroutine total_chi_square
@@ -91,10 +91,10 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
     real(dp), intent(in), dimension(:) :: parameters
     logical, intent(in), dimension(:) :: mask
     type(nn_model), intent(in) :: model
-    real(dp), intent(out) :: chi2
+    real(dp), intent(out), dimension(:) :: chi2
     real(dp), intent(out), allocatable, dimension(:, :) :: alpha
     real(dp), intent(out), allocatable, dimension(:) :: beta
-    integer, intent(out) :: n_points
+    integer, intent(out), dimension(:) :: n_points
 
     type(kinematics) :: kine
     real(dp), allocatable, dimension (:) :: exp_values, sigmas, theory_values
@@ -103,12 +103,14 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
     real(dp), allocatable :: d_theory(:), all_derivatives(:,:)
     logical :: float
     integer :: i!, j, k, l, m, n_active_parameters
+    integer :: my_n_points
+    real(dp) :: my_chi2
 
-    n_points = experiment%n_data
+    my_n_points = experiment%n_data
 
-    allocate(exp_values(1:n_points))
+    allocate(exp_values(1:my_n_points))
     allocate(sigmas, theory_values, mold=exp_values)
-    allocate(all_derivatives(1:size(parameters), n_points))
+    allocate(all_derivatives(1:size(parameters), my_n_points))
 
     kine%channel = experiment%channel
     kine%type = experiment%obs_type
@@ -117,7 +119,7 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
     
     znum = 0._dp
     zden = 0._dp
-    do i = 1, n_points
+    do i = 1, my_n_points
         kine%t_lab = experiment%data_points(i)%t_lab
         kine%angle = experiment%data_points(i)%theta
         kine%em_amplitude = experiment%data_points(i)%em_amplitude
@@ -135,12 +137,38 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
     call calculate_alpha_beta(exp_values, theory_values, sigmas, all_derivatives, z_scale, mask, alpha, beta)
 
     ! calculate chi-square for sinlge experiment
-    chi2 = sum(((exp_values - theory_values*z_scale)/sigmas)**2)
+    my_chi2 = sum(((exp_values - theory_values*z_scale)/sigmas)**2)
     ! check if data is floated
     if(float) then ! add the systematic error contribution to the chi-square
-        chi2 = chi2 + chi2_sys_error
-        n_points = n_points + 1
+        my_chi2 = my_chi2 + chi2_sys_error
+        my_n_points = my_n_points + 1
     end if
+
+    chi2 = 0._dp
+    n_points = 0
+    select case(trim(kine%channel))
+    case('pp')
+        chi2(1) = my_chi2
+        n_points(1) = my_n_points
+    case('np')
+        select case(trim(kine%type))
+        case('dbe')
+            chi2(3) = my_chi2
+            n_points(3) = my_n_points
+        case('asl')
+            chi2(4) = my_chi2
+            n_points(4) = my_n_points
+        case default
+            chi2(2) = my_chi2
+            n_points(2) = my_n_points
+        end select
+    case('nn')
+        chi2(5) = my_chi2
+        n_points(5) = my_n_points
+    case default
+        print*, 'Unrecognized reaction channel in experiment_chi_square'
+        stop
+    end select
 
 end subroutine experiment_chi_square
 

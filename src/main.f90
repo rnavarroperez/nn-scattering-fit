@@ -23,8 +23,8 @@ real(dp), allocatable, dimension(:) :: initial_parameters
 logical, allocatable, dimension(:) :: mask
 logical :: save_results
 character(len=1024) :: output_file
-real(dp) :: chi2
-integer :: n_points
+real(dp) :: chi2(1:5)
+integer :: n_points(1:5)
 
 call setup_optimization(model, parameters, mask, database, save_results, output_file)
 allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
