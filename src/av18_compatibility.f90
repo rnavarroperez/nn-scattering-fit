@@ -19,9 +19,9 @@ subroutine write_marias_format(filename, parameters)
     open(newunit=unit, file=trim(filename))
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsq0'
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsqc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 2.1_dp,   'cc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.5_dp,   'cr'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.2_dp,   'ca'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(42), 'cc'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(43), 'cr'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(44), 'ca'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(31), 'ccI01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(32), 'ccP01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  0.0_dp,         'ccR01pp'
@@ -109,9 +109,12 @@ subroutine read_marias_format(filename, parameters)
     inquire(file=trim(filename), exist = file_exists)
     if (file_exists) then
         open(newunit= unit, file=trim(filename))
-        do i=1,5
+        do i=1,2
             read(unit, *)
         enddo
+        read(unit, *) drop, parameters(42)
+        read(unit, *) drop, parameters(43)
+        read(unit, *) drop, parameters(44)
         read(unit, *) drop, ccI01pp
         read(unit, *) drop, ccP01pp
         read(unit, *) drop, ccR01pp
