@@ -64,6 +64,10 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
 
+    integer, parameter :: n_waves = 22
+    character(len=3), dimension(1:n_waves), parameter :: &
+        phase_types = ['1s0', '3p0', '1p1', '3p1', '3s1', 'ep1', '3d1', '1d2', '3d2', '3p2', &
+            'ep2', '3f2', '1f3', '3f3', '3d3', 'ep3', '3g3', '1g4', '3g4', '3f4', 'ep4', '3h4']
     integer :: i, j
 
     select case (trim(kinematic%type))
@@ -72,7 +76,11 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     case('dbe')
         call binding_energy(model, params, obs, d_obs)
     case default
-        call scattering_obs(kinematic, params, model, obs, d_obs)
+        if ( any(phase_types == trim(kinematic%type)) ) then
+            call phaseshift_as_obserbable(kinematic, params, model, obs, d_obs)
+        else
+            call scattering_obs(kinematic, params, model, obs, d_obs)
+        endif
     end select
     do i= 1, size(d_obs)
         if (ieee_is_nan(d_obs(i)) .or. .not. ieee_is_finite(d_obs(i))) then
@@ -94,6 +102,97 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     enddo
     
 end subroutine observable
+
+subroutine phaseshift_as_obserbable(kinematic, params, model, obs, d_obs)
+    implicit none
+    type(kinematics), intent(in) :: kinematic !< kinematic variables
+    real(dp), intent(in) :: params(:) !< adjustable parameters
+    type(nn_model), intent(in) :: model !< nn scattering model
+    real(dp), intent(out) :: obs !< NN scattering observable
+    real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
+
+    real(dp), dimension(1:5, 1:5) :: phases
+    real(dp), allocatable :: d_phases(:,:,:)
+
+    call all_phaseshifts(model, params, kinematic%t_lab, kinematic%channel, phases, d_phases)
+
+    phases = phases*180/pi
+    d_phases = d_phases*180/pi
+
+    select case(trim(kinematic%type))
+    case('1s0')
+        obs = phases(1, 1)
+        d_obs = d_phases(:, 1, 1)
+    case('3p0')
+        obs = phases(5, 1)
+        d_obs = d_phases(:, 5, 1)
+    case('1p1')
+        obs = phases(1, 2)
+        d_obs = d_phases(:, 1, 2)
+    case('3p1')
+        obs = phases(2, 2)
+        d_obs = d_phases(:, 2, 2)
+    case('3s1')
+        obs = phases(3, 2)
+        d_obs = d_phases(:, 3, 2)
+    case('ep1')
+        obs = phases(4, 2)
+        d_obs = d_phases(:, 4, 2)
+    case('3d1')
+        obs = phases(5, 2)
+        d_obs = d_phases(:, 5, 2)
+    case('1d2')
+        obs = phases(1, 3)
+        d_obs = d_phases(:, 1, 3)
+    case('3d2')
+        obs = phases(2, 3)
+        d_obs = d_phases(:, 2, 3)
+    case('3p2')
+        obs = phases(3, 3)
+        d_obs = d_phases(:, 3, 3)
+    case('ep2')
+        obs = phases(4, 3)
+        d_obs = d_phases(:, 4, 3)
+    case('3f2')
+        obs = phases(5, 3)
+        d_obs = d_phases(:, 5, 3)
+    case('1f3')
+        obs = phases(1, 4)
+        d_obs = d_phases(:, 1, 4)
+    case('3f3')
+        obs = phases(2, 4)
+        d_obs = d_phases(:, 2, 4)
+    case('3d3')
+        obs = phases(3, 4)
+        d_obs = d_phases(:, 3, 4)
+    case('ep3')
+        obs = phases(4, 4)
+        d_obs = d_phases(:, 4, 4)
+    case('3g3')
+        obs = phases(5, 4)
+        d_obs = d_phases(:, 5, 4)
+    case('1g4')
+        obs = phases(1, 5)
+        d_obs = d_phases(:, 1, 5)
+    case('3g4')
+        obs = phases(2, 5)
+        d_obs = d_phases(:, 2, 5)
+    case('3f4')
+        obs = phases(3, 5)
+        d_obs = d_phases(:, 3, 5)
+    case('ep4')
+        obs = phases(4, 5)
+        d_obs = d_phases(:, 4, 5)
+    case('3h4')
+        obs = phases(5, 5)
+        d_obs = d_phases(:, 5, 5)
+    case default
+        print*, 'unrecognized partial wave name in phaseshift_as_obserbable'
+        stop
+    end select
+    
+end subroutine phaseshift_as_obserbable
+
 
 !!
 !> @brief Calculates a NN scattering observable
