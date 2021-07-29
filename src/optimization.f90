@@ -140,7 +140,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     covariance = covariance_matrix(alpha, mask)
     call model%display_subroutine(parameters, mask, output_unit, covariance)
 
-1 format(1x,a,f15.8,2x,a,i5,2x,a,f13.8,2x,a,i5,2x,a,e11.4,2x,a,i2)
+1 format(1x,a,f20.8,2x,a,i5,2x,a,f20.8,2x,a,i5,2x,a,e11.4,2x,a,i2)
 end subroutine lavenberg_marquardt
 
 function covariance_matrix(alpha, mask) result(covariance)
