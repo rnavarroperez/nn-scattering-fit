@@ -23,7 +23,7 @@ private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
-    write_optimization_results
+    write_optimization_results, plot_potential_components
 
 contains
 
@@ -534,4 +534,57 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
     close(unit)
     
 end subroutine write_optimization_results
+
+subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
+    implicit none
+    type(nn_model), intent(in) :: potential
+    real(dp), intent(in), dimension(:) :: parameters
+    real(dp), intent(in), dimension(:, :) :: covariance
+    real(dp), intent(in) :: r_min
+    real(dp), intent(in) :: r_max
+    real(dp), intent(in) :: r_step
+    character(len=*), intent(in) :: file_name
+
+    real(dp) :: r
+    real(dp), allocatable, dimension(:) ::  v
+    real(dp), allocatable, dimension(:, :) :: dv
+    real(dp), allocatable, dimension(:) :: v_error
+    integer :: unit, i
+
+    r = r_min
+    allocate(v(1:potential%n_components))
+    allocate(v_error, mold=v)
+    open(newunit=unit, file=trim(file_name))
+    do
+        if(r > r_max) exit
+        call potential%potential_components(parameters, r, v, dv)
+        do i = 1, size(v_error)
+            v_error(i) = propagated_error_bar(dv(i, :), covariance)
+        enddo
+        write(unit, *) r, (v(i), v_error(i), i = 1, size(v))
+        r = r + r_step
+    enddo
+    close(unit)
+    
+end subroutine plot_potential_components
+
+real(dp) function propagated_error_bar(derivatives, covariance) result(error)
+    implicit none
+    real(dp), intent(in), dimension(:) :: derivatives
+    real(dp), intent(in), dimension(:, :) :: covariance
+
+    integer :: i, j
+
+    error = 0._dp
+
+    do i = 1, size(derivatives)
+        do j=1, size(derivatives)
+            error = error + derivatives(i)*derivatives(j)*covariance(j,i)
+        enddo
+    enddo
+
+    error = sqrt(abs(error))
+    
+end function propagated_error_bar
+
 end module read_write

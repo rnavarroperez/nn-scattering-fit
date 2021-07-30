@@ -10,20 +10,27 @@ MAIN_EXEC = nn_fit
 
 MC_PHASES_EXEC = write_mc_phases
 
+PLOT_POT_EXEC = plot_potential
+
 SRC = $(wildcard *.f90)
 
 OBJ = $(SRC:.f90=.o)
 
-MAIN_OBJ = $(filter-out mc_phases.o, $(OBJ))
+MAIN_OBJ = $(filter-out mc_phases.o plot_potential.o, $(OBJ))
 
-MC_PHASES_OBJ = $(filter-out main.o, $(OBJ))
+MC_PHASES_OBJ = $(filter-out main.o plot_potential.o, $(OBJ))
 
-all: $(MC_PHASES_EXEC) $(MAIN_EXEC)
+PLOT_POT_OBJ = $(filter-out main.o mc_phases.o, $(OBJ))
+
+all: $(MC_PHASES_EXEC) $(MAIN_EXEC) $(PLOT_POT_EXEC)
+
+$(MAIN_EXEC): $(MAIN_OBJ)
+	$(COMPILER) $(FLAGS) -o $@ $^ $(LAPACK)
 
 $(MC_PHASES_EXEC): $(MC_PHASES_OBJ)
 	$(COMPILER) $(FLAGS) -o $@ $^ $(LAPACK)
 
-$(MAIN_EXEC): $(MAIN_OBJ)
+$(PLOT_POT_EXEC): $(PLOT_POT_OBJ)
 	$(COMPILER) $(FLAGS) -o $@ $^ $(LAPACK)
 
 precisions.o: precisions.f90
@@ -109,6 +116,9 @@ random_num.o: random_num.f90 constants.o precisions.o
 
 randomize_exp.o: randomize_exp.f90 exp_data.o precisions.o random_num.o
 	$(COMPILER) $(FLAGS) -c $<
+
+plot_potential.o: plot_potential.f90
+	$(COMPILER) $(FLAGS) -c $<	
 
 clean:
 	rm -rf *.o *.mod

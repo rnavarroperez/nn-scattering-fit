@@ -73,12 +73,12 @@ private
 public :: nn_model, all_delta_shells, ds_ope30_params, ds_ope30fff_params, set_ds_potential
 
 !!
-!> @brief      interface of nn local potentials
+!> @brief      interface of nn local potentials in all partial waves
 !!
 !! @author     Rodrigo Navarro Perez
 !!
 interface
-    subroutine local_potential(ap, r, reaction, v_pw, dv_pw)
+    subroutine local_potential_pw(ap, r, reaction, v_pw, dv_pw)
         use precisions, only : dp
         implicit none
         real(dp), intent(in) :: ap(:) !< potential parameters
@@ -86,7 +86,23 @@ interface
         character(len=2), intent(in) :: reaction !< reaction channel. 'pp' or 'np'
         real(dp), intent(out) :: v_pw(:, :) !< local potential in all partial waves
         real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of the potential with respect of the parameters
-    end subroutine local_potential
+    end subroutine local_potential_pw
+end interface
+
+!!
+!> @brief      interface of nn local potentials to be plotted
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+interface
+    subroutine local_potential_plot(ap, r, v, dv)
+        use precisions, only : dp
+        implicit none
+        real(dp), intent(in) :: ap(:) !< potential parameters
+        real(dp), intent(in) :: r !< radius (in fm) at which the potential is evaluated
+        real(dp), intent(out) :: v(:) !< local potential components
+        real(dp), allocatable, intent(out) :: dv(:, :) !< derivatives of the potential with respect of the parameters
+    end subroutine local_potential_plot
 end interface
 
 !!
@@ -113,13 +129,15 @@ end interface
 !! @author     Rodrigo Navarro Perez
 !!
 type :: nn_model
-    procedure(local_potential), pointer, nopass :: potential !< local NN potential
+    procedure(local_potential_pw), pointer, nopass :: potential !< local NN potential
+    procedure(local_potential_plot), pointer, nopass :: potential_components !< local NN potential in components to be plotted
     procedure(display_parameters), pointer, nopass :: display_subroutine !< local NN potential
     real(dp) :: r_max !< maximum intetgration radius
     real(dp) :: dr !< radial integration step
     character(len=24) :: potential_type !< Typr of nn potential ('local' or 'delta_shell')
     character(len=24) :: name !< potential name
     integer :: n_lambdas !< number of internal delta shells in a DS potential
+    integer :: n_components !< number of potential components that will be plotted
     real(dp) :: dr_core !< Distance between the internal lambdas 
     real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
     logical :: relativistic_deuteron !< Should relativistic kinematics be used when calculating the deuteron binding energy?
@@ -222,6 +240,7 @@ subroutine set_ds_potential(name, ds_potential, parameters)
 
     ! Property of a local potential. We set it to zero
     ds_potential%dr = 0._dp
+    ds_potential%n_components = 0
 
 end subroutine set_ds_potential
 

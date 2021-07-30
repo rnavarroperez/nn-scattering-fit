@@ -16,7 +16,7 @@ use read_write, only: write_potential_setup, setup_from_namelist
 implicit none
 
 private
-public :: lavenberg_marquardt, invert_alpha, setup_optimization
+public :: lavenberg_marquardt, invert_alpha, setup_optimization, covariance_matrix
 contains
 
 subroutine setup_optimization(model, parameters, mask, database, save_results, output_file)

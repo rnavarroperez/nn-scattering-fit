@@ -57,6 +57,7 @@ subroutine set_av18_potential(potential, parameters)
 
     allocate(parameters, source = default_params)
     potential%potential => av18_all_partial_waves
+    potential%potential_components => av18_operator
     potential%display_subroutine => display_parameters
     potential%r_max = r_max
     potential%dr = delta_r
@@ -64,6 +65,7 @@ subroutine set_av18_potential(potential, parameters)
     potential%name = 'AV18'
     potential%relativistic_deuteron = .False.
     potential%full_em_wave = .true.
+    potential%n_components = n_operators
 
     ! Properties of a delta-shell potential. We set them to zero
     potential%n_lambdas = 0
@@ -92,7 +94,8 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     real(dp), intent(out) :: v_pw(:, :) !< AV18 potential in all partial waves, units of MeV
     real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of v_nn with respect to the parameters in ap
 
-    real(dp) :: v_nn(1:n_operators), dv_nn(1:n_operators, 1:n_parameters)
+    real(dp) :: v_nn(1:n_operators) 
+    real(dp), allocatable :: dv_nn(:, :)
     real(dp) :: v_00(1:n_st_terms), v_01(1:n_st_terms), v_10(1:n_st_terms), v_11(1:n_st_terms), &
                 v_em_st(1:n_st_terms)
     real(dp) :: dv_00(1:n_st_terms, 1:n_parameters), dv_01(1:n_st_terms, 1:n_parameters), &
@@ -250,10 +253,10 @@ end function d_operator_2_st_basis
 !!
 subroutine av18_operator(ap, r, v_nn, dv_nn)
     implicit none
-    real(dp), intent(in)  :: ap(1:n_parameters) !< Phenomenological parameters
+    real(dp), intent(in)  :: ap(:) !< Phenomenological parameters
     real(dp), intent(in)  :: r !< radius in units of fm
-    real(dp), intent(out) :: v_nn(1:n_operators) !< AV18 potential in operator basis, units of MeV
-    real(dp), intent(out) :: dv_nn(1:n_operators, 1:n_parameters) !< derivatives of v_nn with respect to the parameters in ap
+    real(dp), intent(out) :: v_nn(:) !< AV18 potential in operator basis, units of MeV
+    real(dp), allocatable, intent(out) :: dv_nn(:, :) !< derivatives of v_nn with respect to the parameters in ap
 
     real(dp), parameter :: &
         mu0 = mpi0/hbar_c, &
@@ -280,6 +283,8 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
 
 
     integer :: ip
+
+    allocate(dv_nn(1:n_operators, 1:n_parameters))
 
     v_nn = 0
     dv_nn = 0
@@ -574,24 +579,24 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     d_pt1cs = (d_pt1pp - d_pt1nn)/4
     d_p01cs = (d_p01pp - d_p01nn)/4
 
-    v_nn( 1) = (9*p11 + 3*p10 + 3*p01 + p00)/16
-    v_nn( 2) = (3*p11 - 3*p10 +   p01 - p00)/16
-    v_nn( 3) = (3*p11 +   p10 - 3*p01 - p00)/16
-    v_nn( 4) = (  p11 -   p10 -   p01 + p00)/16
-    v_nn( 5) = (3*pt1  + pt0 )/4
-    v_nn( 6) = (  pt1  - pt0 )/4
-    v_nn( 7) = (3*pls1 + pls0)/4
-    v_nn( 8) = (  pls1 - pls0)/4
-    v_nn( 9) = (9*pl211 + 3*pl210 + 3*pl201 + pl200)/16
-    v_nn(10) = (3*pl211 - 3*pl210 +   pl201 - pl200)/16
-    v_nn(11) = (3*pl211 +   pl210 - 3*pl201 - pl200)/16
-    v_nn(12) = (  pl211 -   pl210 -   pl201 + pl200)/16
-    v_nn(13) = (3*pls21 + pls20)/4
-    v_nn(14) = (  pls21 - pls20)/4
-    v_nn(15) = (3*p11cd + p01cd)/4
-    v_nn(16) = (  p11cd - p01cd)/4
-    v_nn(17) = pt1cd
-    v_nn(18) = p01cs
+    v_nn( 1) = (9*p11 + 3*p10 + 3*p01 + p00)/16 ! v_c
+    v_nn( 2) = (3*p11 - 3*p10 +   p01 - p00)/16 ! v_tau
+    v_nn( 3) = (3*p11 +   p10 - 3*p01 - p00)/16 ! v_sigma
+    v_nn( 4) = (  p11 -   p10 -   p01 + p00)/16 ! v_sigma_tau
+    v_nn( 5) = (3*pt1  + pt0 )/4 ! v_t
+    v_nn( 6) = (  pt1  - pt0 )/4 ! v_t_tau
+    v_nn( 7) = (3*pls1 + pls0)/4 ! v_ls
+    v_nn( 8) = (  pls1 - pls0)/4 ! v_ls_tau
+    v_nn( 9) = (9*pl211 + 3*pl210 + 3*pl201 + pl200)/16 ! v_l2
+    v_nn(10) = (3*pl211 - 3*pl210 +   pl201 - pl200)/16 ! v_l2_tau
+    v_nn(11) = (3*pl211 +   pl210 - 3*pl201 - pl200)/16 ! v_l2_sigma
+    v_nn(12) = (  pl211 -   pl210 -   pl201 + pl200)/16 ! v_l2_sigma_tau
+    v_nn(13) = (3*pls21 + pls20)/4 ! v_ls2
+    v_nn(14) = (  pls21 - pls20)/4 ! v_ls2_tau
+    v_nn(15) = (3*p11cd + p01cd)/4 ! v_T
+    v_nn(16) = (  p11cd - p01cd)/4 ! v_sigma_T
+    v_nn(17) = pt1cd ! v_t_T
+    v_nn(18) = p01cs ! v_tau_z
 
     do ip = 1, size(dv_nn,2)
         dv_nn( 1, ip) = (9*d_p11(ip) + 3*d_p10(ip) + 3*d_p01(ip) + d_p00(ip))/16
