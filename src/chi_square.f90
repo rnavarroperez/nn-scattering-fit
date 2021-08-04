@@ -120,6 +120,7 @@ subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alph
     do i = 1, n_points
         kine%t_lab = experiment%data_points(i)%t_lab
         kine%angle = experiment%data_points(i)%theta
+        kine%wave = experiment%data_points(i)%wave
         kine%em_amplitude = experiment%data_points(i)%em_amplitude
         exp_values(i) = experiment%data_points(i)%value
         sigmas(i) = experiment%data_points(i)%stat_error

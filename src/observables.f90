@@ -37,6 +37,7 @@ type :: kinematics
     real(dp) :: angle !< scattering angles in degrees
     character(len=2) :: channel !< reaction channel, either 'pp', 'np', or 'nn'
     character(len=4) :: type !< the type of observable ('dsg', 'sgt', ...)
+    character(len=3) :: wave !< Name of the partial wave, if the type is phase-shift
     complex(dp), dimension(1:5) :: em_amplitude !< electromagnetic amplitude
 end type kinematics
 
@@ -65,9 +66,6 @@ subroutine observable(kinematic, params, model, obs, d_obs)
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
 
     integer, parameter :: n_waves = 22
-    character(len=3), dimension(1:n_waves), parameter :: &
-        phase_types = ['1s0', '3p0', '1p1', '3p1', '3s1', 'ep1', '3d1', '1d2', '3d2', '3p2', &
-            'ep2', '3f2', '1f3', '3f3', '3d3', 'ep3', '3g3', '1g4', '3g4', '3f4', 'ep4', '3h4']
     integer :: i, j
 
     select case (trim(kinematic%type))
@@ -75,12 +73,10 @@ subroutine observable(kinematic, params, model, obs, d_obs)
         call scattering_length(model, params, kinematic%channel, obs, d_obs)
     case('dbe')
         call binding_energy(model, params, obs, d_obs)
+    case('ps')
+        call phaseshift_as_obserbable(kinematic, params, model, obs, d_obs)
     case default
-        if ( any(phase_types == trim(kinematic%type)) ) then
-            call phaseshift_as_obserbable(kinematic, params, model, obs, d_obs)
-        else
-            call scattering_obs(kinematic, params, model, obs, d_obs)
-        endif
+        call scattering_obs(kinematic, params, model, obs, d_obs)
     end select
     do i= 1, size(d_obs)
         if (ieee_is_nan(d_obs(i)) .or. .not. ieee_is_finite(d_obs(i))) then
@@ -111,15 +107,40 @@ subroutine phaseshift_as_obserbable(kinematic, params, model, obs, d_obs)
     real(dp), intent(out) :: obs !< NN scattering observable
     real(dp), allocatable, intent(out) :: d_obs(:) !< derivative of the NN scattering observble
 
-    real(dp), dimension(1:5, 1:5) :: phases
+
+    real(dp) :: pre_t_lab = -1._dp
+    real(dp), allocatable, dimension(:) :: pre_parameters
+    real(dp), allocatable, dimension(:, :) :: phases
     real(dp), allocatable :: d_phases(:,:,:)
+    character(len=2) :: pre_channel = '  '
+    integer :: n_parameters
+    integer, parameter :: n_waves = 5
+    integer, parameter :: j_max = 5
 
-    call all_phaseshifts(model, params, kinematic%t_lab, kinematic%channel, phases, d_phases)
+    save pre_t_lab, pre_parameters, phases, d_phases, pre_channel
+!$omp threadprivate(pre_t_lab, pre_parameters, phases, d_phases, pre_channel)
+    ! Set number of parameters
+    n_parameters = size(params)
 
-    phases = phases*180/pi
-    d_phases = d_phases*180/pi
+    ! allocate all arrays
+    allocate(d_obs(1:n_parameters))
+    if(.not. allocated(phases)) allocate(phases(1:n_waves, 1:j_max))
+    if (.not. allocated(pre_parameters)) then
+        allocate(pre_parameters, mold=params)
+        pre_parameters = 0._dp
+    end if
 
-    select case(trim(kinematic%type))
+    if(kinematic%t_lab/=pre_t_lab .or. (.not. all(params==pre_parameters)) .or. &
+        kinematic%channel/=pre_channel) then
+        call all_phaseshifts(model, params, kinematic%t_lab, kinematic%channel, phases, d_phases)
+        phases = phases*180/pi
+        d_phases = d_phases*180/pi
+        pre_t_lab = kinematic%t_lab
+        pre_parameters = params
+        pre_channel = kinematic%channel
+    end if
+
+    select case(trim(kinematic%wave))
     case('1s0')
         obs = phases(1, 1)
         d_obs = d_phases(:, 1, 1)
@@ -187,7 +208,7 @@ subroutine phaseshift_as_obserbable(kinematic, params, model, obs, d_obs)
         obs = phases(5, 5)
         d_obs = d_phases(:, 5, 5)
     case default
-        print*, 'unrecognized partial wave name in phaseshift_as_obserbable'
+        print*, 'unrecognized partial wave name in phaseshift_as_obserbable', trim(kinematic%wave)
         stop
     end select
     

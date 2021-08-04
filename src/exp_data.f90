@@ -31,6 +31,7 @@ type :: exp_point
     real(dp) :: value !< experimental value
     real(dp) :: stat_error !< statistical error
     complex(dp), dimension(1:5) :: em_amplitude !< electromagnetic amplitude
+    character(len=3) :: wave !< Name of the partial wave, for phase-shifts
 end type exp_point
 
 !!
@@ -75,6 +76,7 @@ subroutine read_database(data_file, experiments)
     real(dp) :: sys_error, t_lab, theta, value, stat_error
     character(len=4) :: obs_type
     character(len=2) :: channel
+    character(len=3) :: wave
     logical :: rejected
     character(len=120) :: reference
 
@@ -103,9 +105,15 @@ subroutine read_database(data_file, experiments)
         experiments(counter)%reference = trim(reference)
         allocate(experiments(counter)%data_points(1:n_data))
         do i=1, n_data
-            read(unit, *) t_lab, theta, value, stat_error
+            select case(trim(obs_type))
+            case('ps') !if it's a phaseshift we read the name of the partial wave
+                read(unit, *) t_lab, wave, value, stat_error
+                experiments(counter)%data_points(i)%wave = wave
+            case default !if it's not a phaseshift we read the scattering angle
+                read(unit, *) t_lab, theta, value, stat_error
+                experiments(counter)%data_points(i)%theta = theta
+            end select
             experiments(counter)%data_points(i)%t_lab = t_lab
-            experiments(counter)%data_points(i)%theta = theta
             experiments(counter)%data_points(i)%value = value
             experiments(counter)%data_points(i)%stat_error = stat_error
         enddo
