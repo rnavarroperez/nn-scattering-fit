@@ -19,7 +19,7 @@ private
 public :: lavenberg_marquardt, invert_alpha, setup_optimization, covariance_matrix
 contains
 
-subroutine setup_optimization(model, parameters, mask, database, save_results, output_file)
+subroutine setup_optimization(model, parameters, mask, database, save_results, output_name)
     use iso_fortran_env, only : output_unit
     implicit none
     type(nn_model), intent(out) :: model
@@ -27,7 +27,7 @@ subroutine setup_optimization(model, parameters, mask, database, save_results, o
     logical, intent(out), allocatable, dimension(:) :: mask
     type(nn_experiment), intent(out), allocatable, dimension(:) :: database
     logical, intent(out) :: save_results
-    character(len=*), intent(out) :: output_file
+    character(len=*), intent(out) :: output_name
     
     integer :: n_arguments
     character(len=1024) :: namelist_file
@@ -39,14 +39,14 @@ subroutine setup_optimization(model, parameters, mask, database, save_results, o
         print*, 'No namelist file was given as an argument, using default setup'
         print*, ''
         save_results = .true.
-        output_file = 'results.txt'
+        output_name = 'results'
         call set_av18_potential(model, parameters)
         allocate(mask(1:size(parameters)))
         mask = .true.
     else if(n_arguments == 1) then
         call get_command_argument(1, namelist_file)
         call setup_from_namelist(namelist_file, model, parameters, mask, database_file, &
-            save_results, output_file)
+            save_results, output_name)
     else
         print*, 'The program takes either zero or one argument.'
         print*, 'See documentation for details.'

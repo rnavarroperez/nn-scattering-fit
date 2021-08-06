@@ -354,7 +354,7 @@ subroutine write_potential_setup(potential, parameters, mask, unit)
 end subroutine write_potential_setup
 
 subroutine setup_from_namelist(namelist_file, potential, parameters, mask, database_file, &
-    save_results, output_file)
+    save_results, output_name)
     implicit none
     character(len=*), intent(in) :: namelist_file
     type(nn_model), intent(out) :: potential
@@ -362,7 +362,7 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     logical, intent(out), allocatable, dimension(:) :: mask
     character(len=*), intent(out) :: database_file
     logical, intent(out) :: save_results
-    character(len=*), intent(out) :: output_file
+    character(len=*), intent(out) :: output_name
 
     character(len=1024) :: name
     real(dp) :: r_max, delta_r, dr_core, dr_tail
@@ -379,13 +379,13 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     namelist /deuteron/ relativistic
     namelist /potential_parameters/ parameters
     namelist /adjust_parameter/ mask
-    namelist /output/ save_results, output_file
+    namelist /output/ save_results, output_name
 
 
     database_file = 'database/granada_database.dat'
     name = 'AV18'
     save_results = .true.
-    output_file = 'results.txt'
+    output_name = 'results'
 
     inquire(file=trim(namelist_file), exist = file_exists)
     if (file_exists) then
@@ -509,7 +509,7 @@ end subroutine setup_from_namelist
 
 
 subroutine write_optimization_results(model, initial_parameters, parameters, mask, chi2, n_points, &
-        covariance, output_file)
+        covariance, output_name)
     implicit none
     type(nn_model), intent(in) :: model
     real(dp), intent(in), dimension(:) :: initial_parameters
@@ -518,13 +518,14 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
     real(dp), intent(in) :: chi2
     integer, intent(in) :: n_points
     real(dp), intent(in), dimension(:, :) :: covariance
-    character(len=*), intent(in) :: output_file
+    character(len=*), intent(in) :: output_name
 
     character(len=31), parameter :: format = '(1x,a,f15.8,2x,a,i5,2x,a,f13.8)'
+    real(dp), parameter :: r_min = 0.0_dp, r_max = 2.0_dp, r_step = 0.0078125_dp
 
     integer :: unit
 
-    open(newunit=unit, file=output_file)
+    open(newunit=unit, file=output_name//'_parameters.txt')
         write(unit, *) 'Potential setup and initial parameters:'
         call write_potential_setup(model, initial_parameters, mask, unit)
         write(unit, *)
@@ -533,6 +534,8 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
         write(unit, format) 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi2/n_points
     close(unit)
     
+    call plot_potential_components(model, parameters, covariance, r_min, r_max, r_step, output_name//'_plots.dat')
+
 end subroutine write_optimization_results
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
@@ -551,17 +554,24 @@ subroutine plot_potential_components(potential, parameters, covariance, r_min, r
     real(dp), allocatable, dimension(:) :: v_error
     integer :: unit, i
 
+    character(len=31), parameter :: format = '(f15.8,36e25.8e3)'
+
     r = r_min
     allocate(v(1:potential%n_components))
     allocate(v_error, mold=v)
     open(newunit=unit, file=trim(file_name))
+    write(unite,'(37(a,1x))') 'radius', 'v_c', 'v_tau', 'sig_v_tau', 'v_sigma', 'sig_v_sigma', 'v_sigma_tau', &
+        'sig_v_sigma_tau', 'v_t', 'sig_v_t', 'v_t_tau', 'sig_v_t_tau', 'v_ls', 'sig_v_ls', 'v_ls_tau', 'sig_v_ls_tau', &
+        'v_l2', 'sig_v_l2', 'v_l2_tau', 'sig_v_l2_tau', 'v_l2_sigma', 'sig_v_l2_sigma', 'v_l2_sigma_tau', &
+        'sig_v_l2_sigma_tau', 'v_ls2', 'sig_v_ls2', 'v_ls2_tau', 'sig_v_ls2_tau', 'v_T', 'sig_v_T', 'v_sigma_T', &
+        'sig_v_sigma_T', 'v_t_T', 'sig_v_t_T', 'v_tau_z', 'sig_v_tau_z'
     do
         if(r > r_max) exit
         call potential%potential_components(parameters, r, v, dv)
         do i = 1, size(v_error)
             v_error(i) = propagated_error_bar(dv(i, :), covariance)
         enddo
-        write(unit, *) r, (v(i), v_error(i), i = 1, size(v))
+        write(unit, format) r, (v(i), v_error(i), i = 1, size(v))
         r = r + r_step
     enddo
     close(unit)

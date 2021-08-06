@@ -22,15 +22,15 @@ real(dp), allocatable, dimension(:) :: parameters
 real(dp), allocatable, dimension(:) :: initial_parameters
 logical, allocatable, dimension(:) :: mask
 logical :: save_results
-character(len=1024) :: output_file
+character(len=1024) :: output_name
 real(dp) :: chi2
 integer :: n_points
 
-call setup_optimization(model, parameters, mask, database, save_results, output_file)
+call setup_optimization(model, parameters, mask, database, save_results, output_name)
 allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
 call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
 if (save_results) then
     call write_optimization_results(model, initial_parameters, parameters, mask, chi2, n_points, &
-        covariance, output_file)
+        covariance, output_name)
 endif
 end program nn_fit
