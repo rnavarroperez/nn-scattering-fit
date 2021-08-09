@@ -19,7 +19,7 @@
 
 &output
     save_results = .true.
-    output_file = 'ds_ope30_results.txt'
+    output_name = 'ds_ope30'
 /
 
 &potential_parameters !Potential parameters

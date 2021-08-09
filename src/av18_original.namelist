@@ -17,7 +17,7 @@
 
 &output
     save_results = .true.
-    output_file = 'av18_original_results.txt'
+    output_name = 'av18_original'
 /
 
 &potential_parameters !Potential parameters
@@ -37,6 +37,7 @@
                  -2.099710   1204.430100               ! I_00_c     P_00_c
                  -0.314520    217.455900               ! I_00_l2    P_00_l2
                  -3.921000                             ! P_CD_c
+                  2.100000      0.500000    0.2000000  ! c_pi       r_ws           a_ws
 /
 
 &adjust_parameter ! Parameters with .false. are kept fixed during the optimization
@@ -57,6 +58,7 @@
             .true.      .true.              ! I_00_c      P_00_c
             .true.      .true.              ! I_00_l2     P_00_l2
             .true.                          ! P_CD_c
+            .false.     .false.     .false. ! c_pi        r_ww        a_ws
 /
 
  !  I_11    c:    -7.14753143   P_11    c:  1993.05799182   R_11    c:  1202.25336403 

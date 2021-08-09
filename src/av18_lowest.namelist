@@ -17,7 +17,7 @@
 
 &output
     save_results = .true.
-    output_file = 'av18_lowest_results.txt'
+    output_name = 'av18_lowest'
 /
 
 &potential_parameters !Potential parameters
@@ -37,6 +37,7 @@
                  -1.55065538     911.09696296                   ! I_00_c      P_00_c
                  -0.10878272     155.15564020                   ! I_00_l2     P_00_l2
                  -3.89789660                                    ! P_CD_c
+                  2.10000000       0.50000000       0.20000000  ! c_pi       r_ws           a_ws
 /
 
 &adjust_parameter ! Parameters with .false. are kept fixed during the optimization
@@ -57,4 +58,5 @@
             .true.     .true.               ! I_00_c      P_00_c
             .true.     .true.               ! I_00_l2     P_00_l2
             .true.                          ! P_CD_c
+            .false.    .false.    .false.   ! c_pi        r_ww        a_ws
 /
