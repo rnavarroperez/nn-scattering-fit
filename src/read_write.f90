@@ -221,34 +221,85 @@ subroutine print_observables(parameters, model, channel)
 end subroutine print_observables
 
 !!
-!> @brief      Test the output of observables
+!> @brief      Saves list of phases to a file
 !!
-!! Makes a grid of t_lab from 1-350 in steps of 50
+!! Writes into a file 3 tables of phase-shifts with error bars.
 !!
-!! This subroutine is for benchmarking purposes only and should not be
-!! used in production runs!
+!! The phase-shifts are calculated at the 11 'canonical' energies
 !!
 !! @author     Raul L Bernal-Gonzalez
 !! @author     Rodrigo Navarro Perez
 !!
-subroutine write_phases(parameters, model, channel)
+subroutine write_phases(potential, parameters, covariance, file_name)
     implicit none
+    type(nn_model), intent(in) :: potential !< nn scattering model
     real(dp), intent(in), dimension(:) :: parameters !< potential parameters
-    type(nn_model), intent(in) :: model !< nn scattering model
-    character(len=2), intent(in) :: channel !< reaction channel (pp or np)
+    real(dp), intent(in), dimension(:, :) :: covariance !< Covariance matrix
+    character(len=*), intent(in) :: file_name
 
-    integer, parameter :: jmax = 20
-
-    integer :: unit, i
-    real(dp) :: t_lab
-    real(dp), dimension(1:5, 1:jmax) :: phases
+    integer, parameter :: n_energies = 11
+    real(dp), parameter, dimension(1:n_energies) :: energies = [1._dp, 5._dp, 10._dp, 25._dp, &
+        50._dp, 100._dp, 150._dp, 200._dp, 250._dp, 300._dp, 350._dp]
+    integer, parameter :: jmax = 4
+    real(dp), dimension(1:5, 1:jmax) :: phases, phases_errors
     real(dp), allocatable, dimension(:, :, :) :: d_phases
 
-    open(newunit=unit, file='new_'//channel//'_aps.dat', status='unknown')
-    do i = 50, 350, 50
-        t_lab = real(i, kind=dp)
-        call all_phaseshifts(model, parameters, t_lab, channel, phases, d_phases)
-        write(unit, *) phases
+    integer :: unit, i, j, k
+    real(dp) :: t_lab
+
+    open(newunit=unit, file=file_name, status='unknown')
+    write(unit, '(9a13)') 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
+    do i = 1, n_energies
+        t_lab = energies(i)
+        call all_phaseshifts(potential, parameters, t_lab, 'pp', phases, d_phases)
+        phases = phases*180
+        d_phases = d_phases*180
+        do j=1, size(phases, 2)
+            do k=1, size(phases, 1)
+                phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
+            enddo
+        enddo
+        write(unit, '(9f13.6)') energies(i), phases(1, 1), phases(1, 3), phases(5, 1), phases(2, 2), &
+            phases(3, 3), phases(4, 3), phases(5, 3), phases(2, 4)
+        write(unit, '(13x,8f13.6)') phases_errors(1, 1), phases_errors(1, 3), phases_errors(5, 1), &
+        phases_errors(2, 2), phases_errors(3, 3), phases_errors(4, 3), phases_errors(5, 3), &
+        phases_errors(2, 4)
+    end do
+    write(unit,*)
+    write(unit, '(9a13)') 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
+    do i = 1, n_energies
+        t_lab = energies(i)
+        call all_phaseshifts(potential, parameters, t_lab, 'np', phases, d_phases)
+        phases = phases*180
+        d_phases = d_phases*180
+        do j=1, size(phases, 2)
+            do k=1, size(phases, 1)
+                phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
+            enddo
+        enddo
+        write(unit, '(9f13.6)') energies(i), phases(1, 1), phases(1, 3), phases(5, 1), phases(2, 2), &
+            phases(3, 3), phases(4, 3), phases(5, 3), phases(2, 4)
+        write(unit, '(13x,8f13.6)') phases_errors(1, 1), phases_errors(1, 3), phases_errors(5, 1), &
+        phases_errors(2, 2), phases_errors(3, 3), phases_errors(4, 3), phases_errors(5, 3), &
+        phases_errors(2, 4)
+    end do
+    write(unit,*)
+    write(unit, '(10a13)') 'T_lab', '1P1', '1F3', '3S1', 'Ep1', '3D1', '3D2', '3D3', 'Ep3', '3G3'
+    do i = 1, n_energies
+        t_lab = energies(i)
+        call all_phaseshifts(potential, parameters, t_lab, 'np', phases, d_phases)
+        phases = phases*180
+        d_phases = d_phases*180
+        do j=1, size(phases, 2)
+            do k=1, size(phases, 1)
+                phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
+            enddo
+        enddo
+        write(unit, '(10f13.6)') energies(i), phases(1, 2), phases(1, 4), phases(3, 2), phases(4, 2), &
+            phases(5, 2), phases(2, 3), phases(3, 4), phases(4, 4), phases(5, 4)
+        write(unit, '(13x,9f13.6)') phases_errors(1, 2), phases_errors(1, 4), phases_errors(3, 2), &
+            phases_errors(4, 2), phases_errors(5, 2), phases_errors(2, 3), phases_errors(3, 4), &
+            phases_errors(4, 4), phases_errors(5, 4)
     end do
     close(unit)
 end subroutine write_phases
@@ -525,16 +576,20 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
 
     integer :: unit
 
-    open(newunit=unit, file=output_name//'_parameters.txt')
+    open(newunit=unit, file=trim(output_name)//'_parameters.txt')
         write(unit, *) 'Potential setup and initial parameters:'
         call write_potential_setup(model, initial_parameters, mask, unit)
         write(unit, *)
         write(unit, *) 'Final paramters:'
         call model%display_subroutine(parameters, mask, unit, covariance)
         write(unit, format) 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi2/n_points
-    close(unit)
     
-    call plot_potential_components(model, parameters, covariance, r_min, r_max, r_step, output_name//'_plots.dat')
+    call plot_potential_components(model, parameters, covariance, r_min, r_max, r_step, trim(output_name)//'_plots.dat')
+    write(unit, *) 'Potential plots saved in: ', trim(output_name)//'_plots.dat'
+    call write_phases(model, parameters, covariance, trim(output_name)//'_phases.txt')
+    write(unit, *) 'Phases listed in: ', trim(output_name)//'_phases.txt'
+
+    close(unit)
 
 end subroutine write_optimization_results
 
@@ -554,17 +609,17 @@ subroutine plot_potential_components(potential, parameters, covariance, r_min, r
     real(dp), allocatable, dimension(:) :: v_error
     integer :: unit, i
 
-    character(len=31), parameter :: format = '(f15.8,36e25.8e3)'
+    character(len=31), parameter :: format = '(f15.8,36e19.8e3)'
 
     r = r_min
     allocate(v(1:potential%n_components))
     allocate(v_error, mold=v)
     open(newunit=unit, file=trim(file_name))
-    write(unite,'(37(a,1x))') 'radius', 'v_c', 'v_tau', 'sig_v_tau', 'v_sigma', 'sig_v_sigma', 'v_sigma_tau', &
-        'sig_v_sigma_tau', 'v_t', 'sig_v_t', 'v_t_tau', 'sig_v_t_tau', 'v_ls', 'sig_v_ls', 'v_ls_tau', 'sig_v_ls_tau', &
-        'v_l2', 'sig_v_l2', 'v_l2_tau', 'sig_v_l2_tau', 'v_l2_sigma', 'sig_v_l2_sigma', 'v_l2_sigma_tau', &
-        'sig_v_l2_sigma_tau', 'v_ls2', 'sig_v_ls2', 'v_ls2_tau', 'sig_v_ls2_tau', 'v_T', 'sig_v_T', 'v_sigma_T', &
-        'sig_v_sigma_T', 'v_t_T', 'sig_v_t_T', 'v_tau_z', 'sig_v_tau_z'
+    write(unit, '(a15, 36a19)') 'radius', 'v_c', 'sig_v_c', 'v_tau', 'sig_v_tau', 'v_sigma', 'sig_v_sigma', &
+        'v_sigma_tau', 'sig_v_sigma_tau', 'v_t', 'sig_v_t', 'v_t_tau', 'sig_v_t_tau', 'v_ls', 'sig_v_ls', 'v_ls_tau', &
+        'sig_v_ls_tau', 'v_l2', 'sig_v_l2', 'v_l2_tau', 'sig_v_l2_tau', 'v_l2_sigma', 'sig_v_l2_sigma', &
+        'v_l2_sigma_tau', 'sig_v_l2_sigma_tau', 'v_ls2', 'sig_v_ls2', 'v_ls2_tau', 'sig_v_ls2_tau', 'v_T', 'sig_v_T', &
+        'v_sigma_T', 'sig_v_sigma_T', 'v_t_T', 'sig_v_t_T', 'v_tau_z', 'sig_v_tau_z'
     do
         if(r > r_max) exit
         call potential%potential_components(parameters, r, v, dv)

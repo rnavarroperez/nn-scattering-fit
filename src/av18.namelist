@@ -17,7 +17,7 @@
 
 &output
     save_results = .true.
-    output_file = 'av18_results.txt'
+    output_name = 'av18'
 /
 
 &potential_parameters !Potential parameters
@@ -57,5 +57,5 @@
             .true.      .true.              ! I_00_c      P_00_c
             .true.      .true.              ! I_00_l2     P_00_l2
             .true.                          ! P_CD_c
-            .true.      .true.      .true.  ! c_pi        r_ww        a_ws
+            .false.     .false.     .false. ! c_pi        r_ww        a_ws
 /
