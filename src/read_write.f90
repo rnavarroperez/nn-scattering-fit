@@ -17,6 +17,7 @@ use constants, only: pi
 use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
 use delta_shell, only : set_ds_potential
+use av18_compatibility, only : write_marias_format
 implicit none
 
 private
@@ -583,9 +584,13 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
         write(unit, *) 'Final paramters:'
         call model%display_subroutine(parameters, mask, unit, covariance)
         write(unit, format) 'chi^2:', chi2, 'N_data:', n_points, 'chi^2/N_data:', chi2/n_points
-    
-    call plot_potential_components(model, parameters, covariance, r_min, r_max, r_step, trim(output_name)//'_plots.dat')
-    write(unit, *) 'Potential plots saved in: ', trim(output_name)//'_plots.dat'
+
+    if(model%name == 'AV18') then
+        call plot_potential_components(model, parameters, covariance, r_min, r_max, r_step, trim(output_name)//'_plots.dat')
+        write(unit, *) 'Potential plots saved in: ', trim(output_name)//'_plots.dat'
+        call write_marias_format(trim(output_name)//'.in', parameters)
+        write(unit, *) 'Parameters in Marias input format saved in: ', trim(output_name)//'.in'
+    endif
     call write_phases(model, parameters, covariance, trim(output_name)//'_phases.txt')
     write(unit, *) 'Phases listed in: ', trim(output_name)//'_phases.txt'
 
