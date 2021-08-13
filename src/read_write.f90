@@ -249,12 +249,13 @@ subroutine write_phases(potential, parameters, covariance, file_name)
     real(dp) :: t_lab
 
     open(newunit=unit, file=file_name, status='unknown')
+    write(unit, *) 'pp phase shifts'
     write(unit, '(9a13)') 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
     do i = 1, n_energies
         t_lab = energies(i)
         call all_phaseshifts(potential, parameters, t_lab, 'pp', phases, d_phases)
-        phases = phases*180
-        d_phases = d_phases*180
+        phases = phases*180/pi
+        d_phases = d_phases*180/pi
         do j=1, size(phases, 2)
             do k=1, size(phases, 1)
                 phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
@@ -267,12 +268,13 @@ subroutine write_phases(potential, parameters, covariance, file_name)
         phases_errors(2, 4)
     end do
     write(unit,*)
+    write(unit, *) 'np T=1 phase shifts'
     write(unit, '(9a13)') 'T_lab', '1S0', '1D2', '3P0', '3P1', '3P2', 'Ep2', '3F2', '3F3'
     do i = 1, n_energies
         t_lab = energies(i)
         call all_phaseshifts(potential, parameters, t_lab, 'np', phases, d_phases)
-        phases = phases*180
-        d_phases = d_phases*180
+        phases = phases*180/pi
+        d_phases = d_phases*180/pi
         do j=1, size(phases, 2)
             do k=1, size(phases, 1)
                 phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
@@ -285,12 +287,13 @@ subroutine write_phases(potential, parameters, covariance, file_name)
         phases_errors(2, 4)
     end do
     write(unit,*)
+    write(unit, *) 'np T=0 phase shifts'
     write(unit, '(10a13)') 'T_lab', '1P1', '1F3', '3S1', 'Ep1', '3D1', '3D2', '3D3', 'Ep3', '3G3'
     do i = 1, n_energies
         t_lab = energies(i)
         call all_phaseshifts(potential, parameters, t_lab, 'np', phases, d_phases)
-        phases = phases*180
-        d_phases = d_phases*180
+        phases = phases*180/pi
+        d_phases = d_phases*180/pi
         do j=1, size(phases, 2)
             do k=1, size(phases, 1)
                 phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
@@ -304,6 +307,80 @@ subroutine write_phases(potential, parameters, covariance, file_name)
     end do
     close(unit)
 end subroutine write_phases
+
+!!
+!> @brief      Saves list of phases to a file
+!!
+!! Writes into a file 3 tables of phase-shifts with error bars.
+!!
+!! The phase-shifts are calculated at the 11 'canonical' energies
+!!
+!! @author     Raul L Bernal-Gonzalez
+!! @author     Rodrigo Navarro Perez
+!!
+subroutine plot_phases(potential, parameters, covariance, output_name)
+    implicit none
+    type(nn_model), intent(in) :: potential !< nn scattering model
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    real(dp), intent(in), dimension(:, :) :: covariance !< Covariance matrix
+    character(len=*), intent(in) :: output_name
+
+    integer, parameter :: jmax = 4
+    real(dp), parameter :: tlab_step = 1._dp
+    real(dp), parameter :: tlab_max = 350._dp
+    real(dp), dimension(1:5, 1:jmax) :: phases, phases_errors
+    real(dp), allocatable, dimension(:, :, :) :: d_phases
+
+    integer :: unit, j, k
+    real(dp) :: t_lab
+
+    open(newunit=unit, file=trim(output_name)//'_pp_phases.dat', status='unknown')
+    write(unit, '(17a13)') 'T_lab', '1S0', 'sig_1S0', '1D2', 'sig_1D2', '3P0', 'sig_3P0', '3P1', 'sig_3P1', '3P2', &
+        'sig_3P2', 'Ep2', 'sig_Ep2', '3F2', 'sig_3F2', '3F3', 'sig_3F3'
+    t_lab = 1._dp
+    do
+        if(t_lab > tlab_max) exit
+        call all_phaseshifts(potential, parameters, t_lab, 'pp', phases, d_phases)
+        phases = phases*180/pi
+        d_phases = d_phases*180/pi
+        do j=1, size(phases, 2)
+            do k=1, size(phases, 1)
+                phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
+            enddo
+        enddo
+        write(unit, '(17f13.6)') t_lab, phases(1, 1), phases_errors(1, 1), phases(1, 3), phases_errors(1, 3), &
+            phases(5, 1), phases_errors(5, 1), phases(2, 2), phases_errors(2, 2), phases(3, 3), phases_errors(3, 3), &
+            phases(4, 3), phases_errors(4, 3), phases(5, 3), phases_errors(5, 3), phases(2, 4), phases_errors(2, 4)
+        t_lab = t_lab + tlab_step
+    end do
+    close(unit)
+
+    open(newunit=unit, file=trim(output_name)//'_np_phases.dat', status='unknown')
+    write(unit, '(35a13)') 'T_lab', '1S0', 'sig_1S0', '3P0', 'sig_3P0', '1P1', 'sig_1P1', '3P1', 'sig_3P1', '3S1', &
+        'sig_3S1', 'Ep1', 'sig_Ep1', '3D1', 'sig_3D1', '1D2', 'sig_1D2', '3D2', 'sig_3D2', '3P2', 'sig_3P2', 'Ep2', &
+        'sig_Ep2', '3F2', 'sig_3F2', '1F3', 'sig_1F3', '3F3', 'sig_3F3', '3D3', 'sig_3D3', 'Ep3', 'sig_Ep3', '3G3', &
+        'sig_3G3'
+    t_lab = 1._dp
+    do
+        if(t_lab > tlab_max) exit
+        call all_phaseshifts(potential, parameters, t_lab, 'np', phases, d_phases)
+        phases = phases*180/pi
+        d_phases = d_phases*180/pi
+        do j=1, size(phases, 2)
+            do k=1, size(phases, 1)
+                phases_errors(k, j) = propagated_error_bar(d_phases(:, k, j), covariance)
+            enddo
+        enddo
+        write(unit, '(35f13.6)') t_lab, phases(1, 1), phases_errors(1, 1), phases(5, 1), phases_errors(5, 1), &
+            phases(1, 2), phases_errors(1, 2), phases(2, 2), phases_errors(2, 2), phases(3, 2), phases_errors(3, 2), &
+            phases(4, 2), phases_errors(4, 2), phases(5, 2), phases_errors(5, 2), phases(1, 3), phases_errors(1, 3), &
+            phases(2, 3), phases_errors(2, 3), phases(3, 3), phases_errors(3, 3), phases(4, 3), phases_errors(4, 3), &
+            phases(5, 3), phases_errors(5, 3), phases(1, 4), phases_errors(1, 4), phases(2, 4), phases_errors(2, 4), &
+            phases(3, 4), phases_errors(3, 4), phases(4, 4), phases_errors(4, 4), phases(5, 4), phases_errors(5, 4)
+        t_lab = t_lab + tlab_step
+    end do
+    close(unit)
+end subroutine plot_phases
 
 !!
 !> @brief      Prints phases in the format of the AV18 paper.
@@ -593,7 +670,9 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
     endif
     call write_phases(model, parameters, covariance, trim(output_name)//'_phases.txt')
     write(unit, *) 'Phases listed in: ', trim(output_name)//'_phases.txt'
-
+    call plot_phases(model, parameters, covariance, output_name)
+    write(unit, *) 'Phaseshift plots in: ', trim(output_name)//'_pp_phases.dat and ', &
+        trim(output_name)//'_np_phases.dat'
     close(unit)
 
 end subroutine write_optimization_results
