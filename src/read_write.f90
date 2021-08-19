@@ -327,7 +327,7 @@ subroutine plot_phases(potential, parameters, covariance, output_name)
 
     integer, parameter :: jmax = 4
     real(dp), parameter :: tlab_step = 1._dp
-    real(dp), parameter :: tlab_max = 350._dp
+    real(dp), parameter :: tlab_max = 1000._dp
     real(dp), dimension(1:5, 1:jmax) :: phases, phases_errors
     real(dp), allocatable, dimension(:, :, :) :: d_phases
 
