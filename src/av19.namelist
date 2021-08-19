@@ -17,7 +17,7 @@
 
 &output
     save_results = .true.
-    output_name = 'av18'
+    output_name = 'av19'
 /
 
 &potential_parameters !Potential parameters
@@ -58,6 +58,6 @@
             .true.      .true.              ! I_00_c      P_00_c
             .true.      .true.              ! I_00_l2     P_00_l2
             .true.                          ! P_CD_c
-            .false.     .false.     .false. ! I_CD_1_ls   P_CD_1_ls   R_CD_1_ls
+            .true.      .true.      .true.  ! I_CD_1_ls   P_CD_1_ls   R_CD_1_ls
             .false.     .false.     .false. ! c_pi        r_ww        a_ws
 /

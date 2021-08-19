@@ -19,9 +19,9 @@ subroutine write_marias_format(filename, parameters)
     open(newunit=unit, file=trim(filename))
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsq0'
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsqc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(42), 'cc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(43), 'cr'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(44), 'ca'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(45), 'cc'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(46), 'cr'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(47), 'ca'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(31), 'ccI01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(32), 'ccP01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  0.0_dp,         'ccR01pp'
@@ -40,9 +40,9 @@ subroutine write_marias_format(filename, parameters)
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(39), 'cl2I00'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(40), 'cl2P00'
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'cl2R00'
-    write(unit, '(1l3,1E24.9,1x,a)') .true., parameters( 1), 'ccI11pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .true., parameters( 2), 'ccP11pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .true., parameters( 3), 'ccR11pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 1), 'ccI11pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 2), 'ccP11pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 3), 'ccR11pp'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1), 'ccI11np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41)*0.5_dp + parameters(2), 'ccP11np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3), 'ccR11np'
@@ -64,9 +64,9 @@ subroutine write_marias_format(filename, parameters)
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 7), 'clsI1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 8), 'clsP1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 9), 'clsR1pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7), 'clsI1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8), 'clsP1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9), 'clsR1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7) + parameters(42), 'clsI1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8) + parameters(43), 'clsP1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9) + parameters(44), 'clsR1np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7), 'clsI1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8), 'clsP1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9), 'clsR1nn'
@@ -104,7 +104,7 @@ subroutine read_marias_format(filename, parameters)
         ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, cl2I11, cl2P11, cl2R11, ctI1pp, ctQ1pp, ctR1pp, ctI1np, &
         ctQ1np, ctR1np, ctI1nn, ctQ1nn, ctR1nn, clsI1pp, clsP1pp, clsR1pp, clsI1np, clsP1np, clsR1np, clsI1nn, &
         clsP1nn, clsR1nn, cls2I1, cls2P1, cls2R1, ccI10, ccP10, ccR10, cl2I10, cl2P10, cl2R10, ctI0, ctQ0, &
-        ctR0, clsI0, clsP0, clsR0, cls2I0, cls2P0, cls2R0
+        ctR0, clsI0, clsP0, clsR0, cls2I0, cls2P0, cls2R0, cc, cr, ca
 
     inquire(file=trim(filename), exist = file_exists)
     if (file_exists) then
@@ -112,9 +112,9 @@ subroutine read_marias_format(filename, parameters)
         do i=1,2
             read(unit, *)
         enddo
-        read(unit, *) drop, parameters(42)
-        read(unit, *) drop, parameters(43)
-        read(unit, *) drop, parameters(44)
+        read(unit, *) drop, cc
+        read(unit, *) drop, cr
+        read(unit, *) drop, ca
         read(unit, *) drop, ccI01pp
         read(unit, *) drop, ccP01pp
         read(unit, *) drop, ccR01pp
@@ -228,6 +228,12 @@ subroutine read_marias_format(filename, parameters)
     parameters(39) = cl2I00
     parameters(40) = cl2P00
     parameters(41) = ccP01nn - ccP01pp
+    parameters(42) = clsI1np - clsI1pp
+    parameters(43) = clsP1np - clsP1pp
+    parameters(44) = clsR1np - clsR1pp
+    parameters(45) = cc
+    parameters(46) = cr
+    parameters(47) = ca
     
     call verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01nn, &
                            ccI11pp, ccP11pp, ccR11pp, ccI11np, ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, &
@@ -337,12 +343,6 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
-    if(abs(clsI1pp - clsI1np) > delta) then
-        print*, 'CSB in clsI1!'
-        print*, 'I_11 ls pp:', clsI1pp
-        print*, 'I_11 ls np:', clsI1np
-        violation = .true.
-    endif
 
     if(abs(clsI1pp - clsI1nn) > delta) then
         print*, 'CSB in clsI1!'
@@ -351,12 +351,6 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
-    if(abs(clsP1pp - clsP1np) > delta) then
-        print*, 'CSB in clsP1!'
-        print*, 'P_11 ls pp:', clsP1pp
-        print*, 'P_11 ls np:', clsP1np
-        violation = .true.
-    endif
 
     if(abs(clsP1pp - clsP1nn) > delta) then
         print*, 'CSB in clsP1!'
@@ -365,12 +359,6 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
-    if(abs(clsR1pp - clsR1np) > delta) then
-        print*, 'CSB in clsR1!'
-        print*, 'R_11 ls pp:', clsR1pp
-        print*, 'R_11 ls np:', clsR1np
-        violation = .true.
-    endif
 
     if(abs(clsR1pp - clsR1nn) > delta) then
         print*, 'CSB in clsR1!'
