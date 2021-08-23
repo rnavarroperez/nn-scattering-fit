@@ -707,8 +707,8 @@ subroutine display_parameters(ap, mask, unit, cv)
     if(present(cv)) write(unit, format_4) sqrt(cv(41,41))
     write(unit, format_3) 'I_CD_1 ls:', ap(42), s1(42:42), 'P_CD_1 ls:', ap(43), s1(43:43), 'R_CD_1 ls:', ap(44), s1(44:44)
     if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=42, 44)
-    write(unit, format_3) 'c_pi     :', ap(45), s1(45:45), 'r_ws     :', ap(46), s1(46:46), 'a_ws     :', ap(46), s1(46:46)
-    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=45, 46)
+    write(unit, format_3) 'c_pi     :', ap(45), s1(45:45), 'r_ws     :', ap(46), s1(46:46), 'a_ws     :', ap(47), s1(47:47)
+    if(present(cv)) write(unit, format_4) (sqrt(cv(i,i)), i=45, 47)
 
 end subroutine display_parameters
 
