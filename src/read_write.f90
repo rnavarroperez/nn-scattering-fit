@@ -24,7 +24,7 @@ private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
-    write_optimization_results, plot_potential_components
+    write_optimization_results, plot_potential_components, plot_potential_partial_waves
 
 contains
 
@@ -664,9 +664,14 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
 
     if(model%name == 'AV18') then
         call plot_potential_components(model, parameters, covariance, r_min, r_max, r_step, trim(output_name)//'_plots.dat')
-        write(unit, *) 'Potential plots saved in: ', trim(output_name)//'_plots.dat'
+        write(unit, *) 'AV18 components plots saved in: ', trim(output_name)//'_plots.dat'
         call write_marias_format(trim(output_name)//'.in', parameters)
         write(unit, *) 'Parameters in Marias input format saved in: ', trim(output_name)//'.in'
+    endif
+    if(model%potential_type == 'local') then
+        call plot_potential_partial_waves(model, parameters, covariance, r_min, r_max, r_step, output_name)
+        write(unit, *) 'Potential in partial waves plots saved in: ', trim(output_name)//'_pp_v_partial_wave.dat and ', &
+        trim(output_name)//'_np_v_partial_wave.dat'
     endif
     call write_phases(model, parameters, covariance, trim(output_name)//'_phases.txt')
     write(unit, *) 'Phases listed in: ', trim(output_name)//'_phases.txt'
@@ -693,17 +698,17 @@ subroutine plot_potential_components(potential, parameters, covariance, r_min, r
     real(dp), allocatable, dimension(:) :: v_error
     integer :: unit, i
 
-    character(len=31), parameter :: format = '(f15.8,36e19.8e3)'
+    character(len=31), parameter :: format = '(f15.8,38e19.8e3)'
 
     r = r_min
     allocate(v(1:potential%n_components))
     allocate(v_error, mold=v)
     open(newunit=unit, file=trim(file_name))
-    write(unit, '(a15, 36a19)') 'radius', 'v_c', 'sig_v_c', 'v_tau', 'sig_v_tau', 'v_sigma', 'sig_v_sigma', &
+    write(unit, '(a15, 38a19)') 'radius', 'v_c', 'sig_v_c', 'v_tau', 'sig_v_tau', 'v_sigma', 'sig_v_sigma', &
         'v_sigma_tau', 'sig_v_sigma_tau', 'v_t', 'sig_v_t', 'v_t_tau', 'sig_v_t_tau', 'v_ls', 'sig_v_ls', 'v_ls_tau', &
         'sig_v_ls_tau', 'v_l2', 'sig_v_l2', 'v_l2_tau', 'sig_v_l2_tau', 'v_l2_sigma', 'sig_v_l2_sigma', &
         'v_l2_sigma_tau', 'sig_v_l2_sigma_tau', 'v_ls2', 'sig_v_ls2', 'v_ls2_tau', 'sig_v_ls2_tau', 'v_T', 'sig_v_T', &
-        'v_sigma_T', 'sig_v_sigma_T', 'v_t_T', 'sig_v_t_T', 'v_tau_z', 'sig_v_tau_z'
+        'v_sigma_T', 'sig_v_sigma_T', 'v_t_T', 'sig_v_t_T', 'v_ls_T', 'sig_v_ls_T', 'v_tau_z', 'sig_v_tau_z'
     do
         if(r > r_max) exit
         call potential%potential_components(parameters, r, v, dv)
@@ -716,6 +721,74 @@ subroutine plot_potential_components(potential, parameters, covariance, r_min, r
     close(unit)
     
 end subroutine plot_potential_components
+
+subroutine plot_potential_partial_waves(potential, parameters, covariance, r_min, r_max, r_step, output_name)
+    implicit none
+    type(nn_model), intent(in) :: potential
+    real(dp), intent(in), dimension(:) :: parameters
+    real(dp), intent(in), dimension(:, :) :: covariance
+    real(dp), intent(in) :: r_min
+    real(dp), intent(in) :: r_max
+    real(dp), intent(in) :: r_step
+    character(len=*), intent(in) :: output_name
+
+    integer, parameter :: n_waves = 5
+    integer, parameter :: j_max = 4
+
+    real(dp) :: r
+    real(dp), dimension(1:n_waves, 1:j_max) :: v_pw
+    real(dp), dimension(1:n_waves, 1:j_max) :: v_pw_errors
+    real(dp), allocatable, dimension(:, :, :) :: dv_pw
+    integer :: unit, i, j
+
+    character(len=2) :: channel
+
+    channel = 'pp'
+    r = r_min
+    open(newunit=unit, file=trim(output_name)//'_pp_v_partial_wave.dat', status='unknown')
+    write(unit, '(17a13)') 'radius', '1S0', 'sig_1S0', '1D2', 'sig_1D2', '3P0', 'sig_3P0', '3P1', 'sig_3P1', '3P2', &
+        'sig_3P2', 'Ep2', 'sig_Ep2', '3F2', 'sig_3F2', '3F3', 'sig_3F3'
+    do
+        if(r > r_max) exit
+        call potential%potential(parameters, r, channel, v_pw, dv_pw)
+        do i = 1, size(v_pw_errors, 2)
+            do j=1, size(v_pw_errors, 1)
+                v_pw_errors(j, i) = propagated_error_bar(dv_pw(j, i, :), covariance)
+            enddo
+        enddo
+        write(unit, '(17f13.6)') r, v_pw(1, 1), v_pw_errors(1, 1), v_pw(1, 3), v_pw_errors(1, 3), &
+            v_pw(5, 1), v_pw_errors(5, 1), v_pw(2, 2), v_pw_errors(2, 2), v_pw(3, 3), v_pw_errors(3, 3), &
+            v_pw(4, 3), v_pw_errors(4, 3), v_pw(5, 3), v_pw_errors(5, 3), v_pw(2, 4), v_pw_errors(2, 4)
+        r = r + r_step
+    enddo
+    close(unit)
+
+    channel = 'np'
+    r = r_min
+    open(newunit=unit, file=trim(output_name)//'_np_v_partial_wave.dat', status='unknown')
+    write(unit, '(35a13)') 'radius', '1S0', 'sig_1S0', '3P0', 'sig_3P0', '1P1', 'sig_1P1', '3P1', 'sig_3P1', '3S1', &
+        'sig_3S1', 'Ep1', 'sig_Ep1', '3D1', 'sig_3D1', '1D2', 'sig_1D2', '3D2', 'sig_3D2', '3P2', 'sig_3P2', 'Ep2', &
+        'sig_Ep2', '3F2', 'sig_3F2', '1F3', 'sig_1F3', '3F3', 'sig_3F3', '3D3', 'sig_3D3', 'Ep3', 'sig_Ep3', '3G3', &
+        'sig_3G3'
+    do
+        if(r > r_max) exit
+        call potential%potential(parameters, r, channel, v_pw, dv_pw)
+        do i = 1, size(v_pw_errors, 2)
+            do j=1, size(v_pw_errors, 1)
+                v_pw_errors(j, i) = propagated_error_bar(dv_pw(j, i, :), covariance)
+            enddo
+        enddo
+        write(unit, '(35f13.6)') r, v_pw(1, 1), v_pw_errors(1, 1), v_pw(5, 1), v_pw_errors(5, 1), &
+            v_pw(1, 2), v_pw_errors(1, 2), v_pw(2, 2), v_pw_errors(2, 2), v_pw(3, 2), v_pw_errors(3, 2), &
+            v_pw(4, 2), v_pw_errors(4, 2), v_pw(5, 2), v_pw_errors(5, 2), v_pw(1, 3), v_pw_errors(1, 3), &
+            v_pw(2, 3), v_pw_errors(2, 3), v_pw(3, 3), v_pw_errors(3, 3), v_pw(4, 3), v_pw_errors(4, 3), &
+            v_pw(5, 3), v_pw_errors(5, 3), v_pw(1, 4), v_pw_errors(1, 4), v_pw(2, 4), v_pw_errors(2, 4), &
+            v_pw(3, 4), v_pw_errors(3, 4), v_pw(4, 4), v_pw_errors(4, 4), v_pw(5, 4), v_pw_errors(5, 4)
+        r = r + r_step
+    enddo
+    close(unit)
+
+end subroutine plot_potential_partial_waves
 
 real(dp) function propagated_error_bar(derivatives, covariance) result(error)
     implicit none
@@ -735,5 +808,6 @@ real(dp) function propagated_error_bar(derivatives, covariance) result(error)
     error = sqrt(abs(error))
     
 end function propagated_error_bar
+
 
 end module read_write
