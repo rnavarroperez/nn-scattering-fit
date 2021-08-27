@@ -238,21 +238,19 @@ subroutine read_marias_format(filename, parameters)
     call verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01nn, &
                            ccI11pp, ccP11pp, ccR11pp, ccI11np, ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, &
                             ctI1pp,  ctQ1pp,  ctR1pp,  ctI1np,  ctQ1np,  ctR1np,  ctI1nn,  ctQ1nn,  ctR1nn, &
-                           clsI1pp, clsP1pp, clsR1pp, clsI1np, clsP1np, clsR1np, clsI1nn, clsP1nn, clsR1nn, &
-                           filename)
+                           clsI1pp, clsP1pp, clsR1pp, clsI1nn, clsP1nn, clsR1nn, filename)
 
 end subroutine read_marias_format
 
 subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01nn, &
                              ccI11pp, ccP11pp, ccR11pp, ccI11np, ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, &
                               ctI1pp,  ctQ1pp,  ctR1pp,  ctI1np,  ctQ1np,  ctR1np,  ctI1nn,  ctQ1nn,  ctR1nn, &
-                             clsI1pp, clsP1pp, clsR1pp, clsI1np, clsP1np, clsR1np, clsI1nn, clsP1nn, clsR1nn, &
-                             filename)
+                             clsI1pp, clsP1pp, clsR1pp, clsI1nn, clsP1nn, clsR1nn, filename)
     implicit none
     real(dp), intent(in) :: ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01nn, &
                             ccI11pp, ccP11pp, ccR11pp, ccI11np, ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, &
                              ctI1pp,  ctQ1pp,  ctR1pp,  ctI1np,  ctQ1np,  ctR1np,  ctI1nn,  ctQ1nn,  ctR1nn, &
-                            clsI1pp, clsP1pp, clsR1pp, clsI1np, clsP1np, clsR1np, clsI1nn, clsP1nn, clsR1nn
+                            clsI1pp, clsP1pp, clsR1pp, clsI1nn, clsP1nn, clsR1nn
     character(len=*), intent(in) :: filename
 
     logical :: violation
