@@ -124,4 +124,4 @@ clean:
 	rm -rf *.o *.mod
 
 mrproper: clean
-	rm -rf $(MAIN_EXEC) $(MC_PHASES_EXEC)
+	rm -rf $(MAIN_EXEC) $(MC_PHASES_EXEC) $(PLOT_POT_EXEC)
