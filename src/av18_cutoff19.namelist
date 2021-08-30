@@ -38,6 +38,7 @@
                    -1.25929240       552.70230073                      ! I_00_c     P_00_c
                    -0.59772583       277.83845200                      ! I_00_l2    P_00_l2
                    -1.70110961                                         ! P_CD_c
+                    0.00000000         0.00000000          0.00000000  ! I_CD_1_ls  P_CD_1_ls      R_CD_1_ls
                     1.90000000         0.52500000          0.21000000  ! c_pi       r_ws           a_ws
 /
 
@@ -59,5 +60,6 @@
             .true.      .true.              ! I_00_c      P_00_c
             .true.      .true.              ! I_00_l2     P_00_l2
             .true.                          ! P_CD_c
+            .false.     .false.     .false. ! I_CD_1_ls   P_CD_1_ls   R_CD_1_ls
             .false.     .false.     .false. ! c_pi        r_ww        a_ws
 /
