@@ -117,6 +117,9 @@ random_num.o: random_num.f90 constants.o precisions.o
 randomize_exp.o: randomize_exp.f90 exp_data.o precisions.o random_num.o
 	$(COMPILER) $(FLAGS) -c $<
 
+bootstrap.o: bootstrap.f90 exp_data.o precisions.o randomize_exp.o
+	$(COMPILER) $(FLAGS) -c $<	
+
 plot_potential.o: plot_potential.f90
 	$(COMPILER) $(FLAGS) -c $<	
 
