@@ -54,7 +54,7 @@ END subroutine one_bootstrap
 !!
 !! @author      Marielle Duran
 !! 
-subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, , all_npoints, all_parameters)
+subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, output_name, all_chi2, all_npoints, all_parameters)
         IMPLICIT NONE
         type(nn_experiment), intent(in), dimension(:) :: old_exp
         type(nn_experiment), allocatable, dimension(:) :: new_exp
@@ -65,6 +65,7 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, , 
         REAL(dp) :: chi2
         INTEGER :: n_points
         REAL(dp), allocatable :: covariance(:,:)
+        CHARACTER(len=1024) :: output_name
 
         REAL(dp), allocatable, intent(out), dimension(:) :: all_chi2
         INTEGER, allocatable, intent(out), dimension(:) :: all_npoints
@@ -80,10 +81,10 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, , 
         allocate(all_npoints(1:n_runs))
         allocate(all_parameters(1:SIZE(parameters),1:n_runs))
 
-        !open(newunit=unit, file=output_name//'_bootstrap.dat', status='unknown')
-        !        write(unit, *), '# '
-        !        write(unit, *), '# potential parameters, chi square, number of points '
-        !close(unit)
+        open(newunit=unit, file=output_name//'av18_bootstrap.dat', status='unknown')
+                write(unit, *) '# Data from full_bootstrap using the av18 namelist. This includes:'
+                write(unit, *) '# potential parameters, chi square, number of points '
+        close(unit)
         DO i = 1, n_runs
                 new_exp = randomize_database(old_exp)
                 new_parameters = parameters
@@ -93,9 +94,9 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, , 
                 all_parameters(:,i) = new_parameters
                 all_chi2(i) = chi2
                 all_npoints(i) = n_points
-                !open(newunit, )
-                !write(unit,*) all_parameters(:,i), all_chi2(i), all_npoints(i)
-                !close(unit)
+                open(newunit=unit, file=output_name//'av18_bootstrap.dat', status='unknown', position='append')
+                write(unit,*) all_parameters(:,i), all_chi2(i), all_npoints(i)
+                close(unit)
         END DO
 END subroutine full_bootstrap
 

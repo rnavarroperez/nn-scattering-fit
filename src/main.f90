@@ -27,7 +27,7 @@ real(dp), allocatable :: all_parameters(:,:)
 
 call setup_optimization(model, parameters, mask, database, save_results, output_name)
 
-call full_bootstrap(database, mask, model, parameters, n_runs, all_chi2, all_npoints, all_parameters)
+call full_bootstrap(database, mask, model, parameters, n_runs, output_name, all_chi2, all_npoints, all_parameters)
 !call one_bootstrap(database, mask, model, parameters, new_parameters, chi2, n_points) 
 !call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
 !print*, 'after minimization: ', chi2, n_points, chi2/n_points
