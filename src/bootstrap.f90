@@ -54,7 +54,7 @@ END subroutine one_bootstrap
 !!
 !! @author      Marielle Duran
 !! 
-subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, all_npoints, all_parameters)
+subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, , all_npoints, all_parameters)
         IMPLICIT NONE
         type(nn_experiment), intent(in), dimension(:) :: old_exp
         type(nn_experiment), allocatable, dimension(:) :: new_exp
@@ -80,7 +80,10 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, al
         allocate(all_npoints(1:n_runs))
         allocate(all_parameters(1:SIZE(parameters),1:n_runs))
 
-        open(newunit=unit, file='all_arrays', status='unknown')
+        !open(newunit=unit, file=output_name//'_bootstrap.dat', status='unknown')
+        !        write(unit, *), '# '
+        !        write(unit, *), '# potential parameters, chi square, number of points '
+        !close(unit)
         DO i = 1, n_runs
                 new_exp = randomize_database(old_exp)
                 new_parameters = parameters
@@ -90,9 +93,10 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, all_chi2, al
                 all_parameters(:,i) = new_parameters
                 all_chi2(i) = chi2
                 all_npoints(i) = n_points
-                write(unit,*) all_parameters(:,i), all_chi2(i), all_npoints(i)
+                !open(newunit, )
+                !write(unit,*) all_parameters(:,i), all_chi2(i), all_npoints(i)
+                !close(unit)
         END DO
-        close(unit)
 END subroutine full_bootstrap
 
 END module bootstrap
