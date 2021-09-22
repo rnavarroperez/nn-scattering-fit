@@ -44,6 +44,17 @@ real(dp), parameter :: pion_mass = (2*pion_c_mass + pion_0_mass)/3  !< average p
 ! Historic, charge independent, recommended value.
 real(dp), parameter :: f_pi_n_2 = 0.075_dp !< pion nucleon coupling constant \f$ f^2 \f$. Dimensionless
 
+! Low Energy Constants
+! Values from "Minimally nonlocal nucleon-nucleon potentials with chiral two-pion exchange including delta resonances".
+! https://journals.aps.org/prc/abstract/10.1103/PhysRevC.91.024003
+real(dp), parameter :: gA = 1.29_dp !< nucleon axial coupling constant
+real(dp), parameter :: hA = 2.74_dp !< N-to-delta axial coupling constant
+real(dp), parameter :: pion_decay_amplitude = 184.80_dp !< pion decay amplitude ("Fpi") in units of GeV
+real(dp), parameter :: c1 = -0.57_dp !< necessary for "subleading N2LO terms", in units of GeV^-1
+real(dp), parameter :: c2 = -0.25_dp !< necessary for "subleading N2LO terms", in units of GeV^-1
+real(dp), parameter :: c3 = -0.79_dp !< necessary for "subleading N2LO terms", in units of GeV^-1
+real(dp), parameter :: c4 = 1.33_dp !< necessary for "subleading N2LO terms", in units of GeV^-1
+real(dp), parameter :: b3_b8 = 1.40_dp !< necessary for "subleading N2LO terms", in units of GeV^-1
 
 ! ! Original AV18 values
 ! real(dp), parameter :: hbar_c    = 197.327053_dp!< \f$\hbar c\f$ in units of MeV fm
