@@ -72,7 +72,7 @@ subroutine read_database(data_file, experiments)
     character(len=*), intent(in) :: data_file !< Text file with the database
     type(nn_experiment), intent(out), allocatable, dimension(:) :: experiments !< database
 
-    integer, parameter :: max_year = 1965
+    integer, parameter :: max_year = 2020
 
     integer :: n_data, year
     real(dp) :: sys_error, t_lab, theta, value, stat_error

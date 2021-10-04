@@ -20,7 +20,7 @@ real(dp), allocatable, dimension(:) :: parameters
 logical, allocatable, dimension(:) :: mask
 logical :: save_results
 character(len=1024) :: output_name
-integer, parameter :: n_runs = 5
+integer, parameter :: n_runs = 200
 real(dp), allocatable, dimension(:) :: all_chi2
 integer, allocatable, dimension(:) :: all_npoints
 real(dp), allocatable :: all_parameters(:,:)
