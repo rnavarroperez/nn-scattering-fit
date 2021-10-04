@@ -81,7 +81,7 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, output_name,
         allocate(all_npoints(1:n_runs))
         allocate(all_parameters(1:SIZE(parameters),1:n_runs))
 
-        open(newunit=unit, file=output_name//'av18_bootstrap.dat', status='unknown')
+        open(newunit=unit, file=trim(output_name)//'_bootstrap.dat', status='unknown')
                 write(unit, *) '# Data from full_bootstrap using the av18 namelist. This includes:'
                 write(unit, *) '# potential parameters, chi square, number of points '
         close(unit)
@@ -94,7 +94,7 @@ subroutine full_bootstrap(old_exp, mask, model, parameters, n_runs, output_name,
                 all_parameters(:,i) = new_parameters
                 all_chi2(i) = chi2
                 all_npoints(i) = n_points
-                open(newunit=unit, file=output_name//'av18_bootstrap.dat', status='unknown', position='append')
+                open(newunit=unit, file=trim(output_name)//'_bootstrap.dat', status='unknown', position='append')
                 write(unit,*) all_parameters(:,i), all_chi2(i), all_npoints(i)
                 close(unit)
         END DO
