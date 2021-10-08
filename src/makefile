@@ -54,7 +54,10 @@ test_derivatives.o: test_derivatives.f90 precisions.o num_recipes.o
 constants.o: constants.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-chiral_potential.o: chiral_potential.f90 precisions.o constants.o
+chiral_potential.o: chiral_potential.f90 precisions.o constants.o special_functions.o
+	$(COMPILER) $(FLAGS) -c $<
+
+special_functions.o: special_functions.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 	
 st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
