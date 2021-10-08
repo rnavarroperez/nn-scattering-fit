@@ -9,13 +9,15 @@
 !!
 module chiral_potential
 use precisions, only : dp
-use constants, only : gA, hA, Fpi=>pion_decay_amplitude, c1, c2, c3, c4, b38=>b3_b8, &
-    mpi0=>pion_0_mass, mpic=>pion_c_mass
+use constants, only : pi, gA, hA, Fpi=>pion_decay_amplitude, c1, c2, c3, c4, b38=>b3_b8, &
+    mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, hbar_c, delta_nucleon_mass_difference
     ! Fpi=2fpi
-                     
+use special_functions, only : bessel_k0, bessel_k1   
 implicit none
 
 private
+
+public :: v_lo_sigma_tau, v_lo_t_tau
 
 contains
 
@@ -24,9 +26,11 @@ contains
 !!
 !! One pion exchange potential contribution (1) at leading order
 !!
+!! Corresponds to (A1) in the appendix
+!!
 !! @author Ky Putnam
 !!
-real(dp) function v_lo_sigma_tau(r) result(vst)
+real(dp) function v_lo_sigma_tau(r) result(vlst)
     implicit none
     real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
     real(dp) :: Y_n, Y_p
@@ -34,7 +38,7 @@ real(dp) function v_lo_sigma_tau(r) result(vst)
     Y_n = Y_pion(mpi0,r) !< Y for neutral pion
     Y_p = Y_pion(mpic,r) !< Y for (positively) charged pion
 
-    vst = (Y_n + 2*Y_p)/3
+    vlst = (Y_n + 2*Y_p)/3
 
 end function v_lo_sigma_tau
 
@@ -43,9 +47,11 @@ end function v_lo_sigma_tau
 !!
 !! One pion exchange potential contribution (2) at leading order
 !!
+!! Corresponds to (A2) in the appendix
+!!
 !! @author Ky Putnam
 !!
-real(dp) function v_lo_t_tau(r) result(vtt)
+real(dp) function v_lo_t_tau(r) result(vltt)
     implicit none
     real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
     real(dp) :: T_n, T_p
@@ -53,7 +59,7 @@ real(dp) function v_lo_t_tau(r) result(vtt)
     T_n = T_pion(mpi0,r) !< T for neutral pion
     T_p = T_pion(mpic,r) !< T for (positively) charged pion
 
-    vtt = (T_n + 2*T_p)/3
+    vltt = (T_n + 2*T_p)/3
 
 end function v_lo_t_tau
 
@@ -63,6 +69,8 @@ end function v_lo_t_tau
 !! Y, a function of pion mass and radius for use in the preceeding 
 !! OPE LO functions (v_lo_sigma_tau and v_lo_t_tau)
 !!
+!! Corresponds to (A3) in the appendix
+!!
 !! @author Ky Putnam
 !!
 real(dp) function Y_pion(mpi, r) result(Y)
@@ -71,9 +79,9 @@ real(dp) function Y_pion(mpi, r) result(Y)
     real(dp), intent(in) :: mpi !< pion mass
     real(dp) :: x
 
-    x = mpi * r
-
-    Y = gA**2 * mpi**3 exp(-x) / (12*pi Fpi**2 * x)
+    x = mpi * r / hbar_c
+    
+    Y = gA**2 * mpi**3 * exp(-x) / (12*pi * Fpi**2 * x)
 
 end function Y_pion
 
@@ -83,18 +91,105 @@ end function Y_pion
 !! T, a function of radius and pion mass, for use in the preceeding
 !! OPE LO functions (v_lo_t_tau, specifically)
 !!
+!! Corresponds to (A4) in the appendix
+!!
 !! @author Ky Putnam
 !!
 real(dp) function T_pion(mpi,r) result(T)
     implicit none
     real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
     real(dp), intent(in) :: mpi !< pion mass
-    real(dp) :: x, Y_n, Y_p
+    real(dp) :: x
 
-    x = mpi * r
+    x = mpi * r / hbar_c
     
     T = Y_pion(mpi,r) * (1 + 3/x + 3/x**2)
     
 end function T_pion
+
+!!
+!> @brief       TPE at NLO
+!!
+!! Two pion exchange potential contribution (1) at next leading order
+!!
+!! Corresponds to (A5) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_nlo_tau(r) result(vntau)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c
+
+    vntau = mpi*(x * (1 + 10*gA**2 - gA**4 * (23 + 4*x**2))*bessel_k0(2*x) &
+        + (1 + 2*gA**2 * (5 + 2*x**2) - gA**4 * (23 + 12*x**2))*bessel_k1(2*x)) &
+        / (2*pi**3 * r**4 * Fpi**4)
+    
+end function v_nlo_tau
+
+!!
+!> @brief       TPE at NLO
+!!
+!! Two pion exchange potential contribution (2) at next leading order
+!!
+!! Corresponds to (A6) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_nlo_sigma(r) result(vns)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c
+
+    vns = gA**4 * mpi * (3*x * bessel_k0(2*x) + (3 + 2*x**2) * bessel_k1(2*x)) &
+        / (2*pi**3 * r**4 * Fpi**4)
+
+end function v_nlo_sigma
+
+!!
+!> @brief       TPE at NLO
+!!
+!! Two pion exchange potential contribution (3) at next leading order
+!!
+!! Corresponds to (A7) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_nlo_t(r) result(vnt)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c
+
+    vnt = -gA**4 * mpi * (12*x * bessel_k0(2*x) + (15 + 4*x**2) * bessel_k1(2*x))
+
+end function v_nlo_t
+
+!!
+!> @brief       TPE at NLO
+!!
+!! Two pion exchange potential contribution (4) at next leading order
+!!
+!! Corresponds to (A8) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_nlo_c(r) result(vnc)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c
+    y = delta_nucleon_mass_difference * r
+
+    vnc = - gA**2 * hA**2 * exp(-2*x) * (6 + 12*x + 10*x**2 + 4*x**3 + x**4) &
+        / ( 6 * pi **2 * r**5 * y * Fpi**4)
+
+end function v_nlo_c
 
 end module chiral_potential
