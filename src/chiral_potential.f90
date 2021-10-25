@@ -179,17 +179,121 @@ end function v_nlo_t
 !!
 !! @author Ky Putnam
 !!
-real(dp) function v_nlo_c(r) result(vnc)
+real(dp) function v_nlo_c_d(r) result(vncd)
     implicit none
     real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
     real(dp) :: x , y
 
     x = mpi * r / hbar_c
-    y = delta_nucleon_mass_difference * r
+    y = delta_nucleon_mass_difference * r / hbar_c
 
-    vnc = - gA**2 * hA**2 * exp(-2*x) * (6 + 12*x + 10*x**2 + 4*x**3 + x**4) &
+    vncd = - gA**2 * hA**2 * exp(-2*x) * (6 + 12*x + 10*x**2 + 4*x**3 + x**4) &
         / ( 6 * pi **2 * r**5 * y * Fpi**4)
 
-end function v_nlo_c
+end function v_nlo_c_d
+
+!!
+!> @brief       TPE at NLO
+!!
+!! Two pion exchange potential contribution (7) at next leading order
+!!
+!! Corresponds to (A11) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_nlo_st_d(r) result(vnstd)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c
+    y = delta_nucleon_mass_difference * r / hbar_c
+
+    vnstd = gA**2 * hA**2 * exp(-2*x) * (1 + x) * (3 + 3*x + x**2) &
+        / ( 54 * pi **2 * r**5 * y * Fpi**4)
+
+end function v_nlo_st_d
+
+!!
+!> @brief       TPE at NLO
+!!
+!! Two pion exchange potential contribution (9) at next leading order
+!!
+!! Corresponds to (A13) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_nlo_tt_d(r) result(vnttd)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c
+    y = delta_nucleon_mass_difference * r / hbar_c
+
+    vnttd = - gA**2 * hA**2 * exp(-2*x) * (1 + x) * (3 + 3*x + 2*x**2) &
+        / (54*pi **2 * r**5 * y * Fpi**4)
+
+end function v_nlo_tt_d
+
+!!
+!> @brief       N2LO loop correction
+!!
+!! Loop correction term (1) at N2LO
+!!
+!! Corresponds to (A20) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_n2lo_c(r) result(vn2c)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c
+
+    vn2c = 3*gA**2 * exp(-2*x) * (2*c1*x**2 *(1 + x)**2 + c3*(6 + 12*x + 10*x**2 + 4*x**3 + x**4)) &
+        / (2*pi**2 * r**6 * Fpi**4)
+end function v_n2lo_c
+
+!!
+!> @brief       N2LO loop correction
+!!
+!! Loop correction term (2) at N2LO
+!!
+!! Corresponds to (A21) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_n2lo_sigma_tau(r) result(vn2st)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c
+
+    vn2st = 3*gA**2 * c4*exp(-2*x) * (1 + x)*(3 + 3*x + 2*x**2) &
+        / (3*pi**2 * r**6 * Fpi**4)
+end function v_n2lo_sigma_tau
+
+!!
+!> @brief       N2LO loop correction
+!!
+!! Loop correction term (3) at N2LO
+!!
+!! Corresponds to (A22) in the appendix
+!!
+!! @author Ky Putnam
+!!
+real(dp) function v_n2lo_t_tau(r) result(vn2tt)
+    implicit none
+    real(dp), intent(in) :: r !< radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c
+
+    vn2tt = - 3*gA**2 * c4*exp(-2*x) * (1 + x)*(3 + 3*x + 2*x**2) &
+        / (3*pi**2 * r**6 * Fpi**4)
+end function v_n2lo_t_tau
 
 end module chiral_potential
