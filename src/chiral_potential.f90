@@ -5,7 +5,7 @@
 !!
 !! Phys.Rev. C91 (2015)
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 module chiral_potential
 use precisions, only : dp
@@ -17,7 +17,7 @@ implicit none
 
 private
 
-public :: v_lo_sigma_tau, v_lo_t_tau
+public :: vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9
 
 contains
 
@@ -28,7 +28,7 @@ contains
 !!
 !! Corresponds to (A1) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_lo_sigma_tau(r) result(vlst)
     implicit none
@@ -49,7 +49,7 @@ end function v_lo_sigma_tau
 !!
 !! Corresponds to (A2) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_lo_t_tau(r) result(vltt)
     implicit none
@@ -71,7 +71,7 @@ end function v_lo_t_tau
 !!
 !! Corresponds to (A3) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function Y_pion(mpi, r) result(Y)
     implicit none
@@ -93,7 +93,7 @@ end function Y_pion
 !!
 !! Corresponds to (A4) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function T_pion(mpi,r) result(T)
     implicit none
@@ -114,7 +114,7 @@ end function T_pion
 !!
 !! Corresponds to (A5) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_nlo_tau(r) result(vntau)
     implicit none
@@ -136,7 +136,7 @@ end function v_nlo_tau
 !!
 !! Corresponds to (A6) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_nlo_sigma(r) result(vns)
     implicit none
@@ -157,7 +157,7 @@ end function v_nlo_sigma
 !!
 !! Corresponds to (A7) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_nlo_t(r) result(vnt)
     implicit none
@@ -177,7 +177,7 @@ end function v_nlo_t
 !!
 !! Corresponds to (A8) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_nlo_c_d(r) result(vncd)
     implicit none
@@ -199,7 +199,7 @@ end function v_nlo_c_d
 !!
 !! Corresponds to (A11) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_nlo_st_d(r) result(vnstd)
     implicit none
@@ -221,7 +221,7 @@ end function v_nlo_st_d
 !!
 !! Corresponds to (A13) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_nlo_tt_d(r) result(vnttd)
     implicit none
@@ -243,7 +243,7 @@ end function v_nlo_tt_d
 !!
 !! Corresponds to (A20) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_n2lo_c(r) result(vn2c)
     implicit none
@@ -263,7 +263,7 @@ end function v_n2lo_c
 !!
 !! Corresponds to (A21) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_n2lo_sigma_tau(r) result(vn2st)
     implicit none
@@ -283,7 +283,7 @@ end function v_n2lo_sigma_tau
 !!
 !! Corresponds to (A22) in the appendix
 !!
-!! @author Ky Putnam
+!! @author      Ky Putnam
 !!
 real(dp) function v_n2lo_t_tau(r) result(vn2tt)
     implicit none
@@ -295,5 +295,179 @@ real(dp) function v_n2lo_t_tau(r) result(vn2tt)
     vn2tt = - 3*gA**2 * c4*exp(-2*x) * (1 + x)*(3 + 3*x + 2*x**2) &
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_t_tau
+
+!!
+!!
+!! THE FOLLOWING FUNCTIONS ARE INTEGRANDS OF POTENTIALS, AND ARE IMPLEMENTED SPECIFICALLY FOR PLOTTING
+!!
+!! Integrands are labeled based on their locations in the "Organizing Integrals" spreadsheet:
+!! https://docs.google.com/spreadsheets/d/1dLe5_UPNaTz_hzaVfSETQZh9XZ9dlar5mD3eGOGdOVw/edit?usp=sharing
+!!
+
+
+!! potential integrand function 1: vf1
+!!
+!! labeled "1" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!!
+!! @author      Ky Putnam
+!!
+real(dp) function vf_1(u , r) result(vf1)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf1 = u**4 * exp(-sqrt(u**2 + 4*x**2)) &
+        /sqrt(u**2 + 4*x**2)
+end function vf_1
+
+!! potential integrand function 2: vf2
+!!
+!! labeled "2" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_2(u , r) result(vf2)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf2 = u**2 * exp(-sqrt(u**2 + 4*x**2)) &
+        /(sqrt(u**2 + 4*x**2))
+end function vf_2
+
+!! potential integrand function 3: vf3
+!!
+!! labeled "3" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_3(u, r) result(vf3)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf3 = u**2 * exp(-sqrt(u**2 + 4*x**2))
+end function vf_3
+
+!! potential integrand function 4: vf4
+!!
+!! labeled "4" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_4(u , r) result(vf4)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+    y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf4 = u**2 * (2*x**2 + u**2 + 2*y**2)**2 * exp(-sqrt(u**2 + 4*x**2)) &
+        /(sqrt(u**2 + 4*x**2) * (u**2 +4*y**2))
+end function vf_4
+
+!! potential integrand function 5: vf5
+!!
+!! labeled "5" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_5(u , r) result(vf5)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+    y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf5 = u * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2)) &
+        /(sqrt(u**2 + 4*x**2))
+end function vf_5
+
+!! potential integrand function 6: vf6
+!!
+!! labeled "6" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_6(u , r) result(vf6)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+    y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf6 = u**3 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2)) &
+        /(sqrt(u**2 + 4*x**2))
+end function vf_6
+
+!! potential integrand function 7: vf7
+!!
+!! labeled "7" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_7(u , r) result(vf7)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+    y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf7 = u**5 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2)) &
+        /(sqrt(u**2 + 4*x**2))
+end function vf_7
+
+!! potential integrand function 8: vf8
+!!
+!! labeled "8" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_8(u , r) result(vf8)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+    y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf8 = u**3 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2))
+end function vf_8
+
+!! potential integrand function 9: vf9
+!!
+!! labeled "9" in "organizing integrals" spreadsheet
+!! currently unspecified value of r
+!! 
+!! @author      Ky Putnam
+!!
+real(dp) function vf_9(u , r) result(vf9)
+    implicit none
+    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+    y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
+
+    vf9 = u * y**2 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2))
+end function vf_9
 
 end module chiral_potential
