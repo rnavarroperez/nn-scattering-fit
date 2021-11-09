@@ -692,16 +692,17 @@ subroutine write_chiral_kernals(r, file_name)
     real(dp) :: u, u_max
     integer :: unit
 
-    character(len=31), parameter :: format = '(f15.8,38e19.8e3)'
+    character(len=31), parameter :: format = '(f15.8,9e19.8e3)'
 
     u = 0.1_dp
     u_max = 20.0_dp
 
-    open(newunit=unit, file=file_name)
+    open(newunit=unit, file=trim(file_name))
     write(unit, *) 'mu', 'vf_1', 'vf_2', 'vf_3', 'vf_4', 'vf_5', 'vf_6', 'vf_7', 'vf_8', 'vf_9'
 
     do
         if (u > u_max) exit
+        write(unit, format) u, vf_1(u, r)
         u = u + 0.1_dp
     end do
     close(unit)

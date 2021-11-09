@@ -25,7 +25,7 @@ implicit none
 ! character(len=1024) :: output_name
 ! integer :: n_points
 
-character(len=*) :: file_name
+character(len=50) :: file_name
 real(dp) :: r
 
 ! call setup_optimization(model, parameters, mask, database, save_results, output_name)
@@ -39,11 +39,10 @@ real(dp) :: r
 r = 0.1_dp
 
 do
-    if (r >= 12.1_dp) exit
-
+    if (r > 12.1_dp) exit
+    write(file_name, '(a,i0.3,a)') 'chiral_integrands_r_', int(10*r), '.dat'
     call write_chiral_kernals(r, file_name)
     r = r + 2.0_dp
-    file_name = 'Chiral Integrands, r is '
 end do
 
 end program nn_fit
