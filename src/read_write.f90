@@ -18,13 +18,15 @@ use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
 use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
+use chiral_potential, only : vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9
 implicit none
 
 private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
-    write_optimization_results, plot_potential_components, plot_potential_partial_waves
+    write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
+    write_chiral_kernals
 
 contains
 
@@ -681,6 +683,30 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
     close(unit)
 
 end subroutine write_optimization_results
+
+subroutine write_chiral_kernals(r, file_name)
+    implicit none
+    real(dp), intent(in) :: r
+    character(len=*), intent(in) :: file_name
+
+    real(dp) :: u, u_max
+    integer :: unit
+
+    character(len=31), parameter :: format = '(f15.8,38e19.8e3)'
+
+    u = 0.1_dp
+    u_max = 20.0_dp
+
+    open(newunit=unit, file=file_name)
+    write(unit, *) 'mu', 'vf_1', 'vf_2', 'vf_3', 'vf_4', 'vf_5', 'vf_6', 'vf_7', 'vf_8', 'vf_9'
+
+    do
+        if (u > u_max) exit
+        u = u + 0.1_dp
+    end do
+    close(unit)
+
+end subroutine write_chiral_kernals
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
     implicit none
