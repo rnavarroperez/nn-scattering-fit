@@ -12,12 +12,24 @@ use precisions, only : dp
 use constants, only : pi, gA, hA, Fpi=>pion_decay_amplitude, c1, c2, c3, c4, b38=>b3_b8, &
     mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, hbar_c, delta_nucleon_mass_difference
     ! Fpi=2fpi
-use special_functions, only : bessel_k0, bessel_k1   
+use special_functions, only : bessel_k0, bessel_k1  
+use quadrature, only : booles_quadrature
 implicit none
 
 private
 
-public :: vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9
+public :: vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, vf_integral
+
+
+interface
+
+    real(dp) function chiral_kernel(mu, r) result(ck)
+        use precisions, only : dp
+        implicit none
+        real(dp), intent(in) :: mu
+        real(dp), intent(in) :: r
+    end function chiral_kernel
+end interface
 
 contains
 
@@ -296,6 +308,28 @@ real(dp) function v_n2lo_t_tau(r) result(vn2tt)
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_t_tau
 
+function vf_integral(vf, r) result(i_vf1)
+    implicit none
+    procedure(chiral_kernel) :: vf
+    real(dp), intent(in) :: r
+    real(dp) :: i_vf1
+    integer, parameter :: n_points = 725
+    real(dp), parameter :: mu_max = 30
+    real(dp), parameter :: mu_min = 0
+    real(dp), dimension(1:n_points) :: f_mu
+    real(dp) :: delta_mu, mu
+    integer :: i
+
+    delta_mu = (mu_max - mu_min)/(n_points - 1)   
+    
+    do i=1, n_points
+        mu = mu_min + (i-1) * delta_mu
+        f_mu(i) = vf(mu, r)
+    enddo
+
+    i_vf1 = booles_quadrature(f_mu, delta_mu)
+end function vf_integral
+
 !!
 !!
 !! THE FOLLOWING FUNCTIONS ARE INTEGRANDS OF POTENTIALS, AND ARE IMPLEMENTED SPECIFICALLY FOR PLOTTING
@@ -461,13 +495,13 @@ end function vf_8
 !!
 real(dp) function vf_9(u , r) result(vf9)
     implicit none
-    real(dp), intent(in) :: u , r !< u=mu:, parametric parameter, r: radius at which the function will be evaluated, in fm
+    real(dp), intent(in) :: u , r !< u=mu, parametric parameter, r: radius at which the function will be evaluated, in fm
     real(dp) :: x , y
 
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
-    vf9 = u * y**2 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2))
+    vf9 = u * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2))
 end function vf_9
 
 end module chiral_potential
