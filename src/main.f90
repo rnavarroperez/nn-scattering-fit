@@ -12,7 +12,8 @@ use delta_shell, only : nn_model
 use exp_data, only : nn_experiment!, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt, setup_optimization
 use string_functions, only : mask_to_string
-use read_write, only : write_chiral_kernals !, write_optimization_results
+use read_write, only : write_chiral_kernels, write_chiral_integrals !, write_optimization_results
+use chiral_potential, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9 
 implicit none
 
 ! type(nn_model) :: model
@@ -26,7 +27,7 @@ implicit none
 ! integer :: n_points
 
 character(len=50) :: file_name
-real(dp) :: r
+real(dp) :: r!, r_max
 
 ! call setup_optimization(model, parameters, mask, database, save_results, output_name)
 ! allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
@@ -37,12 +38,26 @@ real(dp) :: r
 ! endif
 
 r = 0.1_dp
+! r_max = 12.1_dp
 
-do
-    if (r > 12.1_dp) exit
-    write(file_name, '(a,i0.3,a)') 'chiral_integrands_r_', int(10*r), '.dat'
-    call write_chiral_kernals(r, file_name)
-    r = r + 2.0_dp
-end do
+! FOR write_chiral_integrals
+write(file_name, *) 'chiral_integrals'
+call write_chiral_integrals(r, file_name)
+
+! do
+!     if (r > r_max) exit
+
+!     ! FOR write_chiral_kernels
+!     write(file_name, '(a,i0.3,a)') 'chiral_integrands_r_', int(10*r), '.dat'
+!     call write_chiral_kernels(r, file_name)
+
+!     !FOR printing chiral integrals in terminal
+!     print'(f11.1,9es20.9)', r, vf_integral(vf_1, r), vf_integral(vf_2, r), vf_integral(vf_3, r), &
+!             vf_integral(vf_4, r), vf_integral(vf_5, r), vf_integral(vf_6, r), &
+!             vf_integral(vf_7, r), vf_integral(vf_8, r), vf_integral(vf_9, r)
+
+!     r = r + 2.0_dp
+
+! end do
 
 end program nn_fit
