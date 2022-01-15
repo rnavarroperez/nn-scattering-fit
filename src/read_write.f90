@@ -18,7 +18,7 @@ use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
 use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
-use chiral_potential, only : vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9
+use chiral_potential, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9
 implicit none
 
 private
@@ -26,7 +26,7 @@ private
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
     write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
-    write_chiral_kernals
+    write_chiral_kernels, write_chiral_integrals
 
 contains
 
@@ -684,7 +684,7 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
 
 end subroutine write_optimization_results
 
-subroutine write_chiral_kernals(r, file_name)
+subroutine write_chiral_kernels(r, file_name)
     implicit none
     real(dp), intent(in) :: r
     character(len=*), intent(in) :: file_name
@@ -702,12 +702,43 @@ subroutine write_chiral_kernals(r, file_name)
 
     do
         if (u > u_max) exit
-        write(unit, format) u, vf_1(u, r)
+        write(unit, format) u, vf_1(u, r), vf_2(u, r), vf_3(u, r), vf_4(u, r), vf_5(u, r), &
+            vf_6(u, r), vf_7(u, r), vf_8(u, r), vf_9(u, r)
         u = u + 0.1_dp
     end do
     close(unit)
 
-end subroutine write_chiral_kernals
+end subroutine write_chiral_kernels
+
+subroutine write_chiral_integrals(r, file_name)
+    implicit none
+    character(len=*), intent(in) :: file_name
+
+    real(dp) :: r_max, r
+    integer :: unit
+    
+
+    character(len=31), parameter :: format = '(f11.1,9es20.9)'
+
+    r_max = 12.1_dp
+
+    open(newunit=unit, file=trim(file_name))
+    ! write(file_name, *) 'chiral_integrals.dat'
+
+    write(unit,'(10a20)') 'r', 'vf1_integral', 'vf2_integral', 'vf3_integral', 'vf4_integral', 'vf5_integral', &
+        'vf6_integral', 'vf7_integral', 'vf8_integral', 'vf9_integral'
+
+    do
+        if (r > r_max) exit
+
+        write(unit, format) r, vf_integral(vf_1, r), vf_integral(vf_2, r), vf_integral(vf_3, r), &
+            vf_integral(vf_4, r), vf_integral(vf_5, r), vf_integral(vf_6, r), &
+            vf_integral(vf_7, r), vf_integral(vf_8, r), vf_integral(vf_9, r)
+
+        r = r + 2.0_dp
+    end do    
+
+end subroutine write_chiral_integrals
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
     implicit none
