@@ -901,13 +901,13 @@ subroutine chiral_integrals(r, mu_integrals)
 end subroutine
 
 !> LO potential functions, Delta-less
-subroutine leading_order_potentials(r)
+subroutine leading_order_potentials(r, v_lo)
     implicit none
     real(dp), intent(in) :: r
-    real(dp) :: vlstau, vlttau
+    real(dp), intent(out), dimension(1:2) :: v_lo
     
-    vlstau = v_lo_sigmatau(r)
-    vlttau = v_lo_ttau(r)
+    v_lo(1) = v_lo_sigmatau(r)
+    v_lo(2) = v_lo_ttau(r)
 
 end subroutine
 
@@ -924,11 +924,12 @@ subroutine next_to_leading_order_potentials_deltaless(r)
 end subroutine
 
 !NLO potential functions with 1 Delta intermediate state
-subroutine next_to_leading_order_potentials_1delta(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+subroutine next_to_leading_order_potentials_1delta(r, mu_integrals)
     implicit none
     real(dp), intent(in) :: r
     real(dp) :: vncd, vntaud, vnsd, vnstaud, vntd, vnttaud
-    real(dp), intent(in) :: vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp), intent(in), dimension(:) :: mu_integrals
+    real(dp) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
 
     vncd = v_nlo_c_d(r)
     vntaud = v_nlo_tau_d(r, vf1, vf2, vf5, vf6, vf7)
@@ -940,11 +941,13 @@ subroutine next_to_leading_order_potentials_1delta(r, vf1, vf2, vf3, vf5, vf6, v
 end subroutine
 
 !NLO potential functions with 2 Delta intermediate states
-subroutine next_to_leading_order_potentials_2delta(r, vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9)
+subroutine next_to_leading_order_potentials_2delta(r, mu_integrals, v_nlo_2delta)
     implicit none
     real(dp), intent(in) :: r
+    real(dp), intent(in), dimension(:) :: mu_integrals
+    real(dp), intent(out), dimension(:) :: v_nlo_2delta
     real(dp) :: vnc2d, vntau2d, vnsigma2d, vnstau2d, vnt2d, vnttau2d
-    real(dp), intent(in) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
 
     vnc2d = v_nlo_c_2d(r, vf2, vf4, vf5, vf6, vf7)
     vntau2d = v_nlo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
@@ -968,11 +971,12 @@ subroutine next_to_next_to_leading_order_potentials_deltaless(r)
 end subroutine
 
 !NLO potential functions with 1 Delta intermediate state
-subroutine next_to_next_to_leading_order_potentials_1delta(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+subroutine next_to_next_to_leading_order_potentials_1delta(r, mu_integrals)
     implicit none
     real(dp), intent(in) :: r
     real(dp) :: vn2cd, vn2taud, vn2sigmad, vn2staud, vn2td, vn2ttaud
-    real(dp), intent(in) :: vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp), intent(in), dimension(:) :: mu_integrals
+    real(dp) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
 
     vn2cd = v_n2lo_c_d(r, vf1, vf2, vf5, vf6, vf7)
     vn2taud = v_n2lo_tau_d(r, vf1, vf2, vf5, vf6, vf7)
@@ -984,11 +988,11 @@ subroutine next_to_next_to_leading_order_potentials_1delta(r, vf1, vf2, vf3, vf5
 end subroutine
 
 !NLO potential functions with 1 Delta intermediate state
-subroutine next_to_next_to_leading_order_potentials_2delta(r, vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9)
+subroutine next_to_next_to_leading_order_potentials_2delta(r, mu_integrals)
     implicit none
     real(dp), intent(in) :: r
     real(dp) :: vn2c2d, vn2tau2d, vn2sigma2d, vn2stau2d, vn2t2d, vn2ttau2d
-    real(dp), intent(in) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
+    real(dp), intent(in), dimension(:) :: mu_integrals
 
     vn2c2d = v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
     vn2tau2d = v_n2lo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
@@ -999,32 +1003,23 @@ subroutine next_to_next_to_leading_order_potentials_2delta(r, vf1, vf2, vf3, vf4
     
 end subroutine
 
-subroutine unpack_chiral_integrals(r)
+subroutine unpack_chiral_integrals(r, v_lo, v_nlo_deltaless, .....)
     implicit none
     real(dp), intent(in) :: r
+    real(dp), intent(out),  dimension(1:2) :: v_lo
+
     real(dp), dimension(1:9) :: mu_integrals
-    real(dp) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
 
     call chiral_integrals(r, mu_integrals)
 
-    call leading_order_potentials(r)
-    call next_to_leading_order_potentials_deltaless(r)
-    call next_to_leading_order_potentials_1delta(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
-    call next_to_leading_order_potentials_2delta(r, vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9)
-    call next_to_next_to_leading_order_potentials_deltaless(r)
-    call next_to_next_to_leading_order_potentials_1delta(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
-    call next_to_next_to_leading_order_potentials_2delta(r, vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9)
+    call leading_order_potentials(r, v_lo)
+    call next_to_leading_order_potentials_deltaless(r, v_nlo_deltaless)
+    call next_to_leading_order_potentials_1delta(r, mu_integrals, v_nlo_1delta)
+    call next_to_leading_order_potentials_2delta(r, mu_integrals, v_nlo_2delta)
+    call next_to_next_to_leading_order_potentials_deltaless(r, v_n2lo_deltaless)
+    call next_to_next_to_leading_order_potentials_1delta(r, mu_integrals, v_n2lo_1delta)
+    call next_to_next_to_leading_order_potentials_2delta(r, mu_integrals, v_n2lo_2delta)
 
-    ! assigning mu_integrals shorter names: vfi = mu_integrals(i)
-        vf1 = mu_integrals(1)
-        vf2 = mu_integrals(2)
-        vf3 = mu_integrals(3)
-        vf4 = mu_integrals(4)
-        vf5 = mu_integrals(5)
-        vf6 = mu_integrals(6)
-        vf7 = mu_integrals(7)
-        vf8 = mu_integrals(8)
-        vf9 = mu_integrals(9)
 
 end subroutine
 
@@ -1034,9 +1029,10 @@ subroutine write_all_potential_functions()
     real(dp) :: vlstau, vlttau ! LO potentials
     !real(dp) :: vntau, vns, vnt ! NLO delta-less potentials
     integer :: unit1!, unit2, unit3, unit4, unit5, unit6, unit7
+    real(dp), dimension(1:2) :: v_lo
+    ! all the others
 
     !call potential subroutines
-    call unpack_chiral_integrals(r)
 
     !opens data files
     open(newunit = unit1, file = "lo.dat", status = 'unknown')
@@ -1047,13 +1043,14 @@ subroutine write_all_potential_functions()
     ! open(newunit = unit6, file = "n2lo_d.dat", status = 'unknown')
     ! open(newunit = unit7, file = "n2lo_2d.dat", status = 'unknown')
 
-    r = 0.1
-    r_max = 12.
+    r = 0.1_dp
+    r_max = 12._dp
     do
         if (r > r_max) exit
+        call unpack_chiral_integrals(r, v_lo, vnlo_deltaless ..... )
 
         !write data files
-        write(unit1,*) r, vlstau, vlttau
+        write(unit1,*) r, v_lo
         !write(unit2,*) r, vntau, vns, vnt
 
         r = r + 0.1_dp
