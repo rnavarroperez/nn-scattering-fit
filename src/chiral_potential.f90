@@ -56,6 +56,15 @@ real(dp) function pion_mass_r(r) result(x)
 
 end function pion_mass_r
 
+real(dp) function variable_pion_mass_r(r, mpi) result(x)
+    implicit none
+    real(dp), intent(in) :: r !< distance at which the function will be evaluated, in fm
+    real(dp), intent(in) :: mpi ! pion mass in units of MeV
+
+    x = mpi * r / hbar_c
+
+end function variable_pion_mass_r
+
 !!
 !> @brief y as a function of r
 !!
@@ -87,7 +96,7 @@ real(dp) function Y_pion(mpi, r) result(Y)
     real(dp), intent(in) :: mpi !< pion mass
     real(dp) :: x
 
-    x = pion_mass_r(r)
+    x = variable_pion_mass_r(r,mpi) !needs to also depend on which mass of pion is received
 
     Y = gA**2 * mpi**3 * exp(-x) / (12*pi * Fpi**2 * x)
 
@@ -109,7 +118,7 @@ real(dp) function T_pion(mpi,r) result(T)
     real(dp), intent(in) :: mpi !< pion mass
     real(dp) :: x
 
-    x = pion_mass_r(r)
+    x = variable_pion_mass_r(r, mpi) ! need to do same change as for Y_pion
     
     T = Y_pion(mpi,r) * (1 + 3/x + 3/x**2)
     
@@ -720,8 +729,9 @@ real(dp) function v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2c2d)
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2c2d = -2*b38 * hA**3 * y * (11*vf1 + (24*x**2 + 12*y**2)*vf2 + 6*vf4 - 3*(24*x**2*y**2 + 4*x**2 + 20*y**2)*vf5/y &
-            - 3*(4*x**2 + 12*y**2)*vf6/y - 3*vf7/y) &
+    vn2c2d = -2*b38 * hA**3 * y * hbar_c**6 * (11*vf1 + (24*x**2 + 12*y**2)*vf2 + &
+             6*vf4 - 3*(24*x**2*y**2 + 4*x**2 + 20*y**2)*vf5/y - 3*(4*x**2 + 12*y**2)*vf6/y &
+             - 3*vf7/y) &
             / (81*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_c_2d
@@ -1052,7 +1062,7 @@ subroutine n2lo_potentials_2delta(r, mu_integrals, v_n2lo_2delta)
     
 end subroutine
 
-subroutine calculate_chiral_integrals(r, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless,&
+subroutine calculate_chiral_potentials(r, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless,&
          v_n2lo_1delta, v_n2lo_2delta)
     implicit none
     real(dp), intent(in) :: r
@@ -1104,7 +1114,7 @@ subroutine write_all_potential_functions()
     r_max = 12._dp
     do
         if (r > r_max) exit
-        call calculate_chiral_integrals(r, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless, &
+        call calculate_chiral_potentials(r, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless, &
             v_n2lo_1delta, v_n2lo_2delta)
 
         !write data files
