@@ -684,6 +684,15 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
 
 end subroutine write_optimization_results
 
+!!
+!> @brief       Writes chiral kernels to a file
+!!
+!! Subroutine for writing chiral kernels to a file. Written to be called in a do loop in main.f90,
+!! so that the chiral kernels could be compared to ones written in Python to see if the values agree.
+!!
+!! @author      Ky Putnam
+!!
+
 subroutine write_chiral_kernels(r, file_name)
     implicit none
     real(dp), intent(in) :: r
@@ -709,6 +718,16 @@ subroutine write_chiral_kernels(r, file_name)
     close(unit)
 
 end subroutine write_chiral_kernels
+
+!!
+!> @brief       Writes chiral integrals to a file
+!!
+!! Writes chiral integrals to a file using the function vf_integral in chiral_potential.f90. The purpose of
+!! this is to determine what n_points and mu_max on vf_integral will have the calculated integrals agree with the
+!! same integrals evaluated in Python, to an acceptable degree of precision (5 or 6 decimal places).
+!!
+!! @author      Ky Putnam
+!!
 
 subroutine write_chiral_integrals(r, file_name)
     implicit none
