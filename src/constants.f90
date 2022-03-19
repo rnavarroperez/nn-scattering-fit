@@ -48,7 +48,7 @@ real(dp), parameter :: f_pi_n_2 = 0.075_dp !< pion nucleon coupling constant \f$
 ! https://journals.aps.org/prc/abstract/10.1103/PhysRevC.91.024003
 ! ! Low Energy Constants
 real(dp), parameter :: gA = 1.29_dp !< nucleon axial coupling constant, adimensional
-real(dp), parameter :: hA = 2.74_dp !< N-to-delta axial coupling constant, adimensional
+real(dp), parameter :: hA = 3.*gA/sqrt(2.)_dp !< N-to-delta axial coupling constant, adimensional
 real(dp), parameter :: pion_decay_amplitude = 184.80_dp !< pion decay amplitude ("Fpi") in units of MeV
 real(dp), parameter :: c1 = -0.57/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
 real(dp), parameter :: c2 = -0.25/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
