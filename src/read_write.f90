@@ -18,7 +18,8 @@ use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
 use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
-use chiral_potential, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9
+use chiral_potential, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, &
+                            calculate_chiral_potentials
 implicit none
 
 private
@@ -26,7 +27,7 @@ private
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
     write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
-    write_chiral_kernels, write_chiral_integrals
+    write_chiral_kernels, write_chiral_integrals, write_all_potential_functions
 
 contains
 
@@ -758,6 +759,66 @@ subroutine write_chiral_integrals(r, file_name)
     end do    
 
 end subroutine write_chiral_integrals
+
+!!
+!> @brief       Calculates and records chiral long-range potentials
+!!
+!! Long range potentials are calculated for different values of r (using the calculate_chiral_potentials 
+!! subroutine in chiral_potential.f90). The results are written to files.
+!!
+!! @author      Ky Putnam
+!!
+
+subroutine write_all_potential_functions()
+    implicit none
+    real(dp) :: r, r_max
+    integer :: unit1, unit2, unit3, unit4, unit5, unit6, unit7
+    real(dp), dimension(1:2) :: v_lo
+    real(dp), dimension(1:3) :: v_nlo_deltaless
+    real(dp), dimension(1:6) :: v_nlo_1delta
+    real(dp), dimension(1:6) :: v_nlo_2delta
+    real(dp), dimension(1:3) :: v_n2lo_deltaless
+    real(dp), dimension(1:6) :: v_n2lo_1delta
+    real(dp), dimension(1:6) :: v_n2lo_2delta
+
+    !opens data files
+    open(newunit = unit1, file = "lo.dat", status = 'unknown')
+    open(newunit = unit2, file = "nlo.dat", status = 'unknown')
+    open(newunit = unit3, file = "nlo_d.dat", status = 'unknown')
+    open(newunit = unit4, file = "nlo_2d.dat", status = 'unknown')
+    open(newunit = unit5, file = "n2lo.dat", status = 'unknown')
+    open(newunit = unit6, file = "n2lo_d.dat", status = 'unknown')
+    open(newunit = unit7, file = "n2lo_2d.dat", status = 'unknown')
+
+    r = 0.1_dp
+    r_max = 12._dp
+    do
+        if (r > r_max) exit
+        call calculate_chiral_potentials(r, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless, &
+            v_n2lo_1delta, v_n2lo_2delta)
+
+        !write data files
+        write(unit1,*) r, v_lo
+        write(unit2,*) r, v_nlo_deltaless
+        write(unit3,*) r, v_nlo_1delta
+        write(unit4,*) r, v_nlo_2delta
+        write(unit5,*) r, v_n2lo_deltaless
+        write(unit6,*) r, v_n2lo_1delta
+        write(unit7,*) r, v_n2lo_2delta
+
+        r = r + 0.1_dp
+    end do
+
+    !closes data files
+    close(unit1)
+    close(unit2)
+    close(unit3)
+    close(unit4)
+    close(unit5)
+    close(unit6)
+    close(unit7)
+
+end subroutine
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
     implicit none
