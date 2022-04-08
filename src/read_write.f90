@@ -18,7 +18,7 @@ use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
 use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
-use chiral_potential, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, &
+use long_range_chiral_potentials, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, &
                             calculate_chiral_potentials
 implicit none
 
@@ -27,7 +27,7 @@ private
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
     write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
-    write_chiral_kernels, write_chiral_integrals, write_all_potential_functions
+    write_chiral_kernels, write_chiral_integrals, write_long_range_chiral_potentials
 
 contains
 
@@ -769,9 +769,9 @@ end subroutine write_chiral_integrals
 !! @author      Ky Putnam
 !!
 
-subroutine write_all_potential_functions()
+subroutine write_long_range_chiral_potentials()
     implicit none
-    real(dp) :: r, r_max
+    real(dp) :: r, r_max, R_L, a_L
     integer :: unit1, unit2, unit3, unit4, unit5, unit6, unit7
     real(dp), dimension(1:2) :: v_lo
     real(dp), dimension(1:3) :: v_nlo_deltaless
@@ -792,9 +792,11 @@ subroutine write_all_potential_functions()
 
     r = 0.1_dp
     r_max = 12._dp
+    R_L = 0.8_dp
+    a_L = R_L/2.0_dp
     do
         if (r > r_max) exit
-        call calculate_chiral_potentials(r, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless, &
+        call calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless, &
             v_n2lo_1delta, v_n2lo_2delta)
 
         !write data files
@@ -818,7 +820,7 @@ subroutine write_all_potential_functions()
     close(unit6)
     close(unit7)
 
-end subroutine
+end subroutine write_long_range_chiral_potentials
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
     implicit none
