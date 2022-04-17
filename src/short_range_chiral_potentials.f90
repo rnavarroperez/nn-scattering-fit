@@ -16,302 +16,119 @@ module short_range_chiral_potentials
     
     private
 
-real(dp) function C_Rs(r) result(CRs)
-    implicit none
-    real(dp), intent(in) :: r ! radius
+    public :: short_range_potentials
 
-    CRs = hbar_c*exp(-(r/R_S)**2)/(pi)**(3/2)*R_S**3)
+contains
+
+subroutine short_range_potentials(r, short_lecs, v_short)
+    implicit none
+    real(dp) :: CRs, d1cRs, d2cRs, d3cRs, d4cRs ! CRs and its derivatives
+    real(dp) :: C_s, C_T, C_1, C_2, C_3, C_4, C_5, C_6, C_7, D_1, D_2, D_3, D_4, D_5, D_6, D_7, &
+                D_8, D_9, D_10, D_11, C_0_IV, C_0_IT, C_1_IT, C_2_IT, C_3_IT, C_4_IT, R_S ! short-range LECS
+    real(dp), intent(in) :: r
+    real(dp), intent(out), dimension(1:16) :: v_short
+    real(dp) :: short_lecs
+
+    !unpack short-range low energy constants (short_lecs)
+    C_s = short_lecs(1)
+    C_T = short_lecs(2)
+
+    C_1 = short_lecs(3)
+    C_2 = short_lecs(4)
+    C_3 = short_lecs(5)
+    C_4 = short_lecs(6)
+    C_5 = short_lecs(7)
+    C_6 = short_lecs(8)
+    C_7 = short_lecs(9)
+
+    D_1 = short_lecs(10)
+    D_2 = short_lecs(11)
+    D_3 = short_lecs(12)
+    D_4 = short_lecs(13)
+    D_5 = short_lecs(14)
+    D_6 = short_lecs(15)
+    D_7 = short_lecs(16)
+    D_8 = short_lecs(17)
+    D_9 = short_lecs(18)
+    D_10 = short_lecs(19)
+    D_11 = short_lecs(20)
+
+    C_0_IV = short_lecs(21)
+    C_0_IT = short_lecs(22)
+
+    C_1_IT = short_lecs(23)
+    C_2_IT = short_lecs(24)
+    C_3_IT = short_lecs(25)
+    C_4_IT = short_lecs(26)
+
+    R_S = short_lecs(27)
+
+    !C_Rs and its derivatives
+    CRs = C_Rs(r, R_S)
+    d1cRs = d1_c_Rs(r, R_S)
+    d2cRs = d2_c_Rs(r, R_S)
+    d3cRs = d3_c_Rs(r, R_S)
+    d4cRs = d4_c_Rs(r, R_S)
+
+    ! short-range potentials (appendix numbers corresponding to "Minimally nonlocal nucleon-nucleon...")
+
+    v_short(1) = C_s*CRs + C_1*(-d2cRs - 2._dp*d1cRs/r) + D_1*(d4cRs + 4._dp*d3cRs/r) ! B11
+    v_short(2) = C_2 * (-d2cRs - 2._dp*d1cRs/r) + D_2*(d4cRs + 4._dp*d3cRs/r) ! B12
+    v_short(3) = C_T*CRs + C_3*(-d2cRs - 2._dp*d1cRs/r) + D_3*(d4cRs + 4._dp*d3cRs/r) ! B13
+    v_short(4) = C_4*(-d2cRs - 2._dp*d1cRs/r) + D_4*(d4cRs + 4._dp*d3cRs/r) ! B14
+    v_short(5) = -C_5*(d2cRs - d1cRs/r) + D_5*(d4cRs + d3cRs/r -6._dp*d2cRs/r**2._dp + 6._dp*d1cRs/r**3._dp) ! B15
+    v_short(6) = -C_6*(d2cRs - d1cRs/r) + D_6*(d4cRs + d3cRs/r -6._dp*d2cRs/r**2._dp + 6._dp*d1cRs/r**3._dp) ! B16
+    v_short(7) = -C_7*d1cRs/r + D_7*(d3cRs/r + 2._dp*d2cRs/r**2._dp - 2._dp*d1cRs/r**3._dp) ! B17
+    v_short(8) = D_8*(d3cRs/r + 2._dp*d2cRs/r**2._dp - 2._dp*d1cRs/r**3._dp) ! B18
+    v_short(9) = -D_9*(d2cRs - d1cRs/r)/r**2._dp ! B19
+    v_short(10) = -D_10*(d2cRs - d1cRs/r)/r**2._dp ! B20
+    v_short(11) = -D_11*(d2cRs - d1cRs/r)/r**2._dp ! B21
+    v_short(12) = C_0_IT*CRs + C_1_IT*(-d2cRs - 2._dp*d1cRs/r) ! B26 (skipping nonlocal functions B22-B25)
+    v_short(13) = C_0_IV*CRs ! B27 (excluding nonlocal term)
+    v_short(14) = -C_3_IT*(d2cRs - d1cRs/r) ! B30
+    v_short(15) = -C_4_IT*d1cRs/r ! B32
+
+end subroutine short_range_potentials
+
+real(dp) function C_Rs(r, R_S) result(CRs)
+    implicit none
+    real(dp), intent(in) :: r, R_S ! radius and short-range LEC
+
+    CRs = hbar_c*exp(-(r/R_S)**2)/(pi**(3._dp/2._dp)*R_S**3)
 
 end function C_Rs
     
-! real(dp) function d1_c_Rs(r, R_S) result(d1cRs)
-!     implicit none
-!     real(dp), intent(in) :: r ! r = radius
-!     real(dp) :: d1cRs
+real(dp) function d1_c_Rs(r, R_S) result(d1cRs)
+    implicit none
+    real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-!     d1cRs = -2*r*hbar_c*exp(-(r/R_S)**2)/(pi)**(3/2)*R_S**5)
+    d1cRs = -2._dp*r*hbar_c*exp(-(r/R_S)**2._dp)/((pi)**(3._dp/2._dp)*R_S**5._dp)
     
-! end function
+end function
 
-! real(dp) function d2_c_Rs(r) result(d2cRs)
-!     implicit none
-!     real(dp), intent(in) :: r ! r = radius
-!     real(dp) :: d2cRs
+real(dp) function d2_c_Rs(r, R_S) result(d2cRs)
+    implicit none
+    real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-!     d2cRs = -2*hbar_c*exp(-(r/R_S)**2)*(R_S**2-2*r**2)/(pi)**3/2*R_S**7)
+    d2cRs = -2._dp*hbar_c*exp(-(r/R_S)**2._dp)*(R_S**2._dp-2._dp*r**2._dp)/((pi)**(3._dp/2._dp)*R_S**7._dp)
     
-! end function
+end function
 
-! real(dp) function d3_c_Rs(r) result(d3cRs)
-!     implicit none
-!     real(dp), intent(in) :: r ! r = radius
-!     real(dp) :: d3cRs
+real(dp) function d3_c_Rs(r, R_S) result(d3cRs)
+    implicit none
+    real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-!     d3cRs = 4*r*hbar_c*exp(-(r/R_S)**2)*(3*R_S**2-2*r**2)/(pi)**3/2*R_S**9)
+    d3cRs = 4._dp*r*hbar_c*exp(-(r/R_S)**2._dp)*(3._dp*R_S**2._dp-2._dp*r**2._dp)/((pi)**(3._dp/2._dp)*R_S**9._dp)
     
-! end function
+end function
 
-! real(dp) function d4_c_Rs(r) result(d4cRs)
-!     implicit none
-!     real(dp), intent(in) :: r ! r = radius
-!     real(dp) :: d4cRs
+real(dp) function d4_c_Rs(r, R_S) result(d4cRs)
+    implicit none
+    real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-!     d4cRs = 4*hbar_c*exp(-(r/R_S)**2)*(4*r**4 - 12*r**2*R_S**2 + 3*R_S**4)/(pi)**3/2*R_S**11)
+    d4cRs = 4._dp*hbar_c*exp(-(r/R_S)**2._dp)*(4._dp*r**4._dp - 12._dp*r**2._dp*R_S**2._dp + 3._dp*R_S**4._dp) &
+            /((pi)**(3._dp/2._dp)*R_S**11._dp)
     
-! end function
-
-! ! !! following are the short-range potentials
-
-! ! ! B11
-! ! real(dp) function v_s_c(r) result(vsc)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-! !     integer :: N 
-
-! !     c_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vsc = C_s * C_rs + C_1 * (-C_Rs_2 - 2*C_Rs_1/r) &
-! !         + D_1*(C_Rs_4 + 4*C_Rs_3/r)
-
-! ! end function
-
-! ! ! B12
-! ! real(dp) function v_s_tau(r,R_s) result(vstau)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-! !     integer :: N 
-
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vstau = C_2 * (-C_Rs_2 - 2*C_Rs_1/r) + D_2*(C_Rs_4 + 4*C_Rs_3/r)
-
-! ! end function
-
-! ! ! B13
-! ! real(dp) function v_s_sigma(r) result(vssigma)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vssigma = C_T*C_Rs + C_3 * (-C_Rs_2 - 2*C_Rs_1/r) + D_3*(C_Rs_4 + 4*C_Rs_3/r)
-
-
-! ! end function
-
-! ! ! B14
-! ! real(dp) function v_s_sigma_tau(r) result(vssigmatau)
-! ! implicit none
-! ! real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vssigmatau = C_4 * (-C_Rs_2 - 2*C_Rs_1/r) + D_4*(C_Rs_4 + 4*C_Rs_3/r)
-
-! ! end function
-
-! ! ! B15
-! ! real(dp) function v_s_t(r) result(vst)
-! ! implicit none
-! ! real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vst = -C_5 * (C_Rs_2 - C_Rs_1/r) + &
-! !          D_5*(C_Rs_4 + C_Rs_3/r + 6*C_Rs_2/r**2 + 6*C_Rs_1/r**3)
-
-! ! end function
-
-! ! ! B16
-! ! real(dp) function v_s_t_tau(r) result(vsttau)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vsttau = -C_6 * (C_Rs_2 - C_Rs_1/r) + &
-! !          D_6*(C_Rs_4 + C_Rs_3/r + 6*C_Rs_2/r**2 + 6*C_Rs_1/r**3)
-
-
-! ! end function
-
-! ! ! B17
-! ! real(dp) function v_s_b(r) result(vsb)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vsb = -C_7 * C_Rs_1/r + D_7*(C_Rs_3/r + 2*C_Rs_2/r**2 - 2*C_Rs_1/r**3)
-
-! ! end function
-
-! ! ! B18
-! ! real(dp) function v_s_b_tau(r) result(vsbtau)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vsbtau = D_8*(C_Rs_3/r + 2*C_Rs_2/r**2 - 2*C_Rs_1/r**3)
-
-! ! end function
-
-! ! ! B19
-! ! real(dp) function v_s_b_b(r) result(vsbb)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vsbb = -D_9*(C_Rs_2 - C_Rs_1/r)/r**2
-
-! ! end function
-
-! ! ! B20
-! ! real(dp) function v_s_q(r) result(vsq)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-
-! !     vsq = -D_10*(C_Rs_2 - C_Rs_1/r)/r**2
-
-! ! end function
-
-! ! ! B21
-! ! real(dp) function v_s_q_sigma(r) result(vsqsigma)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-
-! !     vsqsigma = -D_11*(C_Rs_2 - C_Rs_1/r)/r**2
-
-! ! end function
-
-! ! ! B25
-! ! real(dp) function v_s_p_t_tau(r) result(vspttau)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vspttau = -D_15*(C_Rs_2 - C_Rs_1/r)
-
-! ! end function
-
-! ! ! B26
-! ! real(dp) function v_s_upperT(r) result(vsupperT)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vsupperT = C_IV_0*C_Rs + C_IT_1*(-C_Rs_2 - 2*C_Rs_1/r)
-
-! ! end function
-
-! ! ! B27
-! ! real(dp) function v_s_tau_z(r) result(vstauz)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vstauz = C_IV_0*C_Rs + C_IT_1*(-C_Rs_2 - 2*C_Rs_1/r)
-
-! ! end function
-
-! ! ! B28
-! ! real(dp) function v_sigma_upperT_s(r) result(vssigmaupperT)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vssigmaupperT = C_IT_2*(-C_Rs_2 - 2*C_Rs_1/r)
-
-! ! end function
-
-! ! ! B30
-! ! real(dp) function v_s_t_upperT(r)
-! !     implicit none
-! !     real(dp), intent(in) :: r ! r = radius
-
-! !     C_Rs = C_Rs(r, 0)
-! !     c_Rs_1 = C_Rs(r, 1)
-! !     c_Rs_2 = C_Rs(r, 2)
-! !     c_Rs_3 = C_Rs(r, 3)
-! !     c_Rs_4 = C_Rs(r, 4)
-
-! !     vssigmatauz = -C_IT_3*(C_Rs_2 - C_Rs_1/r)
-
-! ! end function
-
-! ! ! B32
-! ! real(dp) function v_b_upperT_s(r) result(vsbupperT)
-! !     implicit none
-! !     real(dp) intent(in) :: r
-! !     integer :: N
-
-! !     C_Rs_1 = C_Rs(r, 1)
-
-! !     vsbupperT = - C_IT_4 * C_Rs_1/r  
-
-! ! end function
+end function
 
 end module short_range_chiral_potentials
