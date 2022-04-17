@@ -534,8 +534,8 @@ real(dp) function v_nlo_tau_d(r, vf1, vf2, vf5, vf6, vf7) result(vntaud)
     x = pion_mass_r(r)
     y = delta_nucleon_mass_difference_r(r)
 
-    vntaud = -hA**2 * hbar_c**5 * ( (5 - 11*gA**2)*vf1 + (x**2 * (12 - 24*gA**2) + y**2 * (12 - 12*gA**2))*vf2 &
-        + (-12*y*(2*x**2 + 2*y**2) + 6*gA**2*(4*x**2 + 4*y**2 + 8*x**2 * y**2)/y)*vf5 &
+    vntaud = -hA**2 * hbar_c**5 * ( (5 - 11*gA**2)*vf1 + (12*x**2 + 12*y**2 - gA**2*(24*x**2 + 12*y**2))*vf2 &
+        + (-12*y*(2*x**2 + 2*y**2) + 6*gA**2*(4*x**4 + 4*y**4 + 8*x**2 * y**2)/y)*vf5 &
         + (-12*y + 6*gA**2*(4*x**2 + 4*y**2)/y)*vf6 + 6*gA**2*vf7/y ) &
         / (216 * pi**3 * r**5 * Fpi**4)
 end function v_nlo_tau_d
@@ -558,7 +558,7 @@ real(dp) function v_nlo_sigma_d(r, vf1, vf2, vf5, vf6, vf7) result(vnsd)
     x = pion_mass_r(r)
     y = delta_nucleon_mass_difference_r(r)
 
-    vnsd = -gA**2 * hA**2 * hbar_c**5 * (2*vf1 + 8*x**2*vf2 - 16*y*x**2*vf5 - (4*y**2 + 4*x**2)*vf6/y - vf7/y) & 
+    vnsd = -gA**2 * hA**2 * hbar_c**5 * (2*vf1 + 8*x**2*vf2 - (16*x**2*y**2*vf5 + (4*x**2 + 4*y**2)*vf6 + vf7)/y) & 
         / (72 * pi**3 * r**5 * Fpi**4)
 end function v_nlo_sigma_d
 
@@ -646,8 +646,8 @@ real(dp) function v_nlo_c_2d(r, vf2, vf4, vf5, vf6, vf7) result(vnc2d)
     x = pion_mass_r(r)
     y = delta_nucleon_mass_difference_r(r)
 
-    vnc2d = -hA**4 * hbar_c**5 * (4*y**2*vf2 + 2*vf4 + (4*x**4 - 12*y**4 - 8*x**2*y**2)*vf5 &
-        + (4*x**2 - 4*y**2)*vf6/y + vf7/y) &
+    vnc2d = -hA**4 * hbar_c**5 * (4*y**2*vf2 + 2*vf4 + ((4*x**4 -8*x**2*y**2 - 12*y**4)*vf5 &
+        + (4*x**2 - 4*y**2)*vf6 + vf7)/y) &
         / (108 * pi**3 * r**5 * Fpi**4)
 
 end function v_nlo_c_2d
@@ -803,7 +803,7 @@ real(dp) function v_n2lo_sigmatau(r) result(vn2stau)
 
     x = pion_mass_r(r)
 
-    vn2stau = 3*gA**2 * hbar_c**6 * c4*exp(-2*x) * (1 + x)*(3 + 3*x + 2*x**2) &
+    vn2stau = gA**2 * hbar_c**6 * c4*exp(-2*x) * (1 + x)*(3 + 3*x + 2*x**2) &
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_sigmatau
 
@@ -823,7 +823,7 @@ real(dp) function v_n2lo_ttau(r) result(vn2ttau)
 
     x = pion_mass_r(r)
 
-    vn2ttau = - 3*gA**2 * hbar_c**6 * c4 * exp(-2*x) * (1 + x)*(3 + 3*x + 2*x**2) &
+    vn2ttau = - gA**2 * hbar_c**6 * c4 * exp(-2*x) * (1 + x)*(3 + 3*x + x**2) &
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_ttau
 
@@ -846,8 +846,8 @@ real(dp) function v_n2lo_c_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2cd)
 
 
     vn2cd = hA**2 * y * hbar_c**6 * ((5*c2-6*c3)*vf1 + ((-24*c1 + 12*c2 - 12*c3)*x**2 + 12*c2*y**2)*vf2 &
-            + 6*((8*c1 + 4*c3)*x**4 + (8*c1 - 4*c2 + 4*c3)*x**2*y**2 -4*c2*y**4)*vf5/y &
-            + 6*((4*c1 + 4*c3)*x**2 + (-2*c2 + 2*c3)*y**2)*vf6 +6*c3*vf7/y) &
+            + 6*(((8*c1 + 4*c3)*x**4 + (8*c1 - 4*c2 + 4*c3)*x**2*y**2 - 4*c2*y**4)*vf5 &
+            + ((4*c1 + 4*c3)*x**2 + (-2*c2 + 2*c3)*y**2)*vf6 + c3*vf7)/y) &
             / (18*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_c_d
@@ -871,8 +871,8 @@ real(dp) function v_n2lo_tau_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2taud)
 
 
     vn2taud = -b38 * hA * y * hbar_c**6 * ((5 - 11*gA**2)*vf1 + (12*x**2 + 12*y**2 - gA**2 * (24*x**2 + 12*y**2))*vf2 &
-            + (-24*y*(x**2 + y**2) +24*gA**2 * (x**4 + 2*x**2*y**2 + y**4))*vf5/y &
-            + 6*(-12*y  + 24*gA**2 * (x**2 + y**2))*vf6/y + 6*gA**2*vf7/y) &
+            + (-12*y*(2*x**2 + 2*y**2) + 6*gA**2*(4*x**4 + 8*x**2*y**2 + 4*y**4)/y)*vf5 &
+            + (-12*y + 6*gA**2*(4*x**2 + 4*y**2)/y)*vf6 + 6*gA**2*vf7/y) &
             / (54*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_tau_d
@@ -895,7 +895,7 @@ real(dp) function v_n2lo_sigma_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2sigmad)
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2sigmad = -b38 * hA * gA**2 * y * hbar_c**6 * (2*vf1 + 8*x**2*vf2 - 16*x**2*y*vf5 - 4*vf6/y - vf7/y) &
+    vn2sigmad = -b38 * hA * gA**2 * y * hbar_c**6 * (2*vf1 + 8*x**2*vf2 - (16*x**2*y**2*vf5 + 4*(x**2 + y**2)*vf6 + vf7)/y) &
             / (18*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_sigma_d
@@ -918,7 +918,7 @@ real(dp) function v_n2lo_sigmatau_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2staud)
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2staud = -c4* hA**2 * y * hbar_c**6 * (2*vf1 + 8*x**2*vf2 - 16*x**2*y*vf5 - 4*vf6/y - vf7/y) &
+    vn2staud = -c4* hA**2 * y * hbar_c**6 * (2*vf1 + 8*x**2*vf2 - (16*x**2*y**2*vf5 + 4*(x**2 + y**2)*vf6 + vf7)/y) &
             / (108*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_sigmatau_d
@@ -941,7 +941,7 @@ real(dp) function v_n2lo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2td = -c4* hA**2 * y * hbar_c**6 * (2*vf1 + (6+8*x**2)*vf2 + 6*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5/y &
+    vn2td = b38*hA*gA**2 * y*hbar_c**6 * (2*vf1 + (6+8*x**2)*vf2 + 6*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5/y &
             - (3 + 4*x**2 + 4*y**2)*vf6/y - vf7/y - 3*vf8/y - 12*y*vf9) &
             / (36*pi**3 * r**6 * Fpi**4)
 
@@ -990,8 +990,8 @@ real(dp) function v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2c2d)
 
 
     vn2c2d = -2*b38 * hA**3 * y * hbar_c**6 * (11*vf1 + (24*x**2 + 12*y**2)*vf2 + &
-             6*vf4 - 3*(24*x**2*y**2 + 4*x**2 + 20*y**2)*vf5/y - 3*(4*x**2 + 12*y**2)*vf6/y &
-             - 3*vf7/y) &
+             6*vf4 - 3*((4*x**4 + 24*x**2*y**2 + 20*y**4)*vf5 + (4*x**2 + 12*y**2)*vf6 &
+             + vf7)/y) &
             / (81*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_c_2d
@@ -1014,9 +1014,9 @@ real(dp) function v_n2lo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2tau2d
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2tau2d = -b38 * hA**3 * y * hbar_c**6 * (11*vf1 + (24*x**2 + 12*y**2)*vf2 &
-            + 6*vf4 - 3*(24*x**2*y**2 + 4*x**2 + 20*y**2)*vf5/y &
-            - 3*(4*x**2 + 12*y**2)*vf6/y - 3*vf7/y) &
+    vn2tau2d = -b38 * hA**3 * y * hbar_c**6 * (11*vf1 + (24*x**2 + 12*y**2)*vf2 + &
+    6*vf4 - 3*((4*x**4 + 24*x**2*y**2 + 20*y**4)*vf5 + (4*x**2 + 12*y**2)*vf6 &
+    + vf7)/y) &
             / (243*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_tau_2d
@@ -1085,8 +1085,8 @@ real(dp) function v_n2lo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2t2d = b38 * hA**3 * y * hbar_c**6 * (-6*vf1 - 6*(3 + 4*x**2)*vf2 - 24*vf3 + (36*y**2 + 48*x**2*y**2)*vf5/y &
-            + (3 + 4*x**2 + 12*y**2)*vf6/y + vf7/y + 3*vf8/y + 36*y*vf9) &
+    vn2t2d = b38 * hA**3 * y * hbar_c**6 * (-6*vf1 - 6*(3 + 4*x**2)*vf2 - 18*vf3 + ((36*y**2 + 48*x**2*y**2)*vf5 &
+            + (3 + 4*x**2 + 12*y**2)*vf6 + vf7 + 3*vf8 + 36*y**2*vf9)/y) &
             / (324*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_t_2d
@@ -1109,8 +1109,8 @@ real(dp) function v_n2lo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resu
     y = delta_nucleon_mass_difference_r(r)
 
 
-    vn2ttau2d = b38 * hA**3 * y * hbar_c**6 * (-6*vf1 - 6*(3 + 4*x**2)*vf2 - 24*vf3 + (36*y**2 + 48*x**2*y**2)*vf5/y &
-            + (3 + 4*x**2 + 12*y**2)*vf6/y + vf7/y + 3*vf8/y + 36*y*vf9) &
+    vn2ttau2d = b38 * hA**3 * y * hbar_c**6 * (-6*vf1 - 6*(3 + 4*x**2)*vf2 - 18*vf3 + ((36*y**2 + 48*x**2*y**2)*vf5 &
+    + (3 + 4*x**2 + 12*y**2)*vf6 + vf7 + 3*vf8 + 36*y**2*vf9)/y) &
             / (1944*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_ttau_2d
