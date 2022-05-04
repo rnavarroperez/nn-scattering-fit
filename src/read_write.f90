@@ -20,6 +20,8 @@ use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
 use long_range_chiral_potentials, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, &
                             calculate_chiral_potentials
+use short_range_chiral_potentials, only : short_range_potentials
+
 implicit none
 
 private
@@ -27,7 +29,7 @@ private
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
     write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
-    write_chiral_kernels, write_chiral_integrals, write_long_range_chiral_potentials
+    write_chiral_kernels, write_chiral_integrals, write_long_range_chiral_potentials, write_short_range_chiral_potentials
 
 contains
 
@@ -764,7 +766,7 @@ end subroutine write_chiral_integrals
 !> @brief       Calculates and records chiral long-range potentials
 !!
 !! Long range potentials are calculated for different values of r (using the calculate_chiral_potentials 
-!! subroutine in chiral_potential.f90). The results are written to files.
+!! subroutine in long_range_chiral_potentials.f90). The results are written to files.
 !!
 !! @author      Ky Putnam
 !!
@@ -821,6 +823,45 @@ subroutine write_long_range_chiral_potentials()
     close(unit7)
 
 end subroutine write_long_range_chiral_potentials
+
+!!
+!> @brief       Calculates and records chiral short-range potentials
+!!
+!! Short range potentials are calculated for different values of r (using the short_range_potentials
+!! subroutine in short_range_chiral_potentials.f90). The results are written to a file.
+!!
+!! @author      Ky Putnam
+!!
+
+subroutine write_short_range_chiral_potentials(short_lecs)
+    implicit none
+    real(dp), intent(in), dimension(:) :: short_lecs
+    real(dp) :: r, r_max
+    integer :: unit1
+    real(dp), dimension(:), allocatable :: v_short
+    real(dp), dimension(:,:), allocatable :: d_v_short
+    
+
+    !opens data files
+    open(newunit = unit1, file = "short_range_chiral.dat", status = 'unknown')
+
+    r = 0.1_dp
+    r_max = 12._dp
+
+    do
+        if (r > r_max) exit
+        call short_range_potentials(r, short_lecs, v_short, d_v_short)
+
+        !write data files
+        write(unit1,*) r, v_short
+
+        r = r + 0.1_dp
+    end do
+
+    !closes data files
+    close(unit1)
+
+end subroutine write_short_range_chiral_potentials
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
     implicit none
