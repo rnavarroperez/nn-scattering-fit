@@ -19,7 +19,7 @@ implicit none
 private
 
 public :: vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, vf_integral, chiral_integrals, &
-        calculate_chiral_potentials
+        calculate_chiral_potentials, long_range_potentials
 
 
 !!
@@ -41,6 +41,44 @@ interface
 end interface
 
 contains
+
+!!
+!> @brief       Long range chiral potentials
+!!
+!! Linear combinations of potentials previously calculated.
+!!
+!! @author      Ky Putnam
+!!
+subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)
+    implicit none
+    real(dp), intent(out) :: v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau
+    real(dp), intent(in) :: r, R_L, a_L
+    real(dp), dimension(1:2) :: v_lo
+    real(dp), dimension(1:3) :: v_nlo_deltaless
+    real(dp), dimension(1:6) :: v_nlo_1delta
+    real(dp), dimension(1:6) :: v_nlo_2delta
+    real(dp), dimension(1:3) :: v_n2lo_deltaless
+    real(dp), dimension(1:6) :: v_n2lo_1delta
+    real(dp), dimension(1:6) :: v_n2lo_2delta
+
+
+    call calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless,&
+    v_n2lo_1delta, v_n2lo_2delta)
+
+    ! A35
+    v_c = v_nlo_1delta(1) + v_nlo_2delta(1) + v_n2lo_deltaless(1) + v_n2lo_1delta(1) + v_n2lo_2delta(1)
+    ! A35
+    v_tau = v_nlo_deltaless(1) + v_nlo_1delta(2) + v_nlo_2delta(2) + v_n2lo_1delta(2) + v_n2lo_2delta(2)
+    ! A37
+    v_sigma = v_nlo_deltaless(2) + v_nlo_1delta(3) + v_nlo_2delta(3) + v_n2lo_1delta(3) + v_n2lo_2delta(3)
+    ! A38
+    v_sigma_tau = v_nlo_1delta(4) + v_nlo_2delta(4) + v_n2lo_deltaless(2) + v_n2lo_1delta(4) + v_n2lo_2delta(4)
+    ! A39
+    v_t = v_nlo_deltaless(3) + v_nlo_1delta(5) + v_nlo_2delta(5) + v_n2lo_1delta(5) + v_n2lo_2delta(5)
+    ! A40
+    v_t_tau = v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)
+
+end subroutine long_range_potentials
 
 !!
 !> @brief       Integration function for potentials
