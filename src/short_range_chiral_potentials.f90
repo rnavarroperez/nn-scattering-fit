@@ -20,15 +20,23 @@ module short_range_chiral_potentials
 
 contains
 
-subroutine short_range_potentials(r, short_lecs, v_short)
+subroutine short_range_potentials(r, short_lecs, v_short, d_v_short)
     implicit none
     real(dp) :: CRs, d1cRs, d2cRs, d3cRs, d4cRs ! CRs and its derivatives
     real(dp) :: C_s, C_T, C_1, C_2, C_3, C_4, C_5, C_6, C_7, D_1, D_2, D_3, D_4, D_5, D_6, D_7, &
                 D_8, D_9, D_10, D_11, C_0_IV, C_0_IT, C_1_IT, C_2_IT, C_3_IT, C_4_IT, R_S ! short-range LECS
     real(dp), intent(in) :: r
-    real(dp), intent(out), dimension(1:16) :: v_short
-    real(dp) :: short_lecs
+    integer, parameter :: n_pontentials = 16
+    real(dp), intent(out), allocatable, dimension(:) :: v_short
+    real(dp), intent(in), dimension(:) :: short_lecs
+    real(dp), intent(out), allocatable, dimension(:,:) :: d_v_short
 
+    allocate(v_short(1:n_potentials))
+    allocate(d_v_short(1:n_potenials, 1:size(short_lecs)))
+
+    ! initialize d_v_short array to contain 0s
+    d_v_short = 0._dp
+  
     !unpack short-range low energy constants (short_lecs)
     C_s = short_lecs(1)
     C_T = short_lecs(2)
@@ -71,22 +79,80 @@ subroutine short_range_potentials(r, short_lecs, v_short)
     d4cRs = d4_c_Rs(r, R_S)
 
     ! short-range potentials (appendix numbers corresponding to "Minimally nonlocal nucleon-nucleon...")
-
-    v_short(1) = C_s*CRs + C_1*(-d2cRs - 2._dp*d1cRs/r) + D_1*(d4cRs + 4._dp*d3cRs/r) ! B11
-    v_short(2) = C_2 * (-d2cRs - 2._dp*d1cRs/r) + D_2*(d4cRs + 4._dp*d3cRs/r) ! B12
-    v_short(3) = C_T*CRs + C_3*(-d2cRs - 2._dp*d1cRs/r) + D_3*(d4cRs + 4._dp*d3cRs/r) ! B13
-    v_short(4) = C_4*(-d2cRs - 2._dp*d1cRs/r) + D_4*(d4cRs + 4._dp*d3cRs/r) ! B14
-    v_short(5) = -C_5*(d2cRs - d1cRs/r) + D_5*(d4cRs + d3cRs/r -6._dp*d2cRs/r**2._dp + 6._dp*d1cRs/r**3._dp) ! B15
-    v_short(6) = -C_6*(d2cRs - d1cRs/r) + D_6*(d4cRs + d3cRs/r -6._dp*d2cRs/r**2._dp + 6._dp*d1cRs/r**3._dp) ! B16
-    v_short(7) = -C_7*d1cRs/r + D_7*(d3cRs/r + 2._dp*d2cRs/r**2._dp - 2._dp*d1cRs/r**3._dp) ! B17
-    v_short(8) = D_8*(d3cRs/r + 2._dp*d2cRs/r**2._dp - 2._dp*d1cRs/r**3._dp) ! B18
+    v_short(1) = C_s*CRs + C_1*(-d2cRs - 2*d1cRs/r) + D_1*(d4cRs + 4*d3cRs/r) ! B11
+    v_short(2) = C_2 * (-d2cRs - 2*d1cRs/r) + D_2*(d4cRs + 4*d3cRs/r) ! B12
+    v_short(3) = C_T*CRs + C_3*(-d2cRs - 2*d1cRs/r) + D_3*(d4cRs + 4*d3cRs/r) ! B13
+    v_short(4) = C_4*(-d2cRs - 2*d1cRs/r) + D_4*(d4cRs + 4*d3cRs/r) ! B14
+    v_short(5) = -C_5*(d2cRs - d1cRs/r) + D_5*(d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp) ! B15
+    v_short(6) = -C_6*(d2cRs - d1cRs/r) + D_6*(d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp) ! B16
+    v_short(7) = -C_7*d1cRs/r + D_7*(d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp) ! B17
+    v_short(8) = D_8*(d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp) ! B18
     v_short(9) = -D_9*(d2cRs - d1cRs/r)/r**2._dp ! B19
     v_short(10) = -D_10*(d2cRs - d1cRs/r)/r**2._dp ! B20
     v_short(11) = -D_11*(d2cRs - d1cRs/r)/r**2._dp ! B21
-    v_short(12) = C_0_IT*CRs + C_1_IT*(-d2cRs - 2._dp*d1cRs/r) ! B26 (skipping nonlocal functions B22-B25)
+    v_short(12) = C_0_IT*CRs + C_1_IT*(-d2cRs - 2*d1cRs/r) ! B26 (skipping nonlocal functions B22-B25)
     v_short(13) = C_0_IV*CRs ! B27 (excluding nonlocal term)
-    v_short(14) = -C_3_IT*(d2cRs - d1cRs/r) ! B30
-    v_short(15) = -C_4_IT*d1cRs/r ! B32
+    v_short(14) = C_2_IT*(-d2cRs -2*d1cRs/r) ! B28
+    v_short(15) = -C_3_IT*(d2cRs - d1cRs/r) ! B30
+    v_short(16) = -C_4_IT*d1cRs/r ! B32
+
+    ! dv_c_s (derivatives of B11)
+    d_v_short(1:1) =  CRs
+    d_v_short(1:3) =  -d2cRs - 2*d1cRs/r
+    d_v_short(1:10) =  d4cRs + 4*d3cRs/r
+
+    ! dv_tau_s (derivatives of B12)
+    d_v_short(2:4) = -d2cRs - 2*d1cRs/r
+    d_v_short(2:11) = d4cRs + 4*d3cRs/r
+
+    ! dv_sigma_s (derivatives of B13)
+    d_v_short(3:2) = CRs
+    d_v_short(3:5) = -d2cRs - 2*d1cRs/r
+    d_v_short(3:12) = d4cRs + 4*d3cRs/
+
+    ! dv_sigma_tau_s (derivatives of B14)
+    d_v_short(4:6) = -d2cRs - 2*d1cRs/r
+    d_v_short(4:13) = d4cRs + 4*d3cRs/r
+
+    ! dv_t_s (derivatives of B15)
+    d_v_short(5:7) = - d2cRs + d1cRs/r
+    d_v_short(5:14) = d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp
+
+    ! dv_t_tau_s (derivatives of B16)
+    d_v_short(6:8) = - d2cRs + d1cRs/r
+    d_v_short(6:15) = d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp
+
+    ! dv_b_s (derivatives of B17)
+    d_v_short(7:9) = - d1cRs/r
+    d_v_short(7:16) = d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp
+
+    ! dv_b_tau_s (derivatives of B18)
+    d_v_short(8:17) = d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp
+
+    ! dv_b_b_s (derivatives of B19)
+    d_v_short(9:18) = -(d2cRs - d1cRs/r)/r**2._dp
+
+    ! dv_q_s (derivatives of B20)
+    d_v_short(10:19) = -(d2cRs - d1cRs/r)/r**2._dp
+
+    ! dv_q__sigma_s (derivatives of B21)
+    d_v_short(11:20) = -(d2cRs - d1cRs/r)/r**2._dp
+
+    ! dv_T_s (derivatives of B26)
+    d_v_short(12:21) = CRs
+    d_v_short(12:22) = -d2cRs - 2*d1cRs/r
+
+    ! dv_tau_z_s (derivatives of B27)
+    d_v_short(13:23) = CRs
+
+    ! dv_sigma_T_s (derivatives of B28)
+    d_v_short(14:24) = -d2cRs -2*d1cRs/r
+
+    ! dv_t_T_s (derivatives of B30)
+    d_v_short(14:25) = - d2cRs + d1cRs/r
+
+    ! dv_b_T_s (derivatives of B32)
+    d_v_short(14:26) = -d1cRs/r
 
 end subroutine short_range_potentials
 
@@ -94,7 +160,7 @@ real(dp) function C_Rs(r, R_S) result(CRs)
     implicit none
     real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-    CRs = hbar_c*exp(-(r/R_S)**2)/(pi**(3._dp/2._dp)*R_S**3)
+    CRs = hbar_c*exp(-(r/R_S)**2._dp)/(sqrt(pi)*R_S)**3._dp
 
 end function C_Rs
     
@@ -102,7 +168,7 @@ real(dp) function d1_c_Rs(r, R_S) result(d1cRs)
     implicit none
     real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-    d1cRs = -2._dp*r*hbar_c*exp(-(r/R_S)**2._dp)/((pi)**(3._dp/2._dp)*R_S**5._dp)
+    d1cRs = -2*r*hbar_c*exp(-(r/R_S)**2._dp)/(pi**(3._dp/2._dp)*R_S**5._dp)
     
 end function
 
@@ -110,25 +176,25 @@ real(dp) function d2_c_Rs(r, R_S) result(d2cRs)
     implicit none
     real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-    d2cRs = -2._dp*hbar_c*exp(-(r/R_S)**2._dp)*(R_S**2._dp-2._dp*r**2._dp)/((pi)**(3._dp/2._dp)*R_S**7._dp)
-    
+    d2cRs = hbar_c*exp(-(r/R_S)**2._dp)*(4*r**2._dp - 2*R_S**2._dp)/(pi**(3._dp/2._dp)*R_S**7._dp)
+
 end function
 
 real(dp) function d3_c_Rs(r, R_S) result(d3cRs)
     implicit none
     real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-    d3cRs = 4._dp*r*hbar_c*exp(-(r/R_S)**2._dp)*(3._dp*R_S**2._dp-2._dp*r**2._dp)/((pi)**(3._dp/2._dp)*R_S**9._dp)
-    
+    d3cRs = hbar_c*exp(-(r/R_S)**2._dp)*(12*r*R_S**2._dp - 8*r**3._dp)/(pi**(3._dp/2._dp)*R_S**9._dp)
+
 end function
 
 real(dp) function d4_c_Rs(r, R_S) result(d4cRs)
     implicit none
     real(dp), intent(in) :: r, R_S ! radius and short-range LEC
 
-    d4cRs = 4._dp*hbar_c*exp(-(r/R_S)**2._dp)*(4._dp*r**4._dp - 12._dp*r**2._dp*R_S**2._dp + 3._dp*R_S**4._dp) &
-            /((pi)**(3._dp/2._dp)*R_S**11._dp)
-    
+    d4cRs = hbar_c*exp(-(r/R_S)**2._dp)*(16*r**4._dp - 48*(r*R_S)**2._dp + 12*R_S**4._dp) &
+            /(pi**(3._dp/2._dp)*R_S**11._dp)
+
 end function
 
 end module short_range_chiral_potentials
