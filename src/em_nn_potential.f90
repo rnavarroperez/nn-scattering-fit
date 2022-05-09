@@ -11,16 +11,44 @@ use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, f2=>f_pi_n_2, &
     pi, mu_p=>mu_proton, mu_n=>mu_neutron, alpha, m_e=>electron_mass, m_p=>proton_mass, &
     m_n=>neutron_mass, gamma=>euler_mascheroni
-use st_basis_2_partial_waves, only : n_st_terms
+use basis_change, only : n_st_terms, uncoupled_pot, coupled_pot
 use quadrature, only : booles_quadrature
 implicit none
 
 private
 
-public :: n_em_terms, em_potential_in_st_basis, em_potential, vacuum_polarization_integral
+public :: n_em_terms, em_potential, add_em_potential_to_s_waves
 
 integer, parameter :: n_em_terms = 14 !< Number of terms in the EM potential
 contains
+
+subroutine add_em_potential_to_s_waves(r, reaction, v_pw)
+    implicit none
+    real(dp), intent(in) :: r
+    character(len=2), intent(in) :: reaction
+    real(dp), intent(inout), dimension(:, :) :: v_pw
+
+    real(dp) :: v_em(1:n_em_terms), v_em_st(1:n_st_terms)
+    integer :: l, s, j
+
+    ! Adding EM terms to the 1S0 partial wave
+    v_em = em_potential(r)
+    l = 0
+    s = 0
+    j = 0
+    call em_potential_in_st_basis(reaction, s, v_em, v_em_st)
+    v_pw(1, 1) = v_pw(1, 1) + uncoupled_pot(l, s, j, v_em_st)
+
+    if (size(v_pw, 2) > 1) then
+        ! Adding EM terms to the 3S1-3D1 coupled channel
+        s = 1
+        j = 1
+        call em_potential_in_st_basis(reaction, s, v_em, v_em_st)
+        v_pw(3:5, 2) = v_pw(3:5, 2) + coupled_pot(j, v_em_st)
+    endif
+
+    
+end subroutine add_em_potential_to_s_waves
 
 !!
 !> @brief      EM potential in the spin-isospin basis

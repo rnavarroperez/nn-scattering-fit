@@ -11,7 +11,7 @@ module pion_exchange
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, &
     pi, f_pi_n_2
-use st_basis_2_partial_waves, only : n_st_terms, st_2_pw_basis!, uncoupled_pot, coupled_pot
+use basis_change, only : n_st_terms, st_2_pw_basis
 
 implicit none
 
@@ -80,7 +80,7 @@ end subroutine ope_all_partial_waves
 !! couplings are also calculated.
 !!
 !! The structure and order of the spin-isospin basis is the same
-!! that was adopted in the av18 module. (see st_basis_2_partial_waves module
+!! that was adopted in the av18 module. (see basis_change module
 !! for details)
 !!
 !! @author     Rodrigo Navarro Perez
