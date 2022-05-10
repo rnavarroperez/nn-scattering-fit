@@ -129,6 +129,9 @@ randomize_exp.o: randomize_exp.f90 exp_data.o precisions.o random_num.o
 plot_potential.o: plot_potential.f90
 	$(COMPILER) $(FLAGS) -c $<	
 
+chiral_potential.o: chiral_potential.f90 precisions.o delta_shell.o long_range_chiral_potentials.o short_range_chiral_potentials.o
+	$(COMPILER) $(FLAGS) -c $<	
+
 clean:
 	rm -rf *.o *.mod
 
