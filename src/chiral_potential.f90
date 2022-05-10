@@ -95,8 +95,16 @@ subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
     real(dp), allocatable, intent(out) :: dv_nn(:, :) !< derivatives of v_nn with respect to the parameters in parameters
 
 
+
     ! call long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)
+
     ! call short_range_potentials(r, short_lecs, v_short, d_v_short)
+
+    ! v_nn(1) = v_c + v_short(1) !v_c
+    ! v_nn(2) = v_tau + v_short(2) ! v_tau
+    ! ....
+    ! v_nn(19) = 
+
 
 end subroutine chiral_potential_operator
 
