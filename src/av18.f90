@@ -13,8 +13,8 @@ module av18
 use precisions, only : dp
 use constants, only : hbar_c, mpi0=>pion_0_mass, mpic=>pion_c_mass, mpi=>pion_mass, f2=>f_pi_n_2, &
     pi
-use em_nn_potential, only : n_em_terms, em_potential, em_potential_in_st_basis
-use st_basis_2_partial_waves, only : n_st_terms, uncoupled_pot, coupled_pot, st_2_pw_basis
+use em_nn_potential, only : add_em_potential_to_s_waves
+use basis_change, only : n_st_terms, operator_2_partial_waves
 use delta_shell, only : nn_model
 use string_functions, only : mask_to_string
 
@@ -95,149 +95,18 @@ subroutine av18_all_partial_waves(ap, r, reaction, v_pw, dv_pw)
     real(dp), intent(out) :: v_pw(:, :) !< AV18 potential in all partial waves, units of MeV
     real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of v_nn with respect to the parameters in ap
 
-    real(dp) :: v_nn(1:n_operators) 
+    real(dp) :: v_nn(1:n_operators)
     real(dp), allocatable :: dv_nn(:, :)
-    real(dp) :: v_00(1:n_st_terms), v_01(1:n_st_terms), v_10(1:n_st_terms), v_11(1:n_st_terms), &
-                v_em_st(1:n_st_terms)
-    real(dp) :: dv_00(1:n_st_terms, 1:n_parameters), dv_01(1:n_st_terms, 1:n_parameters), &
-                dv_10(1:n_st_terms, 1:n_parameters), dv_11(1:n_st_terms, 1:n_parameters)
-    real(dp) :: v_em(1:n_em_terms)
-    integer :: n_jwaves, n_waves
-    integer :: tz1, tz2, l, s, j
 
     if (size(ap) /= n_parameters) stop 'incorrect number of parameters for v_pw in av18_all_partial_waves'
 
     call av18_operator(ap, r, v_nn, dv_nn)
-    v_em = em_potential(r)
 
-    n_waves  = size(v_pw, 1)
-    n_jwaves = size(v_pw, 2)
+    call operator_2_partial_waves(reaction, v_nn, dv_nn, v_pw, dv_pw)
 
-    if (n_waves /= 5) stop 'incorrect number of waves for v_pw in av18_all_partial_waves'
-
-    allocate(dv_pw(1:n_parameters, 1:n_waves, 1:n_jwaves))
-    v_pw = 0
-    dv_pw = 0
-
-    select case (trim(reaction))
-    case ('pp')
-        tz1 = 1
-        tz2 = 1
-    case ('np')
-        tz1 = -1
-        tz2 = 1
-    case ('nn')
-        tz1 = -1
-        tz2 = -1
-    case default
-        stop 'incorrect reaction channel in av18_all_partial_waves'
-    end select
-
-    v_01 = operator_2_st_basis(tz1, tz2, 0, 1, v_nn)
-    v_11 = operator_2_st_basis(tz1, tz2, 1, 1, v_nn)
-    dv_01 = d_operator_2_st_basis(tz1, tz2, 0, 1, dv_nn)
-    dv_11 = d_operator_2_st_basis(tz1, tz2, 1, 1, dv_nn)
-
-    v_00 = 0._dp
-    v_10 = 0._dp
-    dv_00 = 0._dp
-    dv_10 = 0._dp
-    if (tz1*tz2 == -1) then
-        v_00 = operator_2_st_basis(tz1, tz2, 0, 0, v_nn)
-        v_10 = operator_2_st_basis(tz1, tz2, 1, 0, v_nn)
-        dv_00 = d_operator_2_st_basis(tz1, tz2, 0, 0, dv_nn)
-        dv_10 = d_operator_2_st_basis(tz1, tz2, 1, 0, dv_nn)
-    endif
-
-    call st_2_pw_basis(reaction, v_00, v_01, v_10, v_11, dv_00, dv_01, dv_10, dv_11, v_pw, dv_pw)
-
-    ! Adding EM terms to the 1S0 partial wave
-    v_em = em_potential(r)
-    l = 0
-    s = 0
-    j = 0
-    call em_potential_in_st_basis(reaction, s, v_em, v_em_st)
-    v_pw(1, 1) = v_pw(1, 1) + uncoupled_pot(l, s, j, v_em_st)
-
-    if (n_jwaves > 1) then
-        ! Adding EM terms to the 3S1-3D1 coupled channel
-        s = 1
-        j = 1
-        v_10 = 0._dp
-        call em_potential_in_st_basis(reaction, s, v_em, v_em_st)
-        v_pw(3:5, 2) = v_pw(3:5, 2) + coupled_pot(j, v_em_st)
-    endif
+    call add_em_potential_to_s_waves(r, reaction, v_pw)
 
 end subroutine av18_all_partial_waves
-
-!!
-!> @brief      transform potential from operator to st basis
-!!
-!! Given a potential in the AV18 operator basis and the corresponding spin and isospin quantum
-!! numbers, returns the potential in the spin-isospin basis.
-!!
-!! The five terms in the basis are central, tensor, spin-orbit, l squared, and spin-orbit squared
-!!
-!! @return     potential in spin-isospin basis
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-function operator_2_st_basis(tz1, tz2, s, t, v_op) result(v_st)
-    implicit none
-    integer, intent(in) :: tz1 !< isospin projected in the z direction for the first particle
-    integer, intent(in) :: tz2 !< isospin projected in the z direction for the second particle
-    integer, intent(in) :: s !< spin quantum number
-    integer, intent(in) :: t !< isospin quantum number 
-    real(dp), intent(in) :: v_op(1:n_operators) !< potential in the AV18 operator basis
-    real(dp) :: v_st(1:n_st_terms) !< potential in the spin-isospin basis
-    integer :: s1ds2, t1dt2,t12
-    s1ds2 = 4*s - 3
-    t1dt2 = 4*t - 3
-    t12 = 3*tz1*tz2 - t1dt2
-    ! central term, c
-    v_st(1) = v_op(1) + t1dt2*v_op(2) + s1ds2*v_op(3) + s1ds2*t1dt2*v_op(4) + t12*v_op(15) & 
-        + s1ds2*t12*v_op(16) + (tz1+tz2)*v_op(19)
-    ! tensor term, t
-    v_st(2) = v_op(5) + t1dt2*v_op(6) + t12*v_op(17)
-    ! spin-orbit term, ls
-    v_st(3) = v_op(7) + t1dt2*v_op(8) + t12*v_op(18)
-    ! l squared term, l2
-    v_st(4) = v_op(9) + t1dt2*v_op(10) + s1ds2*v_op(11) + s1ds2*t1dt2*v_op(12)
-    ! spin-orbit squared term, ls2
-    v_st(5) = v_op(13) + t1dt2*v_op(14)
-end function operator_2_st_basis
-
-!!
-!> @brief      transform derivatives potential from operator to st basis
-!!
-!! Given the derivatives of potential in the AV18 operator basis with respect to phenomenological
-!! parameters and the corresponding spin and isospin quantum numbers, returns the derivatives in the
-!! spin-isospin basis.
-!!
-!! The five terms in the basis are central, tensor, spin-orbit, l squared, and spin-orbit squared
-!!
-!! @return     derivatives of the potential in spin-isospin basis
-!!
-!! @author     Rodrigo Navarro Perez
-!!
-function d_operator_2_st_basis(tz1, tz2, s, t, dv_op) result(dv_st)
-    implicit none
-    integer, intent(in) :: tz1 !< isospin projected in the z direction for the first particle
-    integer, intent(in) :: tz2 !< isospin projected in the z direction for the second particle
-    integer, intent(in) :: s !< spin quantum number
-    integer, intent(in) :: t !< isospin quantum number 
-    real(dp), intent(in) :: dv_op(:, :) !< derivatives of the potential in the AV18 operator basis
-    real(dp), allocatable :: dv_st(:, :) !< derivatives of the potential in the spin-isospin basis
-    integer :: n_p, n_o, i
-    n_p = size(dv_op,2)
-    n_o = size(dv_op,1)
-    if (n_o /= n_operators) stop 'incorrect number of operators in d_operator_2_st_basis'
-    allocate(dv_st(1:n_st_terms, 1:n_p))
-    do i = 1, n_p
-        dv_st(:, i) = operator_2_st_basis(tz1, tz2, s, t, dv_op(:, i))
-    enddo
-
-end function d_operator_2_st_basis
 
 !!
 !> @brief      av18 potential in operator basis

@@ -63,19 +63,19 @@ short_range_chiral_potentials.o: short_range_chiral_potentials.f90 precisions.o 
 special_functions.o: special_functions.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 	
-st_basis_2_partial_waves.o: st_basis_2_partial_waves.f90 precisions.o
+basis_change.o: basis_change.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o st_basis_2_partial_waves.o quadrature.o
+em_nn_potential.o: em_nn_potential.f90 precisions.o constants.o basis_change.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
-av18.o: av18.f90 precisions.o constants.o em_nn_potential.o st_basis_2_partial_waves.o string_functions.o
+av18.o: av18.f90 precisions.o constants.o em_nn_potential.o basis_change.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<
 
 av18_compatibility.o: av18_compatibility.f90 precisions.o
 	$(COMPILER) $(FLAGS) -c $<
 
-pion_exchange.o : pion_exchange.f90 precisions.o constants.o st_basis_2_partial_waves.o
+pion_exchange.o : pion_exchange.f90 precisions.o constants.o basis_change.o
 	$(COMPILER) $(FLAGS) -c $<
 
 delta_shell.o: delta_shell.f90 precisions.o constants.o utilities.o em_nn_potential.o pion_exchange.o string_functions.o
@@ -90,7 +90,7 @@ amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recip
 observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o utilities.o av18.o av18_compatibility.o long_range_chiral_potentials.o
+read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o utilities.o av18.o av18_compatibility.o long_range_chiral_potentials.o short_range_chiral_potentials.o
 	$(COMPILER) $(FLAGS) -c $<
 
 exp_data.o: exp_data.f90 precisions.o string_functions.o utilities.o amplitudes.o
@@ -127,6 +127,9 @@ randomize_exp.o: randomize_exp.f90 exp_data.o precisions.o random_num.o
 	$(COMPILER) $(FLAGS) -c $<
 
 plot_potential.o: plot_potential.f90
+	$(COMPILER) $(FLAGS) -c $<	
+
+chiral_potential.o: chiral_potential.f90 precisions.o delta_shell.o long_range_chiral_potentials.o short_range_chiral_potentials.o
 	$(COMPILER) $(FLAGS) -c $<	
 
 clean:

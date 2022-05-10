@@ -26,13 +26,13 @@ subroutine short_range_potentials(r, short_lecs, v_short, d_v_short)
     real(dp) :: C_s, C_T, C_1, C_2, C_3, C_4, C_5, C_6, C_7, D_1, D_2, D_3, D_4, D_5, D_6, D_7, &
                 D_8, D_9, D_10, D_11, C_0_IV, C_0_IT, C_1_IT, C_2_IT, C_3_IT, C_4_IT, R_S ! short-range LECS
     real(dp), intent(in) :: r
-    integer, parameter :: n_pontentials = 16
+    integer, parameter :: n_potentials = 16
     real(dp), intent(out), allocatable, dimension(:) :: v_short
     real(dp), intent(in), dimension(:) :: short_lecs
     real(dp), intent(out), allocatable, dimension(:,:) :: d_v_short
 
     allocate(v_short(1:n_potentials))
-    allocate(d_v_short(1:n_potenials, 1:size(short_lecs)))
+    allocate(d_v_short(1:n_potentials, 1:size(short_lecs)))
 
     ! initialize d_v_short array to contain 0s
     d_v_short = 0._dp
@@ -97,62 +97,62 @@ subroutine short_range_potentials(r, short_lecs, v_short, d_v_short)
     v_short(16) = -C_4_IT*d1cRs/r ! B32
 
     ! dv_c_s (derivatives of B11)
-    d_v_short(1:1) =  CRs
-    d_v_short(1:3) =  -d2cRs - 2*d1cRs/r
-    d_v_short(1:10) =  d4cRs + 4*d3cRs/r
+    d_v_short(1, 1) =  CRs
+    d_v_short(1, 3) =  -d2cRs - 2*d1cRs/r
+    d_v_short(1, 10) =  d4cRs + 4*d3cRs/r
 
     ! dv_tau_s (derivatives of B12)
-    d_v_short(2:4) = -d2cRs - 2*d1cRs/r
-    d_v_short(2:11) = d4cRs + 4*d3cRs/r
+    d_v_short(2, 4) = -d2cRs - 2*d1cRs/r
+    d_v_short(2, 11) = d4cRs + 4*d3cRs/r
 
     ! dv_sigma_s (derivatives of B13)
-    d_v_short(3:2) = CRs
-    d_v_short(3:5) = -d2cRs - 2*d1cRs/r
-    d_v_short(3:12) = d4cRs + 4*d3cRs/
+    d_v_short(3, 2) = CRs
+    d_v_short(3, 5) = -d2cRs - 2*d1cRs/r
+    d_v_short(3, 12) = d4cRs + 4*d3cRs/r
 
     ! dv_sigma_tau_s (derivatives of B14)
-    d_v_short(4:6) = -d2cRs - 2*d1cRs/r
-    d_v_short(4:13) = d4cRs + 4*d3cRs/r
+    d_v_short(4, 6) = -d2cRs - 2*d1cRs/r
+    d_v_short(4, 13) = d4cRs + 4*d3cRs/r
 
     ! dv_t_s (derivatives of B15)
-    d_v_short(5:7) = - d2cRs + d1cRs/r
-    d_v_short(5:14) = d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp
+    d_v_short(5, 7) = - d2cRs + d1cRs/r
+    d_v_short(5, 14) = d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp
 
     ! dv_t_tau_s (derivatives of B16)
-    d_v_short(6:8) = - d2cRs + d1cRs/r
-    d_v_short(6:15) = d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp
+    d_v_short(6, 8) = - d2cRs + d1cRs/r
+    d_v_short(6, 15) = d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp
 
     ! dv_b_s (derivatives of B17)
-    d_v_short(7:9) = - d1cRs/r
-    d_v_short(7:16) = d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp
+    d_v_short(7, 9) = - d1cRs/r
+    d_v_short(7, 16) = d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp
 
     ! dv_b_tau_s (derivatives of B18)
-    d_v_short(8:17) = d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp
+    d_v_short(8, 17) = d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp
 
     ! dv_b_b_s (derivatives of B19)
-    d_v_short(9:18) = -(d2cRs - d1cRs/r)/r**2._dp
+    d_v_short(9, 18) = -(d2cRs - d1cRs/r)/r**2._dp
 
     ! dv_q_s (derivatives of B20)
-    d_v_short(10:19) = -(d2cRs - d1cRs/r)/r**2._dp
+    d_v_short(10, 19) = -(d2cRs - d1cRs/r)/r**2._dp
 
     ! dv_q__sigma_s (derivatives of B21)
-    d_v_short(11:20) = -(d2cRs - d1cRs/r)/r**2._dp
+    d_v_short(11, 20) = -(d2cRs - d1cRs/r)/r**2._dp
 
     ! dv_T_s (derivatives of B26)
-    d_v_short(12:21) = CRs
-    d_v_short(12:22) = -d2cRs - 2*d1cRs/r
+    d_v_short(12, 21) = CRs
+    d_v_short(12, 22) = -d2cRs - 2*d1cRs/r
 
     ! dv_tau_z_s (derivatives of B27)
-    d_v_short(13:23) = CRs
+    d_v_short(13, 23) = CRs
 
     ! dv_sigma_T_s (derivatives of B28)
-    d_v_short(14:24) = -d2cRs -2*d1cRs/r
+    d_v_short(14, 24) = -d2cRs -2*d1cRs/r
 
     ! dv_t_T_s (derivatives of B30)
-    d_v_short(14:25) = - d2cRs + d1cRs/r
+    d_v_short(14, 25) = - d2cRs + d1cRs/r
 
     ! dv_b_T_s (derivatives of B32)
-    d_v_short(14:26) = -d1cRs/r
+    d_v_short(14, 26) = -d1cRs/r
 
 end subroutine short_range_potentials
 
