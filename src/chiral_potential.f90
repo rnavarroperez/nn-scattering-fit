@@ -3,8 +3,13 @@ module chiral_potential
 use precisions, only : dp
 use delta_shell, only : nn_model
 use long_range_chiral_potentials, only : long_range_potentials
+use string_functions, only : mask_to_string
 
 implicit none
+
+private
+
+public :: set_chiral_potential(potential, parameters)
 
 integer, parameter :: n_parameters = 28 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 19   !< Number of operators in the chiral potential
@@ -115,6 +120,37 @@ subroutine display_parameters(parameters, mask, unit, cv)
     integer, intent(in) :: unit !< Unit where the output is sent to. Either and already opened file or output_unit from iso_fortran_env
     real(dp), intent(in), optional, dimension(:, :) :: cv !< Covariance matrix of the parameters
 
+    character(len=7), dimension(1:n_parameters), parameter :: &
+        lecs = ['   C_S:', '   C_T:', '   C_1:', '   C_2:', '   C_3:', '   C_4:', '   C_5:', &
+                '   C_6:', '   C_7:', '   D_1:', '   D_2:', '   D_3:', '   D_4:', '   D_5:', &
+                '   D_6:', '   D_7:', '   D_8:', '   D_9:', '  D_10:', '  D_11:', 'C_0_IV:', &
+                'C_0_IT:', 'C_1_IT:', 'C_2_IT:', 'C_3_IT:', 'C_4_IT:', '   R_S:', '   R_L:']
+    character(len=18), parameter :: format    = '(4(2x,a,f12.8,a1))'
+    character(len=18), parameter :: format_cv = '(4(9x,f12.8,1x))'
+    character(len=n_parameters) :: s1
+    integer :: i
+
+    s1 = mask_to_string(mask, ' ', '*')
+
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i = 1, 2)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i= 1, 2)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i = 3, 6)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i= 3, 6)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i = 7, 9)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i= 7, 9)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i =10,13)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i=10,13)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i =14,17)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i=14,17)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i =18,20)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i=18,20)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i =21,22)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i=21,22)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i =23,26)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i=23,26)
+    write(unit, format) (lecs(i), parameters(i), s1(i:i), i =27,28)
+    if(present(cv)) write(unit, format_cv) (sqrt(cv(i,i)), i=27,28)
+    
 
 end subroutine display_parameters
 
