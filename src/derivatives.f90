@@ -29,9 +29,48 @@ private
 public :: f_scattering_length, df_scattering_length, f_av18, df_av18, f_av18_pw, &
     df_av18_pw, f_all_phaseshifts, df_all_phaseshifts, f_amplitudes, df_amplitudes, f_observable, df_observable, &
     f_deuteron_binding_energy, df_deuteron_binding_energy, f_all_phaseshifts_ds, df_all_phaseshifts_ds, &
-    f_observable_ds, df_observable_ds
+    f_observable_ds, df_observable_ds, f_short_chiral_pot, df_short_chiral_pot
 
 contains
+
+real(dp) function f_short_chiral_pot(x, data) result(r)
+    use short_range_chiral_potentials, only : short_range_potentials
+    implicit none
+    real(dp), intent(in) :: x !< parameter that will be varied by the dfridr subroutine
+    type(context), intent(in) :: data !< data structure with all the arguments for short_range_potentials
+    
+    real(dp) :: radius
+    real(dp), allocatable, dimension(:) :: parameters
+    real(dp), allocatable, dimension(:) :: v_short
+    real(dp), allocatable, dimension(:, :) :: d_v_short
+
+    radius = data%a
+    allocate(parameters, source=data%x)
+
+    parameters(data%i) = x
+    call short_range_potentials(radius, parameters, v_short, d_v_short)
+    r = v_short(data%j)
+
+end function f_short_chiral_pot
+
+function df_short_chiral_pot(data) result(r)
+    use short_range_chiral_potentials, only : short_range_potentials
+    implicit none
+    type(context), intent(in) :: data !< data structure with all the arguments for av18_operator
+    real(dp), allocatable :: r(:)
+
+    real(dp) :: radius
+    real(dp), allocatable, dimension(:) :: parameters
+    real(dp), allocatable, dimension(:) :: v_short
+    real(dp), allocatable, dimension(:, :) :: d_v_short
+
+    allocate(parameters, source=data%x)
+    radius = data%a
+    call short_range_potentials(radius, parameters, v_short, d_v_short)
+
+    r = d_v_short(data%j, :)
+
+end function df_short_chiral_pot
 
 !!
 !> @brief      wrapper function for dueteron binding energy
