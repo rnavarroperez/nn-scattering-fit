@@ -9,7 +9,7 @@ implicit none
 
 private
 
-public :: set_chiral_potential(potential, parameters)
+public :: set_chiral_potential, default_parameters, n_parameters
 
 integer, parameter :: n_parameters = 28 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 19   !< Number of operators in the chiral potential
