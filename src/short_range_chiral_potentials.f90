@@ -139,20 +139,20 @@ subroutine short_range_potentials(r, short_lecs, v_short, d_v_short)
     d_v_short(11, 20) = -(d2cRs - d1cRs/r)/r**2._dp
 
     ! dv_T_s (derivatives of B26)
-    d_v_short(12, 21) = CRs
-    d_v_short(12, 22) = -d2cRs - 2*d1cRs/r
+    d_v_short(12, 22) = CRs
+    d_v_short(12, 23) = -d2cRs - 2*d1cRs/r
 
     ! dv_tau_z_s (derivatives of B27)
-    d_v_short(13, 23) = CRs
+    d_v_short(13, 21) = CRs
 
     ! dv_sigma_T_s (derivatives of B28)
     d_v_short(14, 24) = -d2cRs -2*d1cRs/r
 
     ! dv_t_T_s (derivatives of B30)
-    d_v_short(14, 25) = - d2cRs + d1cRs/r
+    d_v_short(15, 25) = - d2cRs + d1cRs/r
 
     ! dv_b_T_s (derivatives of B32)
-    d_v_short(14, 26) = -d1cRs/r
+    d_v_short(16, 26) = -d1cRs/r
 
 end subroutine short_range_potentials
 

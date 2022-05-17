@@ -49,9 +49,9 @@ contains
 !!
 !! @author      Ky Putnam
 !!
-subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)
+subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)!v_sigma_T, v_t_T)
     implicit none
-    real(dp), intent(out) :: v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau
+    real(dp), intent(out) :: v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau!, v_sigma_T, v_t_T
     real(dp), intent(in) :: r, R_L, a_L
     real(dp), dimension(1:2) :: v_lo
     real(dp), dimension(1:3) :: v_nlo_deltaless
@@ -77,6 +77,10 @@ subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, 
     v_t = v_nlo_deltaless(3) + v_nlo_1delta(5) + v_nlo_2delta(5) + v_n2lo_1delta(5) + v_n2lo_2delta(5)
     ! A40
     v_t_tau = v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)
+    ! A_41
+    ! v_sigma_T = ....
+    ! A_42
+    ! v_t_T = ...
 
 end subroutine long_range_potentials
 

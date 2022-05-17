@@ -99,7 +99,7 @@ exp_data.o: exp_data.f90 precisions.o string_functions.o utilities.o amplitudes.
 deuteron.o: deuteron.f90 precisions.o delta_shell.o constants.o ode_solver.o quadrature.o
 	$(COMPILER) $(FLAGS) -c $<
 
-derivatives.o: derivatives.f90 precisions.o num_recipes.o av18.o delta_shell.o observables.o
+derivatives.o: derivatives.f90 precisions.o num_recipes.o av18.o delta_shell.o observables.o short_range_chiral_potentials.o
 	$(COMPILER) $(FLAGS) -c $<
 
 chi_square.o: chi_square.f90 precisions.o exp_data.o observables.o delta_shell.o
@@ -129,7 +129,7 @@ randomize_exp.o: randomize_exp.f90 exp_data.o precisions.o random_num.o
 plot_potential.o: plot_potential.f90
 	$(COMPILER) $(FLAGS) -c $<	
 
-chiral_potential.o: chiral_potential.f90 precisions.o delta_shell.o long_range_chiral_potentials.o short_range_chiral_potentials.o
+chiral_potential.o: chiral_potential.f90 precisions.o delta_shell.o long_range_chiral_potentials.o short_range_chiral_potentials.o string_functions.o
 	$(COMPILER) $(FLAGS) -c $<	
 
 clean:
