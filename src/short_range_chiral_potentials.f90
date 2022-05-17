@@ -79,22 +79,22 @@ subroutine short_range_potentials(r, short_lecs, v_short, d_v_short)
     d4cRs = d4_c_Rs(r, R_S)
 
     ! short-range potentials (appendix numbers corresponding to "Minimally nonlocal nucleon-nucleon...")
-    v_short(1) = C_s*CRs + C_1*(-d2cRs - 2*d1cRs/r) + D_1*(d4cRs + 4*d3cRs/r) ! B11
-    v_short(2) = C_2 * (-d2cRs - 2*d1cRs/r) + D_2*(d4cRs + 4*d3cRs/r) ! B12
-    v_short(3) = C_T*CRs + C_3*(-d2cRs - 2*d1cRs/r) + D_3*(d4cRs + 4*d3cRs/r) ! B13
-    v_short(4) = C_4*(-d2cRs - 2*d1cRs/r) + D_4*(d4cRs + 4*d3cRs/r) ! B14
-    v_short(5) = -C_5*(d2cRs - d1cRs/r) + D_5*(d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp) ! B15
-    v_short(6) = -C_6*(d2cRs - d1cRs/r) + D_6*(d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp) ! B16
-    v_short(7) = -C_7*d1cRs/r + D_7*(d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp) ! B17
-    v_short(8) = D_8*(d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp) ! B18
-    v_short(9) = -D_9*(d2cRs - d1cRs/r)/r**2._dp ! B19
-    v_short(10) = -D_10*(d2cRs - d1cRs/r)/r**2._dp ! B20
-    v_short(11) = -D_11*(d2cRs - d1cRs/r)/r**2._dp ! B21
-    v_short(12) = C_0_IT*CRs + C_1_IT*(-d2cRs - 2*d1cRs/r) ! B26 (skipping nonlocal functions B22-B25)
-    v_short(13) = C_0_IV*CRs ! B27 (excluding nonlocal term)
-    v_short(14) = C_2_IT*(-d2cRs -2*d1cRs/r) ! B28
-    v_short(15) = -C_3_IT*(d2cRs - d1cRs/r) ! B30
-    v_short(16) = -C_4_IT*d1cRs/r ! B32
+    v_short(1) = C_s*CRs + C_1*(-d2cRs - 2*d1cRs/r) + D_1*(d4cRs + 4*d3cRs/r) ! v_c
+    v_short(2) = C_2 * (-d2cRs - 2*d1cRs/r) + D_2*(d4cRs + 4*d3cRs/r) ! v_tau
+    v_short(3) = C_T*CRs + C_3*(-d2cRs - 2*d1cRs/r) + D_3*(d4cRs + 4*d3cRs/r) ! v_sigma
+    v_short(4) = C_4*(-d2cRs - 2*d1cRs/r) + D_4*(d4cRs + 4*d3cRs/r) ! v_sigma_tau
+    v_short(5) = -C_5*(d2cRs - d1cRs/r) + D_5*(d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp) ! v_t
+    v_short(6) = -C_6*(d2cRs - d1cRs/r) + D_6*(d4cRs + d3cRs/r - 6*d2cRs/r**2._dp + 6*d1cRs/r**3._dp) ! v_t_tau
+    v_short(7) = -C_7*d1cRs/r + D_7*(d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp) ! v_b = v_ls
+    v_short(8) = D_8*(d3cRs/r + 2*d2cRs/r**2._dp - 2*d1cRs/r**3._dp) ! v_b_tau = v_ls_tau
+    v_short(9) = -D_9*(d2cRs - d1cRs/r)/r**2._dp ! v_b_b = v_ls_ls = v_ls2?
+    v_short(10) = -D_10*(d2cRs - d1cRs/r)/r**2._dp ! v_q or v_l2
+    v_short(11) = -D_11*(d2cRs - d1cRs/r)/r**2._dp ! v_q_sigma or v_l2_sigma
+    v_short(12) = C_0_IT*CRs + C_1_IT*(-d2cRs - 2*d1cRs/r) ! v_T
+    v_short(13) = C_0_IV*CRs ! v_tau_z
+    v_short(14) = C_2_IT*(-d2cRs -2*d1cRs/r) ! v_sigma_T
+    v_short(15) = -C_3_IT*(d2cRs - d1cRs/r) ! v_t_T
+    v_short(16) = -C_4_IT*d1cRs/r ! v_b_T = v_ls_T
 
     ! dv_c_s (derivatives of B11)
     d_v_short(1, 1) =  CRs

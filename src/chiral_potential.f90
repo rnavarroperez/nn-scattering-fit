@@ -93,10 +93,35 @@ subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
     real(dp), intent(in)  :: r !< radius in units of fm
     real(dp), intent(out) :: v_nn(:) !< AV18 potential in operator basis, units of MeV
     real(dp), allocatable, intent(out) :: dv_nn(:, :) !< derivatives of v_nn with respect to the parameters in parameters
+    real(dp), allocatable :: v_short(:), d_v_short(:,:) ! arrays containing short-range potentials and their derivatives
+    real(dp) :: v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau ! long range components of potentials
+    real(dp) :: R_L, a_L
 
+    R_L = parameters(28)
+    a_L = R_L/2._dp
 
-    ! call long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)
-    ! call short_range_potentials(r, short_lecs, v_short, d_v_short)
+    call long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)
+    call short_range_potentials(r, parameters, v_short, d_v_short)
+
+    v_nn( 1) = v_c + v_short(1) ! v_c
+    v_nn( 2) = v_tau + v_short(2) ! v_tau
+    v_nn( 3) = v_sigma + v_short(3) ! v_sigma
+    v_nn( 4) = v_sigma_tau + v_short(4) ! v_sigma_tau
+    v_nn( 5) = v_t + v_short(5) ! v_t
+    v_nn( 6) = v_t_tau + v_short(6) ! v_t_tau
+    v_nn( 7) = v_short(7) ! v_ls or v_b
+    v_nn( 8) = v_short(8) ! v_ls_tau or v_b_tau
+    v_nn( 9) = v_short(10) ! v_l2 or v_q
+    v_nn(10) = 0 ! v_l2_tau
+    v_nn(11) = v_short(11) ! v_l2_sigma or v_q_sigma
+    v_nn(12) = 0 ! v_l2_sigma_tau
+    v_nn(13) = v_short(9) ! v_ls2 or v_b_b
+    v_nn(14) = 0 ! v_ls2_tau
+    v_nn(15) = v_short(12) ! v_T
+    v_nn(16) = v_short(14) ! v_sigma_T
+    v_nn(17) = v_short(15)  ! v_t_T
+    v_nn(18) = v_short(16) ! v_ls_T
+    v_nn(19) = v_short(13)  ! v_tau_z
 
 end subroutine chiral_potential_operator
 
