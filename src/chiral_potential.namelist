@@ -1,0 +1,63 @@
+&data_base
+    database_file = 'database/granada_database.dat'
+/
+
+&nn_potential
+    name = 'N2LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N2LO'
+/
+
+&local_integration
+    r_max = 12.5,  ! Maximum integration radius
+    delta_r = 0.0078125 ! Integration step
+/
+
+&deuteron
+    relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
+/
+
+&output
+    save_results = .true.
+    output_name = 'n2lo'
+/
+
+&potential_parameters ! Potential parameters
+    parameters =     2.936041      -0.08647128   ! C_s   ! D_10
+                   -0.4933897      -0.01167788   ! C_T   ! D_11
+                   -0.1013462      0.009575695   ! C_1   ! C_0_IV
+                   -0.1444844       0.02194758   ! C_2   ! C_0_IT
+                  -0.03647634     -0.001550501   ! C_3   ! C_1_IT
+                  -0.01630825     -0.008354679   ! C_4   ! C_2_IT
+                 -0.006658100     -0.006682746   ! C_5   ! C_3_IT
+                  -0.06176835       0.01276971   ! C_6   ! C_4_IT
+                   -0.9578191       0.03119241   ! C_7   ! D_8
+                  -0.03102824       0.03281636   ! D_1   ! D_9   
+                 -0.004438695                    ! D_2   
+                  -0.01351171                    ! D_3
+                -0.0007084459                    ! D_4
+                0.01110108_dp                    ! D_5
+                 -0.008598857                    ! D_6
+                  -0.05367908                    ! D_7
+                          0.6                    ! R_s
+                          0.8                    ! R_L                                         
+ /
+&adjust_parameter ! Parameters with .false. are kept fixed during the optimization
+                  ! If left empty only non-zero parameters will be adjusted.
+    mask =  .true.      .true.      ! C_s      ! D_10
+            .true.      .true.      ! C_T      ! D_11
+            .true.      .true.      ! C_1      ! C_0_IV
+            .true.      .true.      ! C_2      ! C_0_IT
+            .true.      .true.      ! C_3      ! C_1_IT
+            .true.      .true.      ! C_4      ! C_2_IT
+            .true.      .true.      ! C_5      ! C_3_IT
+            .true.      .true.      ! C_6      ! C_4_IT
+            .true.      .true.      ! C_7      ! D_8     
+            .true.      .true.      ! D_1      ! D_9     
+            .true.                  ! D_2      
+            .true.                  ! D_3
+            .true.                  ! D_4
+            .true.                  ! D_5
+            .true.                  ! D_6
+            .true.                  ! D_7
+            .false.                 ! R_s 
+            .false.                 ! R_L          
+/

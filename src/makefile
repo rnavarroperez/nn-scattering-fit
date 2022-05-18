@@ -90,7 +90,7 @@ amplitudes.o: amplitudes.f90 precisions.o nn_phaseshifts.o constants.o num_recip
 observables.o: observables.f90 constants.o amplitudes.o nn_phaseshifts.o precisions.o deuteron.o delta_shell.o
 	$(COMPILER) $(FLAGS) -c $<
 
-read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o utilities.o av18.o av18_compatibility.o long_range_chiral_potentials.o short_range_chiral_potentials.o
+read_write.o: read_write.f90 precisions.o amplitudes.o observables.o nn_phaseshifts.o constants.o  delta_shell.o utilities.o av18.o av18_compatibility.o long_range_chiral_potentials.o short_range_chiral_potentials.o chiral_potential.o
 	$(COMPILER) $(FLAGS) -c $<
 
 exp_data.o: exp_data.f90 precisions.o string_functions.o utilities.o amplitudes.o
