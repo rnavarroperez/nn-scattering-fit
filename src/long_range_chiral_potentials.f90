@@ -60,7 +60,9 @@ subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, 
     real(dp), dimension(1:3) :: v_n2lo_deltaless
     real(dp), dimension(1:6) :: v_n2lo_1delta
     real(dp), dimension(1:6) :: v_n2lo_2delta
+    real(dp) :: v_sigma_T, v_t_T, c_RL
 
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     call calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless,&
     v_n2lo_1delta, v_n2lo_2delta)
@@ -78,9 +80,9 @@ subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, 
     ! A40
     v_t_tau = v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)
     ! A_41
-    ! v_sigma_T = ....
+    v_sigma_T = c_RL*(Y_pion(mpi0,r) - Y_pion(mpic,r))/3
     ! A_42
-    ! v_t_T = ...
+    v_t_T = c_RL*(T_pion(mpi0,r) - T_pion(mpic,r))/3
 
 end subroutine long_range_potentials
 
@@ -397,7 +399,7 @@ real(dp) function Y_pion(mpi, r) result(Y)
     real(dp), intent(in) :: mpi !< pion mass
     real(dp) :: x
 
-    x = variable_pion_mass_r(r,mpi) !needs to also depend on which mass of pion is received
+    x = variable_pion_mass_r(r,mpi) ! depends on which mass of the pion is received
 
     Y = gA**2 * mpi**3 * exp(-x) / (12*pi * Fpi**2 * x)
 
@@ -419,7 +421,7 @@ real(dp) function T_pion(mpi,r) result(T)
     real(dp), intent(in) :: mpi !< pion mass
     real(dp) :: x
 
-    x = variable_pion_mass_r(r, mpi) ! need to do same change as for Y_pion
+    x = variable_pion_mass_r(r, mpi)
     
     T = Y_pion(mpi,r) * (1 + 3/x + 3/x**2)
     
