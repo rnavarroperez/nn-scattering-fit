@@ -16,6 +16,7 @@ use delta_shell, only: nn_model
 use constants, only: pi
 use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
+use chiral_potential, only : set_chiral_potential
 use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
 use long_range_chiral_potentials, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, &
@@ -551,6 +552,14 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
             ! those are later replaced by whatever is read in the namelist file
         case ('AV18')
             call set_av18_potential(potential, parameters)
+            r_max = 12.5_dp
+            delta_r = 1/128._dp
+            relativistic = .false.
+            n_lambdas = 0
+            dr_core = 0.0_dp
+            dr_tail = 0.0_dp
+        case ('N2LO')
+            call set_chiral_potential(potential, parameters)
             r_max = 12.5_dp
             delta_r = 1/128._dp
             relativistic = .false.
