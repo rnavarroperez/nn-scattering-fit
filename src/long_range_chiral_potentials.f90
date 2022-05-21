@@ -49,9 +49,9 @@ contains
 !!
 !! @author      Ky Putnam
 !!
-subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau)!v_sigma_T, v_t_T)
+subroutine long_range_potentials(r, R_L, a_L, v_long)
     implicit none
-    real(dp), intent(out) :: v_c, v_tau, v_sigma, v_sigma_tau, v_t, v_t_tau!, v_sigma_T, v_t_T
+    real(dp), dimension(1:19), intent(out) :: v_long
     real(dp), intent(in) :: r, R_L, a_L
     real(dp), dimension(1:2) :: v_lo
     real(dp), dimension(1:3) :: v_nlo_deltaless
@@ -60,29 +60,26 @@ subroutine long_range_potentials(r, R_L, a_L, v_c, v_tau, v_sigma, v_sigma_tau, 
     real(dp), dimension(1:3) :: v_n2lo_deltaless
     real(dp), dimension(1:6) :: v_n2lo_1delta
     real(dp), dimension(1:6) :: v_n2lo_2delta
-    real(dp) :: v_sigma_T, v_t_T, c_RL
+    real(dp) :: c_RL
 
     c_RL = long_range_regulator(r, R_L, a_L)
 
     call calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless,&
     v_n2lo_1delta, v_n2lo_2delta)
 
-    ! A35
-    v_c = v_nlo_1delta(1) + v_nlo_2delta(1) + v_n2lo_deltaless(1) + v_n2lo_1delta(1) + v_n2lo_2delta(1)
-    ! A35
-    v_tau = v_nlo_deltaless(1) + v_nlo_1delta(2) + v_nlo_2delta(2) + v_n2lo_1delta(2) + v_n2lo_2delta(2)
-    ! A37
-    v_sigma = v_nlo_deltaless(2) + v_nlo_1delta(3) + v_nlo_2delta(3) + v_n2lo_1delta(3) + v_n2lo_2delta(3)
-    ! A38
-    v_sigma_tau = v_nlo_1delta(4) + v_nlo_2delta(4) + v_n2lo_deltaless(2) + v_n2lo_1delta(4) + v_n2lo_2delta(4)
-    ! A39
-    v_t = v_nlo_deltaless(3) + v_nlo_1delta(5) + v_nlo_2delta(5) + v_n2lo_1delta(5) + v_n2lo_2delta(5)
-    ! A40
-    v_t_tau = v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)
-    ! A_41
-    v_sigma_T = c_RL*(Y_pion(mpi0,r) - Y_pion(mpic,r))/3
-    ! A_42
-    v_t_T = c_RL*(T_pion(mpi0,r) - T_pion(mpic,r))/3
+    ! initialize all elements to 0
+    v_long = 0 
+
+    ! fill array (order reflects order in av18.f90)
+    v_long( 1) = v_nlo_1delta(1) + v_nlo_2delta(1) + v_n2lo_deltaless(1) + v_n2lo_1delta(1) + v_n2lo_2delta(1)    ! v_c
+    v_long( 2) = v_nlo_deltaless(1) + v_nlo_1delta(2) + v_nlo_2delta(2) + v_n2lo_1delta(2) + v_n2lo_2delta(2)     ! v_tau
+    v_long( 3) = v_nlo_deltaless(2) + v_nlo_1delta(3) + v_nlo_2delta(3) + v_n2lo_1delta(3) + v_n2lo_2delta(3)     ! v_sigma
+    v_long( 4) = v_nlo_1delta(4) + v_nlo_2delta(4) + v_n2lo_deltaless(2) + v_n2lo_1delta(4) + v_n2lo_2delta(4)    ! v_sigma_tau
+    v_long( 5) = v_nlo_deltaless(3) + v_nlo_1delta(5) + v_nlo_2delta(5) + v_n2lo_1delta(5) + v_n2lo_2delta(5)     ! v_t
+    v_long( 6) = v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)    ! v_t_tau
+
+    v_long(14) = c_RL*(Y_pion(mpi0,r) - Y_pion(mpic,r))/3   ! v_sigma_T
+    v_long(15) = c_RL*(T_pion(mpi0,r) - T_pion(mpic,r))/3   ! v_t_T
 
 end subroutine long_range_potentials
 
