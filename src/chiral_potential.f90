@@ -3,6 +3,9 @@ module chiral_potential
 use precisions, only : dp
 use delta_shell, only : nn_model
 use long_range_chiral_potentials, only : long_range_potentials
+use short_range_chiral_potentials, only : short_range_potentials
+use basis_change, only : operator_2_partial_waves
+use em_nn_potential, only : add_em_potential_to_s_waves
 use string_functions, only : mask_to_string
 
 implicit none
@@ -98,9 +101,13 @@ subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
     real(dp), intent(in)  :: r !< radius in units of fm
     real(dp), intent(out) :: v_nn(:) !< AV18 potential in operator basis, units of MeV
     real(dp), allocatable, intent(out) :: dv_nn(:, :) !< derivatives of v_nn with respect to the parameters in parameters
-    real(dp), allocatable :: v_short(:), d_v_short(:,:) ! arrays containing short-range potentials and their derivatives
-    real(dp), dimension(1:19) :: v_long
+    real(dp), allocatable :: d_v_short(:,:) ! arrays containing short-range potentials and their derivatives
+    real(dp), allocatable :: v_long(:), v_short(:)
     real(dp) :: R_L, a_L
+
+    ! allocate(d_v_short(1:n_operators, 1:size(parameters)))
+    allocate(v_long(1:n_operators))
+    ! allocate(v_short(1:n_operators))
 
     R_L = parameters(28)
     a_L = R_L/2._dp
@@ -110,6 +117,7 @@ subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
 
     v_nn = v_long + v_short
     allocate(dv_nn, source=d_v_short)
+    print*, dv_nn
 
 end subroutine chiral_potential_operator
 
