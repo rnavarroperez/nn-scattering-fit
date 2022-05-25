@@ -46,8 +46,8 @@ real(dp), parameter, dimension(1:n_parameters) :: default_parameters = &
        -0.008354679_dp,  & !C_2_IT
        -0.006682746_dp,  & !C_3_IT
         0.01276971_dp,   & !C_4_IT
-        0.6_dp,          & !R_s
-        0.8_dp           & !R_L
+        0.8_dp,          & !R_s
+        1.2_dp           & !R_L
     ] !< default parameters in the chiral potential
 
 contains
@@ -117,7 +117,6 @@ subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
 
     v_nn = v_long + v_short
     allocate(dv_nn, source=d_v_short)
-    print*, dv_nn
 
 end subroutine chiral_potential_operator
 

@@ -48,8 +48,8 @@
                  -0.008354679      ! C_2_IT
                  -0.006682746      ! C_3_IT
                    0.01276971      ! C_4_IT
-                          0.6      ! R_s
-                          0.8      ! R_L
+                          0.8      ! R_s
+                          1.2      ! R_L
 /
 &adjust_parameter ! Parameters with .false. are kept fixed during the optimization.
                   ! If left empty only non-zero parameters will be adjusted.
