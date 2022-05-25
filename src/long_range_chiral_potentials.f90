@@ -74,12 +74,12 @@ subroutine long_range_potentials(r, R_L, a_L, v_long)
     v_long( 1) = v_nlo_1delta(1) + v_nlo_2delta(1) + v_n2lo_deltaless(1) + v_n2lo_1delta(1) + v_n2lo_2delta(1)    ! v_c
     v_long( 2) = v_nlo_deltaless(1) + v_nlo_1delta(2) + v_nlo_2delta(2) + v_n2lo_1delta(2) + v_n2lo_2delta(2)     ! v_tau
     v_long( 3) = v_nlo_deltaless(2) + v_nlo_1delta(3) + v_nlo_2delta(3) + v_n2lo_1delta(3) + v_n2lo_2delta(3)     ! v_sigma
-    v_long( 4) = v_nlo_1delta(4) + v_nlo_2delta(4) + v_n2lo_deltaless(2) + v_n2lo_1delta(4) + v_n2lo_2delta(4)    ! v_sigma_tau
+    v_long( 4) = v_lo(1) + v_nlo_1delta(4) + v_nlo_2delta(4) + v_n2lo_deltaless(2) + v_n2lo_1delta(4) + v_n2lo_2delta(4)    ! v_sigma_tau
     v_long( 5) = v_nlo_deltaless(3) + v_nlo_1delta(5) + v_nlo_2delta(5) + v_n2lo_1delta(5) + v_n2lo_2delta(5)     ! v_t
-    v_long( 6) = v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)    ! v_t_tau
+    v_long( 6) = v_lo(2) + v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)    ! v_t_tau
 
-    v_long(14) = c_RL*(Y_pion(mpi0,r) - Y_pion(mpic,r))/3   ! v_sigma_T
-    v_long(15) = c_RL*(T_pion(mpi0,r) - T_pion(mpic,r))/3   ! v_t_T
+    v_long(16) = c_RL*(Y_pion(mpi0,r) - Y_pion(mpic,r))/3   ! v_sigma_T
+    v_long(17) = c_RL*(T_pion(mpi0,r) - T_pion(mpic,r))/3   ! v_t_T
 
 end subroutine long_range_potentials
 
