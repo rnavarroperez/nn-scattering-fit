@@ -784,7 +784,7 @@ subroutine write_long_range_chiral_potentials()
     implicit none
     real(dp) :: r, r_max, R_L, a_L
     integer :: unit1, unit2, unit3, unit4, unit5, unit6, unit7
-    real(dp), dimension(1:2) :: v_lo
+    real(dp), dimension(1:4) :: v_lo
     real(dp), dimension(1:3) :: v_nlo_deltaless
     real(dp), dimension(1:6) :: v_nlo_1delta
     real(dp), dimension(1:6) :: v_nlo_2delta

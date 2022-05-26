@@ -16,6 +16,8 @@ use special_functions, only : bessel_k0, bessel_k1
 use quadrature, only : booles_quadrature
 implicit none
 
+real(dp), parameter :: b_small = 0.045_dp
+
 private
 
 public :: vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, vf_integral, chiral_integrals, &
@@ -53,7 +55,7 @@ subroutine long_range_potentials(r, R_L, a_L, v_long)
     implicit none
     real(dp), dimension(1:19), intent(out) :: v_long
     real(dp), intent(in) :: r, R_L, a_L
-    real(dp), dimension(1:2) :: v_lo
+    real(dp), dimension(1:4) :: v_lo
     real(dp), dimension(1:3) :: v_nlo_deltaless
     real(dp), dimension(1:6) :: v_nlo_1delta
     real(dp), dimension(1:6) :: v_nlo_2delta
@@ -78,8 +80,8 @@ subroutine long_range_potentials(r, R_L, a_L, v_long)
     v_long( 5) = v_nlo_deltaless(3) + v_nlo_1delta(5) + v_nlo_2delta(5) + v_n2lo_1delta(5) + v_n2lo_2delta(5)     ! v_t
     v_long( 6) = v_lo(2) + v_nlo_1delta(6) + v_nlo_2delta(6) + v_n2lo_deltaless(3) + v_n2lo_1delta(6) + v_n2lo_2delta(6)    ! v_t_tau
 
-    v_long(16) = c_RL*(Y_pion(mpi0,r) - Y_pion(mpic,r))/3   ! v_sigma_T
-    v_long(17) = c_RL*(T_pion(mpi0,r) - T_pion(mpic,r))/3   ! v_t_T
+    v_long(16) = v_lo(3) ! v_sigma_T
+    v_long(17) = v_lo(4) ! v_t_T
 
 end subroutine long_range_potentials
 
@@ -140,37 +142,68 @@ subroutine chiral_integrals(r, mu_integrals)
 end subroutine
 
 !> LO potential functions, Delta-less
-subroutine lo_potentials(r, v_lo)
+subroutine lo_potentials(r, R_L, a_L, v_lo)
     implicit none
-    real(dp), intent(in) :: r
-    real(dp), intent(out), dimension(1:2) :: v_lo
+    real(dp), intent(in) :: r, R_L, a_L
+    real(dp), intent(out), dimension(1:4) :: v_lo
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
     
     ! fill v_lo array
-    v_lo(1) = v_lo_sigmatau(r)
-    v_lo(2) = v_lo_ttau(r)
+    if (r < b_small) then
+        v_lo(1) = v_lo_sigmatau_small_r(r, R_L, a_L)
+        v_lo(2) = v_lo_ttau_small_r(r, R_L, a_L)
+        v_lo(3) = v_lo_sigmaT_small_r(r, R_L, a_L)
+        v_lo(4) = v_lo_tT_small_r(r, R_L, a_L)
+    else        
+        v_lo(1) = v_lo_sigmatau(r)
+        v_lo(2) = v_lo_ttau(r)
+        v_lo(3) = v_lo_sigmaT(r)
+        v_lo(4) = v_lo_tT(r)
+
+        v_lo = c_RL*v_lo
+    endif
 
 end subroutine
 
 !> NLO potential functions, Delta-less
-subroutine nlo_potentials_deltaless(r, v_nlo_deltaless)
+subroutine nlo_potentials_deltaless(r, R_L, a_L, v_nlo_deltaless)
+    use precisions, only : sp
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r, R_L, a_L
     real(dp), intent(out), dimension(1:3) :: v_nlo_deltaless
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     !fill v_nlo_deltaless array
-    v_nlo_deltaless(1) = v_nlo_tau(r)
-    v_nlo_deltaless(2) = v_nlo_sigma(r)
-    v_nlo_deltaless(3) = v_nlo_t(r)
+    if (r < tiny(1._sp)) then
+        v_nlo_deltaless = 0._dp
+    elseif (r < b_small) then
+        v_nlo_deltaless(1) = v_nlo_tau_small_r(r, R_L, a_L)
+        v_nlo_deltaless(2) = v_nlo_sigma_small_r(r, R_L, a_L)
+        v_nlo_deltaless(3) = v_nlo_t_small_r(r, R_L, a_L)
+    else
+        v_nlo_deltaless(1) = v_nlo_tau(r)
+        v_nlo_deltaless(2) = v_nlo_sigma(r)
+        v_nlo_deltaless(3) = v_nlo_t(r)
+
+        v_nlo_deltaless = c_RL*v_nlo_deltaless
+    endif
 
 end subroutine
 
 !NLO potential functions with 1 Delta intermediate state
-subroutine nlo_potentials_1delta(r, mu_integrals, v_nlo_1delta)
+subroutine nlo_potentials_1delta(r, R_L, a_L, mu_integrals, v_nlo_1delta)
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r, R_L, a_L
     real(dp), intent(out), dimension(1:6) :: v_nlo_1delta
     real(dp), intent(in), dimension(1:9) :: mu_integrals
     real(dp) :: vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     !unpack mu integrals
     vf1 = mu_integrals(1)
@@ -183,22 +216,36 @@ subroutine nlo_potentials_1delta(r, mu_integrals, v_nlo_1delta)
     vf9 = mu_integrals(9)
     
     !fill v_nlo_1delta array
-    v_nlo_1delta(1) = v_nlo_c_d(r)
-    v_nlo_1delta(2) = v_nlo_tau_d(r, vf1, vf2, vf5, vf6, vf7)
-    v_nlo_1delta(3) = v_nlo_sigma_d(r, vf1, vf2, vf5, vf6, vf7)
-    v_nlo_1delta(4) = v_nlo_sigmatau_d(r)
-    v_nlo_1delta(5) = v_nlo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
-    v_nlo_1delta(6) = v_nlo_ttau_d(r)
+    if (r < b_small) then
+        v_nlo_1delta(1) = v_nlo_c_d_small_r(r, R_L, a_L)
+        v_nlo_1delta(2) = v_nlo_tau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_1delta(3) = v_nlo_sigma_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_1delta(4) = v_nlo_sigmatau_d_small_r(r, R_L, a_L)
+        v_nlo_1delta(5) = v_nlo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_nlo_1delta(6) = v_nlo_ttau_d_small_r(r, R_L, a_L)        
+    else
+        v_nlo_1delta(1) = v_nlo_c_d(r)
+        v_nlo_1delta(2) = v_nlo_tau_d(r, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_1delta(3) = v_nlo_sigma_d(r, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_1delta(4) = v_nlo_sigmatau_d(r)
+        v_nlo_1delta(5) = v_nlo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_nlo_1delta(6) = v_nlo_ttau_d(r)
+
+        v_nlo_1delta = c_RL*v_nlo_1delta
+    endif
 
 end subroutine
 
 !NLO potential functions with 2 Delta intermediate states
-subroutine nlo_potentials_2delta(r, mu_integrals, v_nlo_2delta)
+subroutine nlo_potentials_2delta(r, R_L, a_L, mu_integrals, v_nlo_2delta)
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r, R_L, a_L
     real(dp), intent(in), dimension(1:9) :: mu_integrals
     real(dp), intent(out), dimension(1:6) :: v_nlo_2delta
     real(dp) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     !unpack mu_integrals
     vf1 = mu_integrals(1)
@@ -212,35 +259,60 @@ subroutine nlo_potentials_2delta(r, mu_integrals, v_nlo_2delta)
     vf9 = mu_integrals(9)
 
     !fill v_nlo_2delta array
-    v_nlo_2delta(1) = v_nlo_c_2d(r, vf2, vf4, vf5, vf6, vf7)
-    v_nlo_2delta(2) = v_nlo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
-    v_nlo_2delta(3) = v_nlo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7)
-    v_nlo_2delta(4) = v_nlo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7)
-    v_nlo_2delta(5) = v_nlo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
-    v_nlo_2delta(6) = v_nlo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+    if (r < b_small) then
+        v_nlo_2delta(1) = v_nlo_c_2d_small_r(r, R_L, a_L, vf2, vf4, vf5, vf6, vf7)
+        v_nlo_2delta(2) = v_nlo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7)
+        v_nlo_2delta(3) = v_nlo_sigma_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_2delta(4) = v_nlo_sigmatau_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_2delta(5) = v_nlo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_nlo_2delta(6) = v_nlo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)        
+    else
+        v_nlo_2delta(1) = v_nlo_c_2d(r, vf2, vf4, vf5, vf6, vf7)
+        v_nlo_2delta(2) = v_nlo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
+        v_nlo_2delta(3) = v_nlo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_2delta(4) = v_nlo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7)
+        v_nlo_2delta(5) = v_nlo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_nlo_2delta(6) = v_nlo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+
+        v_nlo_2delta = c_RL*v_nlo_2delta
+    endif
 
 end subroutine
 
 !N2LO potential functions, Delta-less
-subroutine n2lo_potentials_deltaless(r, v_n2lo_deltaless)
+subroutine n2lo_potentials_deltaless(r, R_L, a_L, v_n2lo_deltaless)
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r, R_L, a_L
     real(dp), intent(out), dimension(1:3) :: v_n2lo_deltaless
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     !fill v_n2lo_deltaless array
-    v_n2lo_deltaless(1) = v_n2lo_c(r)
-    v_n2lo_deltaless(2) = v_n2lo_sigmatau(r)
-    v_n2lo_deltaless(3) = v_n2lo_ttau(r)
+    if (r < b_small) then
+        v_n2lo_deltaless(1) = v_n2lo_c_small_r(r, R_L, a_L)
+        v_n2lo_deltaless(2) = v_n2lo_sigmatau_small_r(r, R_L, a_L)
+        v_n2lo_deltaless(3) = v_n2lo_ttau_small_r(r, R_L, a_L)
+    else        
+        v_n2lo_deltaless(1) = v_n2lo_c(r)
+        v_n2lo_deltaless(2) = v_n2lo_sigmatau(r)
+        v_n2lo_deltaless(3) = v_n2lo_ttau(r)
+
+        v_n2lo_deltaless = c_RL*v_n2lo_deltaless
+    endif
 
 end subroutine
 
 !NLO potential functions with 1 Delta intermediate state
-subroutine n2lo_potentials_1delta(r, mu_integrals, v_n2lo_1delta)
+subroutine n2lo_potentials_1delta(r, R_L, a_L, mu_integrals, v_n2lo_1delta)
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r, R_L, a_L
     real(dp), intent(in), dimension(1:9) :: mu_integrals
     real(dp), intent(out), dimension(1:6) :: v_n2lo_1delta
     real(dp) :: vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     !unpack mu_integrals
     vf1 = mu_integrals(1)
@@ -253,22 +325,36 @@ subroutine n2lo_potentials_1delta(r, mu_integrals, v_n2lo_1delta)
     vf9 = mu_integrals(9)
 
     !fill v_n2lo_1delta array
-    v_n2lo_1delta(1) = v_n2lo_c_d(r, vf1, vf2, vf5, vf6, vf7)
-    v_n2lo_1delta(2) = v_n2lo_tau_d(r, vf1, vf2, vf5, vf6, vf7)
-    v_n2lo_1delta(3) = v_n2lo_sigma_d(r, vf1, vf2, vf5, vf6, vf7)
-    v_n2lo_1delta(4) = v_n2lo_sigmatau_d(r, vf1, vf2, vf5, vf6, vf7)
-    v_n2lo_1delta(5) = v_n2lo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
-    v_n2lo_1delta(6) = v_n2lo_ttau_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+    if (r < b_small) then
+        v_n2lo_1delta(1) = v_n2lo_c_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(2) = v_n2lo_tau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(3) = v_n2lo_sigma_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(4) = v_n2lo_sigmatau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(5) = v_n2lo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_n2lo_1delta(6) = v_n2lo_ttau_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+    else        
+        v_n2lo_1delta(1) = v_n2lo_c_d(r, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(2) = v_n2lo_tau_d(r, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(3) = v_n2lo_sigma_d(r, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(4) = v_n2lo_sigmatau_d(r, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_1delta(5) = v_n2lo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_n2lo_1delta(6) = v_n2lo_ttau_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+
+        v_n2lo_1delta = c_RL*v_n2lo_1delta
+    endif
 
 end subroutine
 
 !NLO potential functions with 1 Delta intermediate state
-subroutine n2lo_potentials_2delta(r, mu_integrals, v_n2lo_2delta)
+subroutine n2lo_potentials_2delta(r, R_L, a_L, mu_integrals, v_n2lo_2delta)
     implicit none
-    real(dp), intent(in) :: r
+    real(dp), intent(in) :: r, R_L, a_L
     real(dp), intent(in), dimension(1:9) :: mu_integrals
     real(dp), intent(out), dimension(1:6) :: v_n2lo_2delta
     real(dp) :: vf1, vf2, vf3, vf4, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: c_RL
+
+    c_RL = long_range_regulator(r, R_L, a_L)
 
     !unpack mu_integrals
     vf1 = mu_integrals(1)
@@ -282,12 +368,23 @@ subroutine n2lo_potentials_2delta(r, mu_integrals, v_n2lo_2delta)
     vf9 = mu_integrals(9)
 
     !fill v_n2lo_2delta array
-    v_n2lo_2delta(1) = v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
-    v_n2lo_2delta(2) = v_n2lo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
-    v_n2lo_2delta(3) = v_n2lo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7)
-    v_n2lo_2delta(4) = v_n2lo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7)
-    v_n2lo_2delta(5) = v_n2lo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
-    v_n2lo_2delta(6) = v_n2lo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+    if (r < b_small) then
+        v_n2lo_2delta(1) = v_n2lo_c_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7)
+        v_n2lo_2delta(2) = v_n2lo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7)
+        v_n2lo_2delta(3) = v_n2lo_sigma_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_2delta(4) = v_n2lo_sigmatau_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_2delta(5) = v_n2lo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_n2lo_2delta(6) = v_n2lo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+    else        
+        v_n2lo_2delta(1) = v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
+        v_n2lo_2delta(2) = v_n2lo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7)
+        v_n2lo_2delta(3) = v_n2lo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_2delta(4) = v_n2lo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7)
+        v_n2lo_2delta(5) = v_n2lo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+        v_n2lo_2delta(6) = v_n2lo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9)
+
+        v_n2lo_2delta = c_RL*v_n2lo_2delta
+    endif
     
 end subroutine
 
@@ -295,8 +392,7 @@ subroutine calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo
          v_n2lo_1delta, v_n2lo_2delta)
     implicit none
     real(dp), intent(in) :: r, R_L, a_L
-    real(dp) :: C_RL
-    real(dp), intent(out), dimension(1:2) :: v_lo
+    real(dp), intent(out), dimension(1:4) :: v_lo
     real(dp), intent(out), dimension(1:3) :: v_nlo_deltaless
     real(dp), intent(out), dimension(1:6) :: v_nlo_1delta
     real(dp), intent(out), dimension(1:6) :: v_nlo_2delta
@@ -308,24 +404,15 @@ subroutine calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo
 
     call chiral_integrals(r, mu_integrals)
 
-    c_RL = long_range_regulator(r, R_L, a_L)
-
     !call potential subroutines
-    call lo_potentials(r, v_lo)
-    v_lo = c_RL*v_lo
-    call nlo_potentials_deltaless(r, v_nlo_deltaless)
-    v_nlo_deltaless = c_RL*v_nlo_deltaless
-    call nlo_potentials_1delta(r, mu_integrals, v_nlo_1delta)
-    v_nlo_1delta = c_RL*v_nlo_1delta
-    call nlo_potentials_2delta(r, mu_integrals, v_nlo_2delta)
-    v_nlo_2delta = c_RL*v_nlo_2delta
-    call n2lo_potentials_deltaless(r, v_n2lo_deltaless)
-    v_n2lo_deltaless = c_RL*v_n2lo_deltaless
-    call n2lo_potentials_1delta(r, mu_integrals, v_n2lo_1delta)
-    v_n2lo_1delta = c_RL*v_n2lo_1delta
-    call n2lo_potentials_2delta(r, mu_integrals, v_n2lo_2delta)
-    v_n2lo_2delta = c_RL*v_n2lo_2delta
-
+    call lo_potentials(r, R_L, a_L, v_lo)
+    call nlo_potentials_deltaless(r, R_L, a_L, v_nlo_deltaless)
+    call nlo_potentials_1delta(r, R_L, a_L, mu_integrals, v_nlo_1delta)
+    call nlo_potentials_2delta(r, R_L, a_L, mu_integrals, v_nlo_2delta)
+    call n2lo_potentials_deltaless(r, R_L, a_L, v_n2lo_deltaless)
+    call n2lo_potentials_1delta(r, R_L, a_L, mu_integrals, v_n2lo_1delta)
+    call n2lo_potentials_2delta(r, R_L, a_L, mu_integrals, v_n2lo_2delta)
+    
 end subroutine calculate_chiral_potentials
 
 !!
@@ -402,6 +489,19 @@ real(dp) function Y_pion(mpi, r) result(Y)
 
 end function Y_pion
 
+real(dp) function Y_pion_small_r(mpi, r, R_L, a_L) result(Y)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp), intent(in) :: mpi !< pion mass
+    real(dp) :: x
+
+    x = variable_pion_mass_r(r,mpi) ! depends on which mass of the pion is received
+
+    Y = gA**2*mpi**2*exp(-x)*hbar_c/(12*pi*Fpi**2)*&
+    (exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)*r**5 
+
+end function Y_pion_small_r
+
 !!
 !! @        For the vtt function
 !!
@@ -423,6 +523,19 @@ real(dp) function T_pion(mpi,r) result(T)
     T = Y_pion(mpi,r) * (1 + 3/x + 3/x**2)
     
 end function T_pion
+
+real(dp) function T_pion_small_r(mpi, r, R_L, a_L) result(T)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp), intent(in) :: mpi !< pion mass
+    real(dp) :: x
+
+    x = variable_pion_mass_r(r, mpi)
+    
+    T = gA**2*exp(-x)*(hbar_c)**3/(12*pi*Fpi**2)*(x**2 + 3*x + 3)*&
+    (exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)*r**3 
+    
+end function T_pion_small_r
 
 !! LEADING ORDER POTENTIALS
 
@@ -447,6 +560,18 @@ real(dp) function v_lo_sigmatau(r) result(vlstau)
 
 end function v_lo_sigmatau
 
+real(dp) function v_lo_sigmatau_small_r(r, R_L, a_L) result(vlstau)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: Y_n, Y_p
+
+    Y_n = Y_pion_small_r(mpi0, r, R_L, a_L) !< Y for neutral pion
+    Y_p = Y_pion_small_r(mpic, r, R_L, a_L) !< Y for (positively) charged pion
+
+    vlstau = (Y_n + 2*Y_p)/3
+
+end function v_lo_sigmatau_small_r
+
 !!
 !> @brief       OPE at LO
 !!
@@ -468,6 +593,66 @@ real(dp) function v_lo_ttau(r) result(vlttau)
     vlttau = (T_n + 2*T_p)/3
 
 end function v_lo_ttau
+
+real(dp) function v_lo_ttau_small_r(r, R_L, a_L) result(vlttau)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: T_n, T_p
+
+    T_n = T_pion_small_r(mpi0, r, R_L, a_L) !< T for neutral pion
+    T_p = T_pion_small_r(mpic, r, R_L, a_L) !< T for (positively) charged pion
+
+    vlttau = (T_n + 2*T_p)/3
+
+end function v_lo_ttau_small_r
+
+real(dp) function v_lo_sigmaT(r) result(vlstau)
+    implicit none
+    real(dp), intent(in) :: r !< distance at which the function will be evaluated, in fm
+    real(dp) :: Y_n, Y_p
+
+    Y_n = Y_pion(mpi0,r) !< Y for neutral pion
+    Y_p = Y_pion(mpic,r) !< Y for (positively) charged pion
+
+    vlstau = (Y_n - Y_p)/3
+
+end function v_lo_sigmaT
+
+real(dp) function v_lo_sigmaT_small_r(r, R_L, a_L) result(vlstau)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: Y_n, Y_p
+
+    Y_n = Y_pion_small_r(mpi0, r, R_L, a_L) !< Y for neutral pion
+    Y_p = Y_pion_small_r(mpic, r, R_L, a_L) !< Y for (positively) charged pion
+
+    vlstau = (Y_n - Y_p)/3
+
+end function v_lo_sigmaT_small_r
+
+real(dp) function v_lo_tT(r) result(vlttau)
+    implicit none
+    real(dp), intent(in) :: r !< distance at which the function will be evaluated, in fm
+    real(dp) :: T_n, T_p
+
+    T_n = T_pion(mpi0,r) !< T for neutral pion
+    T_p = T_pion(mpic,r) !< T for (positively) charged pion
+
+    vlttau = (T_n - T_p)/3
+
+end function v_lo_tT
+
+real(dp) function v_lo_tT_small_r(r, R_L, a_L) result(vlttau)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: T_n, T_p
+
+    T_n = T_pion_small_r(mpi0, r, R_L, a_L) !< T for neutral pion
+    T_p = T_pion_small_r(mpic, r, R_L, a_L) !< T for (positively) charged pion
+
+    vlttau = (T_n - T_p)/3
+
+end function v_lo_tT_small_r
 
 !! NEXT-TO-LEADING ORDER POTENTIALS
 
@@ -493,6 +678,19 @@ real(dp) function v_nlo_tau(r) result(vntau)
     
 end function v_nlo_tau
 
+real(dp) function v_nlo_tau_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = mpi*hbar_c**4*(x*(1 + 10*gA**2 - gA**4 * (23 + 4*x**2))*bessel_k0(2*x) &
+        + (1 + 2*gA**2*(5 + 2*x**2) - gA**4*(23 + 12*x**2))*bessel_k1(2*x)) &
+        /(8*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)*r**2
+    
+end function v_nlo_tau_small_r
+
 !!
 !> @brief       TPE at NLO
 !!
@@ -513,6 +711,18 @@ real(dp) function v_nlo_sigma(r) result(vns)
         / (2*pi**3 * r**4 * Fpi**4)
 
 end function v_nlo_sigma
+
+real(dp) function v_nlo_sigma_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = gA**4*mpi*hbar_c**4*(3*x*bessel_k0(2*x) + (3 + 2*x**2)*bessel_k1(2*x)) &
+        / (2*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)*r**2
+
+end function v_nlo_sigma_small_r
 
 !!
 !> @brief       TPE at NLO
@@ -535,6 +745,18 @@ real(dp) function v_nlo_t(r) result(vnt)
 
 end function v_nlo_t
 
+real(dp) function v_nlo_t_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = -gA**4*mpi*hbar_c**4*(12*x*bessel_k0(2*x) + (15 + 4*x**2)*bessel_k1(2*x)) &
+    /(8*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)*r**2
+
+end function v_nlo_t_small_r
+
 !!
 !> @brief       TPE at NLO with a single Delta intermediate state
 !!
@@ -556,6 +778,20 @@ real(dp) function v_nlo_c_d(r) result(vncd)
         / ( 6 * pi **2 * r**5 * y * Fpi**4)
 
 end function v_nlo_c_d
+
+real(dp) function v_nlo_c_d_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r
+    real(dp), intent(in) :: R_L
+    real(dp), intent(in) :: a_L
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = -(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)*gA**2*hA**2*hbar_c**6*exp(-2*x)*&
+        (6 + 12*x + 10*x**2 + 4*x**3 + x**4)/(6*pi**2*delta_nucleon_mass_difference*Fpi**4)
+    
+end function v_nlo_c_d_small_r
 
 !!
 !> @brief       TPE at NLO with a single Delta intermediate state
@@ -581,6 +817,21 @@ real(dp) function v_nlo_tau_d(r, vf1, vf2, vf5, vf6, vf7) result(vntaud)
         / (216 * pi**3 * r**5 * Fpi**4)
 end function v_nlo_tau_d
 
+real(dp) function v_nlo_tau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = -hA**2*hbar_c**6*( (5-11*gA**2)*y*vf1 + (12*x**2 + 12*y**2 - gA**2*(24*x**2 + 12*y**2))*y*vf2 &
+        + (-12*y**2*(2*x**2 + 2*y**2) + 6*gA**2*(4*x**4 + 4*y**4 + 8*x**2 * y**2) )*vf5 &
+        + (-12*y**2 + 6*gA**2*(4*x**2 + 4*y**2))*vf6 + 6*gA**2*vf7 ) &
+        / (216*pi**3*Fpi**4*delta_nucleon_mass_difference)*(exp(-R_L/a_L)/R_L**6)&
+        * (1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+end function v_nlo_tau_d_small_r
+
 !!
 !> @brief       TPE at NLO with a single Delta intermediate state
 !!
@@ -603,6 +854,19 @@ real(dp) function v_nlo_sigma_d(r, vf1, vf2, vf5, vf6, vf7) result(vnsd)
         / (72 * pi**3 * r**5 * Fpi**4)
 end function v_nlo_sigma_d
 
+real(dp) function v_nlo_sigma_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = -gA**2*hA**2*hbar_c**6*(2*y*vf1 + 8*y*x**2*vf2 - 16*x**2*y**2*vf5 - (4*x**2 + 4*y**2)*vf6 - vf7) & 
+        / (72*pi**3*delta_nucleon_mass_difference*Fpi**4)*(exp(-R_L/a_L)/R_L**6)&
+        * (1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+end function v_nlo_sigma_d_small_r
+
 !!
 !> @brief       TPE at NLO with a single Delta intermediate state
 !!
@@ -624,6 +888,19 @@ real(dp) function v_nlo_sigmatau_d(r) result(vnstaud)
         / ( 54 * pi **2 * r**5 * y * Fpi**4)
 
 end function v_nlo_sigmatau_d
+
+real(dp) function v_nlo_sigmatau_d_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = gA**2*hA**2*hbar_c**6*exp(-2*x)*(1 + x)*(3 + 3*x + x**2) &
+        /(54*pi**2*delta_nucleon_mass_difference*Fpi**4)*(exp(-R_L/a_L)/R_L**6)&
+        * (1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_sigmatau_d_small_r
 
 !!
 !> @brief       TPE at NLO with a single Delta intermediate state
@@ -648,6 +925,21 @@ real(dp) function v_nlo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(vn
 
 end function v_nlo_t_d
 
+real(dp) function v_nlo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = gA**2*hA**2*hbar_c**6*(2*y*vf1 + 2*(3 + 4*x**2)*y*vf2 + 6*y*vf3 -(12*y**2 + 16*y**2*x**2)*vf5 &
+        - (4*y**2 + 4*x**2 + 3)*vf6 - vf7 - 3*vf8 -12*y**2*vf9) &
+        / (144*pi**3*delta_nucleon_mass_difference*Fpi**4)*(exp(-R_L/a_L)/R_L**6)&
+        * (1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_t_d_small_r
+
 !!
 !> @brief       TPE at NLO with a single Delta intermediate state
 !!
@@ -669,6 +961,19 @@ real(dp) function v_nlo_ttau_d(r) result(vnttaud)
         / (54*pi **2 * r**5 * y * Fpi**4)
 
 end function v_nlo_ttau_d
+
+real(dp) function v_nlo_ttau_d_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = -gA**2*hA**2*hbar_c**6*exp(-2*x)*(1 + x)*(3 + 3*x + 2*x**2) &
+        /(54*pi**2*delta_nucleon_mass_difference*Fpi**4)*(exp(-R_L/a_L)/R_L**6)&
+        *(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_ttau_d_small_r
 
 !!
 !> @brief       TPE at NLO with 2 Delta intermediate states
@@ -693,6 +998,20 @@ real(dp) function v_nlo_c_2d(r, vf2, vf4, vf5, vf6, vf7) result(vnc2d)
 
 end function v_nlo_c_2d
 
+real(dp) function v_nlo_c_2d_small_r(r, R_L, a_L, vf2, vf4, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf2, vf4, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = -hA**4*hbar_c**6*(4*y**3*vf2 + 2*y*vf4 + (4*x**4 -8*x**2*y**2 - 12*y**4)*vf5 &
+        + (4*x**2 - 4*y**2)*vf6 + vf7)/(108*pi**3*delta_nucleon_mass_difference*Fpi**4) &
+        *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_c_2d_small_r
+
 !!
 !> @brief       TPE at NLO with 2 Delta intermediate states
 !!
@@ -716,6 +1035,20 @@ real(dp) function v_nlo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vntau2d)
 
 end function v_nlo_tau_2d
 
+real(dp) function v_nlo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = -hA**4*hbar_c**6*(11*y*vf1 + y*(24*x**2 + 24*y**2)*vf2 + 6*y*vf4 - 3*(24*x**2*y**2 + 4*x**4 +20*y**4)*vf5 &
+        - 3*(4*x**2 + 12*y**2)*vf6 - 3*vf7)/(1944*pi**3*delta_nucleon_mass_difference*Fpi**4) &
+        *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_tau_2d_small_r
+
 !!
 !> @brief       TPE at NLO with 2 Delta intermediate states
 !!
@@ -738,6 +1071,20 @@ real(dp) function v_nlo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7) result(vnsigma2d)
 
 end function v_nlo_sigma_2d
 
+real(dp) function v_nlo_sigma_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = -hA**4*hbar_c**6*(-6*y*vf1 - 24*x**2*y*vf2 + 48*y**2*x**2*vf5 + (4*x**2 + 12*y**2)*vf6 + vf7) &
+        /(1296*pi**3*delta_nucleon_mass_difference*Fpi**4) &
+        *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_sigma_2d_small_r
+
 !!
 !> @brief       TPE at NLO with 2 Delta intermediate states
 !!
@@ -759,6 +1106,22 @@ real(dp) function v_nlo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7) result(vnstau2d)
         / (7776 * pi**3 * r**5 * Fpi**4)
 
 end function v_nlo_sigmatau_2d
+
+real(dp) function v_nlo_sigmatau_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7 !< distance at which the function will be evaluated, in fm
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = -hA**4*hbar_c**6*(-2*y*vf1 - 8*x**2*y*vf2 + 16*y**2*x**2*vf5 + (4*y**2 - 4*x**2)*vf6 - vf7) &
+        /(7776*pi**3*delta_nucleon_mass_difference*Fpi**4) &
+        *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+
+end function v_nlo_sigmatau_2d_small_r
+
 
 !!
 !> @brief       TPE at NLO with 2 Delta intermediate states
@@ -783,6 +1146,21 @@ real(dp) function v_nlo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v
 
 end function v_nlo_t_2d
 
+real(dp) function v_nlo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = hA**4*hbar_c**6*(-6*y*vf1 - 6*y*(3 + 4*x**2)*vf2 - 18*y*vf3 + (36*y**2 + 48*x**2*y**2)*vf5 &
+        + (3 + 4*x**2 + 12*y**2)*vf6 + vf7 + 3*vf8 + 36*y**2*vf9) &
+        / (2592*pi**3*delta_nucleon_mass_difference*Fpi**4) &
+        *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_t_2d_small_r
+
 !!
 !> @brief       TPE at NLO with 2 Delta intermediate states
 !!
@@ -806,6 +1184,21 @@ real(dp) function v_nlo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resul
 
 end function v_nlo_ttau_2d
 
+real(dp) function v_nlo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x , y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = hA**4*hbar_c**6*(-2*y*vf1 - 2*y*(3 + 4*x**2)*vf2 - 6*y*vf3 + (12*y**2 + 16*x**2*y**2)*vf5 &
+        + (4*y**2 - 4*x**2 - 3)*vf6 - vf7 -3*vf8 + 12*y**2*vf9) &
+        / (15552*pi**3*delta_nucleon_mass_difference*Fpi**4) &
+        *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_nlo_ttau_2d_small_r
+
 !! NEXT-TO-NEXT-TO LEADING ORDER POTENTIALS
 
 !!
@@ -828,6 +1221,17 @@ real(dp) function v_n2lo_c(r) result(vn2c)
         / (2*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_c
 
+real(dp) function v_n2lo_c_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = 3*gA**2*hbar_c**6*exp(-2*x)*(2*c1*x**2*(1 + x)**2 + c3*(6 + 12*x + 10*x**2 + 4*x**3 + x**4)) &
+        /(2*pi**2*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+end function v_n2lo_c_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -848,6 +1252,17 @@ real(dp) function v_n2lo_sigmatau(r) result(vn2stau)
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_sigmatau
 
+real(dp) function v_n2lo_sigmatau_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = gA**2*hbar_c**6*c4*exp(-2*x)*(1 + x)*(3 + 3*x + 2*x**2) &
+        /(3*pi**2*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+end function v_n2lo_sigmatau_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -867,6 +1282,17 @@ real(dp) function v_n2lo_ttau(r) result(vn2ttau)
     vn2ttau = - gA**2 * hbar_c**6 * c4 * exp(-2*x) * (1 + x)*(3 + 3*x + x**2) &
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_ttau
+
+real(dp) function v_n2lo_ttau_small_r(r, R_L, a_L) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L !< distance at which the function will be evaluated, in fm
+    real(dp) :: x
+
+    x = pion_mass_r(r)
+
+    v = -gA**2*hbar_c**6*c4*exp(-2*x)*(1 + x)*(3 + 3*x + x**2) &
+        /(3*pi**2*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+end function v_n2lo_ttau_small_r
 
 !!
 !> @brief       N2LO loop correction
@@ -893,6 +1319,23 @@ real(dp) function v_n2lo_c_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2cd)
 
 end function v_n2lo_c_d
 
+real(dp) function v_n2lo_c_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = hA**2*hbar_c**6*(y*(5*c2-6*c3)*vf1 + y*((-24*c1 + 12*c2 - 12*c3)*x**2 + 12*c2*y**2)*vf2 &
+        + 6*(((8*c1 + 4*c3)*x**4 + (8*c1 - 4*c2 + 4*c3)*x**2*y**2 - 4*c2*y**4)*vf5 &
+        + ((4*c1 + 4*c3)*x**2 + (-2*c2 + 2*c3)*y**2)*vf6 + c3*vf7)) &
+        /(18*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_c_d_small_r
+
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -918,6 +1361,22 @@ real(dp) function v_n2lo_tau_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2taud)
 
 end function v_n2lo_tau_d
 
+real(dp) function v_n2lo_tau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -b38*hA*hbar_c**6*(y*(5 - 11*gA**2)*vf1 + y*(12*x**2 + 12*y**2 - gA**2 * (24*x**2 + 12*y**2))*vf2 &
+        + (-12*y**2*(2*x**2 + 2*y**2) + 6*gA**2*(4*x**4 + 8*x**2*y**2 + 4*y**4))*vf5 &
+        + (-12*y**2 + 6*gA**2*(4*x**2 + 4*y**2))*vf6 + 6*gA**2*vf7) &
+        / (54*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_tau_d_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -941,6 +1400,20 @@ real(dp) function v_n2lo_sigma_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2sigmad)
 
 end function v_n2lo_sigma_d
 
+real(dp) function v_n2lo_sigma_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -b38*hA*gA**2*hbar_c**6*(2*y*vf1 + 8*x**2*y*vf2 - 16*x**2*y**2*vf5 - 4*(x**2 + y**2)*vf6 - vf7) &
+        /(18*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_sigma_d_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -963,6 +1436,20 @@ real(dp) function v_n2lo_sigmatau_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2staud)
             / (108*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_sigmatau_d
+
+real(dp) function v_n2lo_sigmatau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -c4*hA**2*hbar_c**6*(2*y*vf1 + 8*x**2*y*vf2 - 16*x**2*y**2*vf5 - 4*(x**2 + y**2)*vf6 - vf7) &
+        /(108*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_sigmatau_d_small_r
 
 !!
 !> @brief       N2LO loop correction
@@ -988,6 +1475,21 @@ real(dp) function v_n2lo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v
 
 end function v_n2lo_t_d
 
+real(dp) function v_n2lo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = b38*hA*gA**2*hbar_c**6*(2*y*vf1 + y*(6+8*x**2)*vf2 + 6*y*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5 &
+        - (3 + 4*x**2 + 4*y**2)*vf6 - vf7 - 3*vf8 - 12*y**2*vf9) &
+        /(36*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_t_d_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -1011,6 +1513,20 @@ real(dp) function v_n2lo_ttau_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resul
             / (216*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_ttau_d
+
+real(dp) function v_n2lo_ttau_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+    v = c4*hA**2*hbar_c**6*(2*y*vf1 + (6+8*x**2)*y*vf2 + 6*y*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5 &
+        - (3 + 4*x**2 + 4*y**2)*vf6 - vf7 - 3*vf8 - 12*y**2*vf9) &
+        /(216*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_ttau_d_small_r
 
 !!
 !> @brief       N2LO loop correction
@@ -1037,6 +1553,21 @@ real(dp) function v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2c2d)
 
 end function v_n2lo_c_2d
 
+real(dp) function v_n2lo_c_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -2*b38*hA**3*hbar_c**6*(11*y*vf1 + (24*x**2 + 12*y**2)*y*vf2 + &
+        6*y*vf4 - 3*((4*x**4 + 24*x**2*y**2 + 20*y**4)*vf5 + (4*x**2 + 12*y**2)*vf6 &
+        + vf7))/(81*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_c_2d_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -1056,11 +1587,26 @@ real(dp) function v_n2lo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2tau2d
 
 
     vn2tau2d = -b38 * hA**3 * y * hbar_c**6 * (11*vf1 + (24*x**2 + 12*y**2)*vf2 + &
-    6*vf4 - 3*((4*x**4 + 24*x**2*y**2 + 20*y**4)*vf5 + (4*x**2 + 12*y**2)*vf6 &
-    + vf7)/y) &
+        6*vf4 - 3*((4*x**4 + 24*x**2*y**2 + 20*y**4)*vf5 + (4*x**2 + 12*y**2)*vf6 &
+        + vf7)/y) &
             / (243*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_tau_2d
+
+real(dp) function v_n2lo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -b38*hA**3*hbar_c**6*(11*y*vf1 + (24*x**2 + 12*y**2)*y*vf2 + &
+        6*y*vf4 - 3*((4*x**4 + 24*x**2*y**2 + 20*y**4)*vf5 + (4*x**2 + 12*y**2)*vf6 &
+        + vf7))/(243*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_tau_2d_small_r
 
 !!
 !> @brief       N2LO loop correction
@@ -1085,6 +1631,20 @@ real(dp) function v_n2lo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7) result(vn2sigma2d)
 
 end function v_n2lo_sigma_2d
 
+real(dp) function v_n2lo_sigma_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -b38*hA**3*hbar_c**6*(-6*y*vf1 - 24*x**2*y*vf2 + 48*x**2*y**2*vf5 + (4*x**2 + 12*y**2)*vf6 + vf7) &
+        /(162*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_sigma_2d_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -1107,6 +1667,20 @@ real(dp) function v_n2lo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7) result(vn2stau2
             / (972*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_sigmatau_2d
+
+real(dp) function v_n2lo_sigmatau_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf5, vf6, vf7
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = -b38*hA**3*hbar_c**6*(-6*y*vf1 - 24*x**2*y*vf2 + 48*x**2*y**2*vf5 + (4*x**2 + 12*y**2)*vf6 + vf7) &
+        /(972*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_sigmatau_2d_small_r
 
 !!
 !> @brief       N2LO loop correction
@@ -1132,6 +1706,21 @@ real(dp) function v_n2lo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(
 
 end function v_n2lo_t_2d
 
+real(dp) function v_n2lo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = b38*hA**3*hbar_c**6*(-6*y*vf1 - 6*(3 + 4*x**2)*y*vf2 - 18*y*vf3 + ((36*y**2 + 48*x**2*y**2)*vf5 &
+        + (3 + 4*x**2 + 12*y**2)*vf6 + vf7 + 3*vf8 + 36*y**2*vf9)) &
+        /(324*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_t_2d_small_r
+
 !!
 !> @brief       N2LO loop correction
 !!
@@ -1155,6 +1744,21 @@ real(dp) function v_n2lo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resu
             / (1944*pi**3 * r**6 * Fpi**4)
 
 end function v_n2lo_ttau_2d
+
+real(dp) function v_n2lo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
+    implicit none
+    real(dp), intent(in) :: r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9
+    real(dp) :: x, y
+
+    x = pion_mass_r(r)
+    y = delta_nucleon_mass_difference_r(r)
+
+
+    v = b38*hA**3*hbar_c**6*(-6*y*vf1 - 6*(3 + 4*x**2)*y*vf2 - 18*y*vf3 + ((36*y**2 + 48*x**2*y**2)*vf5 &
+    + (3 + 4*x**2 + 12*y**2)*vf6 + vf7 + 3*vf8 + 36*y**2*vf9)) &
+        /(1944*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
+
+end function v_n2lo_ttau_2d_small_r
 
 !!
 !!
@@ -1180,7 +1784,7 @@ real(dp) function vf_1(u , r) result(vf1)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
     vf1 = u**4 * exp(-sqrt(u**2 + 4*x**2)) &
-        /sqrt(u**2 + 4*x**2)
+        /sqrt(u**2 + 4*x**2 + tiny(1._dp))
 end function vf_1
 
 !! potential integrand function 2: vf2
@@ -1198,7 +1802,7 @@ real(dp) function vf_2(u , r) result(vf2)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
     vf2 = u**2 * exp(-sqrt(u**2 + 4*x**2)) &
-        /(sqrt(u**2 + 4*x**2))
+        /sqrt(u**2 + 4*x**2 + tiny(1._dp))
 end function vf_2
 
 !! potential integrand function 3: vf3
@@ -1234,7 +1838,7 @@ real(dp) function vf_4(u , r) result(vf4)
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
     vf4 = u**2 * (2*x**2 + u**2 + 2*y**2)**2 * exp(-sqrt(u**2 + 4*x**2)) &
-        /(sqrt(u**2 + 4*x**2) * (u**2 +4*y**2))
+        /(sqrt(u**2 + 4*x**2) * (u**2 +4*y**2) + tiny(1._dp))
 end function vf_4
 
 !! potential integrand function 5: vf5
@@ -1252,8 +1856,8 @@ real(dp) function vf_5(u , r) result(vf5)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
-    vf5 = u * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2)) &
-        /(sqrt(u**2 + 4*x**2))
+    vf5 = u * atan(u/(2*y + tiny(1._dp))) * exp(-sqrt(u**2 + 4*x**2)) &
+        /sqrt(u**2 + 4*x**2 + tiny(1._dp))
 end function vf_5
 
 !! potential integrand function 6: vf6
@@ -1271,8 +1875,8 @@ real(dp) function vf_6(u , r) result(vf6)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
-    vf6 = u**3 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2)) &
-        /(sqrt(u**2 + 4*x**2))
+    vf6 = u**3 * atan(u/(2*y + tiny(1._dp))) * exp(-sqrt(u**2 + 4*x**2)) &
+        /sqrt(u**2 + 4*x**2 + tiny(1._dp))
 end function vf_6
 
 !! potential integrand function 7: vf7
@@ -1290,8 +1894,8 @@ real(dp) function vf_7(u , r) result(vf7)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
-    vf7 = u**5 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2)) &
-        /(sqrt(u**2 + 4*x**2))
+    vf7 = u**5 * atan(u/(2*y + tiny(1._dp))) * exp(-sqrt(u**2 + 4*x**2)) &
+        /sqrt(u**2 + 4*x**2 + tiny(1._dp))
 end function vf_7
 
 !! potential integrand function 8: vf8
@@ -1309,7 +1913,7 @@ real(dp) function vf_8(u , r) result(vf8)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
-    vf8 = u**3 * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2))
+    vf8 = u**3 * atan(u/(2*y + tiny(1._dp))) * exp(-sqrt(u**2 + 4*x**2))
 end function vf_8
 
 !! potential integrand function 9: vf9
@@ -1327,7 +1931,7 @@ real(dp) function vf_9(u , r) result(vf9)
     x = mpi * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
     y = delta_nucleon_mass_difference * r / hbar_c !< r needs to be replaced with value of r that we are using for the do loop
 
-    vf9 = u * atan(u/(2*y)) * exp(-sqrt(u**2 + 4*x**2))
+    vf9 = u * atan(u/(2*y + tiny(1._dp))) * exp(-sqrt(u**2 + 4*x**2))
 end function vf_9
 
 end module long_range_chiral_potentials
