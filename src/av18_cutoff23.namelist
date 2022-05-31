@@ -38,6 +38,7 @@
                  -0.57343351       546.71069478                   ! I_00_c      P_00_c
                  -0.32714832       404.67568157                   ! I_00_l2     P_00_l2
                  -4.99851176                                      ! P_CD_c
+                  0.00000000         0.00000000        0.00000000 ! I_CD_1_ls  P_CD_1_ls      R_CD_1_ls
                   2.30000000         0.47500000        0.19000000 ! c_pi        r_ww        a_ws
 /
 &adjust_parameter ! Parameters with .false. are kept fixed during the optimization
@@ -58,5 +59,6 @@
             .true.      .true.              ! I_00_c      P_00_c
             .true.      .true.              ! I_00_l2     P_00_l2
             .true.                          ! P_CD_c
+            .false.     .false.     .false. ! I_CD_1_ls   P_CD_1_ls   R_CD_1_ls
             .false.     .false.     .false. ! c_pi        r_ww        a_ws
 /
