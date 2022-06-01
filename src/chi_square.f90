@@ -42,6 +42,7 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     integer, allocatable :: all_n_points(:)
     real(dp), allocatable :: all_alpha(:,:,:), all_beta(:,:)
     integer :: i, n_exps, n_active_parameters
+    type(nn_experiment) :: my_experiment
     
 
     ! get the number of experiments
@@ -59,13 +60,14 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     all_chi = 0
     all_n_points = 0
 !---Parallel section------------------------------------------------------------
-    !$omp parallel default(none) private(i, chi2, n_points, beta, alpha) &
+    !$omp parallel default(none) private(i, chi2, n_points, beta, alpha, my_experiment) &
     !$omp & shared(parameters, mask, model, all_chi, all_n_points, all_alpha, all_beta, experiments)
     !$omp do schedule(dynamic)
     do i = 1, size(experiments) ! calculate chi-square, alpha, and beta for each experiment
         if (experiments(i)%rejected) cycle
         if (experiments(i)%channel == 'nn' .and. model%potential_type == 'delta_shell') cycle ! delta-shell potentials don't have a nn channel (yet)
-        call experiment_chi_square(experiments(i), parameters, mask, model, chi2, alpha, beta, n_points)
+        call filter_by_energy(experiments(i), model%t_lab_limit, my_experiment)
+        call experiment_chi_square(my_experiment, parameters, mask, model, chi2, alpha, beta, n_points)
         all_chi(i) = chi2
         all_n_points(i) = n_points
         all_alpha(:, :, i) = alpha
@@ -84,6 +86,32 @@ subroutine total_chi_square(experiments, parameters, mask, model, n_points, chi2
     alpha = sum(all_alpha, dim=3)!, mask=.not.isnan(all_alpha))
     beta = sum(all_beta, dim=2)!, mask=.not.isnan(all_beta))
 end subroutine total_chi_square
+
+subroutine filter_by_energy(full_experiment, t_lab_limit, filtered_experiment)
+    implicit none
+    type(nn_experiment), intent(in) :: full_experiment
+    real(dp), intent(in) :: t_lab_limit
+    type(nn_experiment), intent(out) :: filtered_experiment
+    
+    integer :: filtered_n_data, i, counter
+
+    filtered_n_data = count(full_experiment%data_points(:)%t_lab <= t_lab_limit)
+    filtered_experiment%n_data = filtered_n_data
+    filtered_experiment%sys_error = full_experiment%sys_error
+    filtered_experiment%obs_type = full_experiment%obs_type
+    filtered_experiment%channel = full_experiment%channel
+    filtered_experiment%rejected = full_experiment%rejected
+    filtered_experiment%year = full_experiment%year
+    filtered_experiment%reference = full_experiment%reference
+    allocate(filtered_experiment%data_points(1:filtered_n_data))
+    counter = 0
+    do i = 1, full_experiment%n_data
+        if (full_experiment%data_points(i)%t_lab <= t_lab_limit) then
+            counter = counter + 1
+            filtered_experiment%data_points(counter) = full_experiment%data_points(i)
+        endif
+    enddo
+end subroutine filter_by_energy
 
 subroutine experiment_chi_square(experiment, parameters, mask, model, chi2, alpha, beta, n_points)
     implicit none

@@ -67,6 +67,7 @@ subroutine set_av18_potential(potential, parameters)
     potential%relativistic_deuteron = .False.
     potential%full_em_wave = .true.
     potential%n_components = n_operators
+    potential%t_lab_limit = 350._dp
 
     ! Properties of a delta-shell potential. We set them to zero
     potential%n_lambdas = 0

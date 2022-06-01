@@ -142,6 +142,7 @@ type :: nn_model
     real(dp) :: dr_tail !< Distance between the external lambdas (usually pion exchange)
     logical :: relativistic_deuteron !< Should relativistic kinematics be used when calculating the deuteron binding energy?
     logical :: full_em_wave !< Should the full EM wave (with 2 photon exchange and vacuum polarization) calculated for the 1S0 partial wave
+    real(dp) :: t_lab_limit !< Maximum laboratory energy to be included in the fitted dataset
 end type nn_model
 
 !!
@@ -222,6 +223,7 @@ subroutine set_ds_potential(name, ds_potential, parameters)
         ds_potential%dr_tail = 0.5_dp
         ds_potential%relativistic_deuteron = .True.
         ds_potential%full_em_wave = .false.
+        ds_potential%t_lab_limit = 350._dp
     case('ds_ope30_fff')
         parameters = ds_ope30fff_params
         ds_potential%potential => ds_potential_tail_all_waves
@@ -234,6 +236,7 @@ subroutine set_ds_potential(name, ds_potential, parameters)
         ds_potential%dr_tail = 0.5_dp
         ds_potential%relativistic_deuteron = .True.
         ds_potential%full_em_wave = .false.
+        ds_potential%t_lab_limit = 350._dp
     case default
         stop 'unrecognized ds potential name in set_ds_potential'
     end select
