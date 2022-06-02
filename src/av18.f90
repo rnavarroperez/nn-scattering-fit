@@ -64,6 +64,7 @@ subroutine set_av18_potential(potential, parameters)
     potential%dr = delta_r
     potential%potential_type = 'local'
     potential%name = 'AV18'
+    potential%fit_deuteron = .true.
     potential%relativistic_deuteron = .False.
     potential%full_em_wave = .true.
     potential%n_components = n_operators

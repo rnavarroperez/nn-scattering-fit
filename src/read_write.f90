@@ -459,8 +459,9 @@ subroutine write_potential_setup(potential, parameters, mask, unit)
     logical, intent(in), dimension(:) :: mask
     integer, intent(in) :: unit !< Unit where the output is sent to. Either and already opened file or output_unit from iso_fortran_env
 
-    write(unit, *) 'Characteristics of the potential'
-    write(unit, *) 'Name:', potential%name
+    write(unit, *) 'Characteristics of the optimization run'
+    write(unit, *) 'Potential Name: ', potential%name
+    write(unit, *) 'Max T lab of data in the chi square:', potential%t_lab_limit
     write(unit, *) 'Maximum integration radius:', potential%r_max
     select case(trim(potential%potential_type))
     case ('local')
@@ -472,6 +473,11 @@ subroutine write_potential_setup(potential, parameters, mask, unit)
     case default
         stop 'Unrecognized potential type in write_potential_setup'
     end select
+    if (potential%fit_deuteron) then
+        write(unit, *) 'The deuteron is included in the total chi square'
+    else
+        write(unit, *) 'The deuteron is NOT included in the total chi square'
+    endif
     if (potential%relativistic_deuteron) then
         write(unit, *) 'The deuteron is calculated with RELATIVISITC kinematics'
     else
@@ -500,18 +506,18 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     character(len=*), intent(out) :: output_name
 
     character(len=1024) :: name
-    real(dp) :: r_max, delta_r, dr_core, dr_tail
+    real(dp) :: t_lab_limit, r_max, delta_r, dr_core, dr_tail
     integer :: n_lambdas
-    logical :: relativistic
+    logical :: fit_deuteron, relativistic
 
     logical :: file_exists
     integer :: unit, ierror
 
     namelist /data_base/ database_file
-    namelist /nn_potential/ name
+    namelist /nn_potential/ name, t_lab_limit
     namelist /local_integration/ r_max, delta_r
     namelist /delta_shell_integration/ r_max, n_lambdas, dr_core, dr_tail
-    namelist /deuteron/ relativistic
+    namelist /deuteron/ fit_deuteron, relativistic
     namelist /potential_parameters/ parameters
     namelist /adjust_parameter/ mask
     namelist /output/ save_results, output_name
@@ -519,6 +525,8 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
 
     database_file = 'database/granada_database.dat'
     name = 'AV18'
+    fit_deuteron = .true.
+    t_lab_limit = 350._dp
     save_results = .true.
     output_name = 'results'
 
@@ -639,6 +647,8 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     endif
 
     ! Updating values if those where present in the namelist file
+    potential%t_lab_limit = t_lab_limit
+
     potential%r_max = r_max
     potential%dr = delta_r
 
@@ -646,6 +656,7 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     potential%dr_core = dr_core
     potential%dr_tail = dr_tail
 
+    potential%fit_deuteron = fit_deuteron
     potential%relativistic_deuteron = relativistic
   
 end subroutine setup_from_namelist
