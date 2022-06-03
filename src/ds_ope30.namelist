@@ -14,6 +14,7 @@
 /
 
 &deuteron
+    fit_deuteron = .false.
     relativistic = .true. ! Whether to use relativistic kinematics for the deuteron or not
 /
 

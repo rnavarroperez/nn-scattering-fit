@@ -4,14 +4,16 @@
 
 &nn_potential
     name = 'N2LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N2LO'
+    t_lab_limit = 10.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
 /
 
 &local_integration
-    r_max = 12.5,  ! Maximum integration radius
-    delta_r = 0.0078125 ! Integration step
+    r_max = 12.5,  ! Maximum integration radius (in units of fm)
+    delta_r = 0.0078125 ! Integration step (in units of fm)
 /
 
 &deuteron
+    fit_deuteron = .false.
     relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
 /
 
