@@ -558,7 +558,7 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
             n_lambdas = 0
             dr_core = 0.0_dp
             dr_tail = 0.0_dp
-        case ('N2LO')
+        case ('N3LO')
             call set_chiral_potential(potential, parameters)
             r_max = 12.5_dp
             delta_r = 1/128._dp

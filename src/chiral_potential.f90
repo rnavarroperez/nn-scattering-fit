@@ -65,7 +65,7 @@ subroutine set_chiral_potential(potential, parameters)
     potential%r_max = r_max
     potential%dr = delta_r
     potential%potential_type = 'local'
-    potential%name = 'N2LO'
+    potential%name = 'N3LO'
     potential%relativistic_deuteron = .False.
     potential%full_em_wave = .true.
     potential%n_components = n_operators
