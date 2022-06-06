@@ -3,7 +3,7 @@
 /
 
 &nn_potential
-    name = 'N2LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N2LO'
+    name = 'N3LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N2LO'
     t_lab_limit = 10.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
 /
 
