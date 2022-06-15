@@ -4,7 +4,7 @@
 
 &nn_potential
     name = 'N3LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N2LO'
-    t_lab_limit = 10.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
+    t_lab_limit = 125.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
 /
 
 &local_integration
@@ -19,37 +19,37 @@
 
 &output
     save_results = .true.
-    output_name = 'n3lo'
+    output_name = 'model_a_125'
 /
 
 
 &potential_parameters !Potential parameters
-    parameters =     2.936041      ! C_s
-                   -0.4933897      ! C_T
-                   -0.1013462      ! C_1
-                   -0.1444844      ! C_2
-                  -0.03647634      ! C_3
-                  -0.01630825      ! C_4
-                 -0.006658100      ! C_5
-                  -0.06176835      ! C_6
-                   -0.9578191      ! C_7
-                  -0.03102824      ! D_1
-                 -0.004438695      ! D_2
-                  -0.01351171      ! D_3
-                -0.0007084459      ! D_4
-                   0.01110108      ! D_5
-                 -0.008598857      ! D_6
-                  -0.05367908      ! D_7
-                   0.03119241      ! D_8
-                   0.03281636      ! D_9
-                  -0.08647128      ! D_10
-                  -0.01167788      ! D_11
-                  0.009575695      ! C_0_IV
-                   0.02194758      ! C_0_IT
-                 -0.001550501      ! C_1_IT
-                 -0.008354679      ! C_2_IT
-                 -0.006682746      ! C_3_IT
-                   0.01276971      ! C_4_IT
+    parameters =     2.726141      ! C_s
+                   −0.5228448      ! C_T
+                  −0.06992838      ! C_1
+                   −0.1496013      ! C_2
+                  −0.02502401      ! C_3
+                  −0.02728396      ! C_4
+                 −0.006530008      ! C_5
+                  −0.07554924      ! C_6
+                    −1.017206      ! C_7
+                  −0.04251199      ! D_1
+                 −0.005567938      ! D_2
+                  −0.01666607      ! D_3
+                  0.001054347      ! D_4
+                  0.005383828      ! D_5
+                 -0.008012050      ! D_6
+                  -0.02309392      ! D_7
+                   0.01383136      ! D_8
+                   0.04797012      ! D_9
+                   -0.1156876      ! D_10
+                  -0.01453295      ! D_11
+                  0.009325477      ! C_0_IV
+                   0.01578240      ! C_0_IT
+                 −0.002179452      ! C_1_IT
+                 −0.006288540      ! C_2_IT
+                 -0.005799803      ! C_3_IT
+                   0.02250167      ! C_4_IT
                           0.8      ! R_s
                           1.2      ! R_L
 /
