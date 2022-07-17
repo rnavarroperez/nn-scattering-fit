@@ -19,36 +19,36 @@ subroutine write_marias_format(filename, parameters)
     open(newunit=unit, file=trim(filename))
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsq0'
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsqc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(45), 'cc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(46), 'cr'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(47), 'ca'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(52), 'cc'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(53), 'cr'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(54), 'ca'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(31), 'ccI01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(32), 'ccP01pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .true.,  0.0_dp,         'ccR01pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(33), 'ccI01np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(34), 'ccP01np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'ccR01np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(31), 'ccI01nn'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41) + parameters(32), 'ccP01nn'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp, 'ccR01nn'
-    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(35), 'cl2I01'
-    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(36), 'cl2P01'
-    write(unit, '(1l3,1E24.9,1x,a)') .true.,  0.0_dp,         'cl2R01'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(37), 'ccI00'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(38), 'ccP00'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'ccR00'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(39), 'cl2I00'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(40), 'cl2P00'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., 0.0_dp,         'cl2R00'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(33), 'ccR01pp'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(34), 'ccI01np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(35), 'ccP01np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(36), 'ccR01np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(31) + parameters(46), 'ccI01nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(32) + parameters(47), 'ccP01nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(33) + parameters(48), 'ccR01nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(37), 'cl2I01'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(38), 'cl2P01'
+    write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(39), 'cl2R01'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(40), 'ccI00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41), 'ccP00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(42), 'ccR00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(43), 'cl2I00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(44), 'cl2P00'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(45), 'cl2R00'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 1), 'ccI11pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 2), 'ccP11pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 3), 'ccR11pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1), 'ccI11np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41)*0.5_dp + parameters(2), 'ccP11np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3), 'ccR11np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1), 'ccI11nn'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(41) + parameters(2), 'ccP11nn'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3), 'ccR11nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1) + 0.5_dp*parameters(46), 'ccI11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 2) + 0.5_dp*parameters(47), 'ccP11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3) + 0.5_dp*parameters(48), 'ccR11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 1) + parameters(46), 'ccI11nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 2) + parameters(47), 'ccP11nn'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 3) + parameters(48), 'ccR11nn'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(10), 'cl2I11'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(11), 'cl2P11'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(12), 'cl2R11'
@@ -64,9 +64,9 @@ subroutine write_marias_format(filename, parameters)
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 7), 'clsI1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 8), 'clsP1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 9), 'clsR1pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7) + parameters(42), 'clsI1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8) + parameters(43), 'clsP1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9) + parameters(44), 'clsR1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7) + parameters(49), 'clsI1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8) + parameters(50), 'clsP1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9) + parameters(51), 'clsR1np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 7), 'clsI1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 8), 'clsP1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters( 9), 'clsR1nn'
@@ -219,21 +219,28 @@ subroutine read_marias_format(filename, parameters)
     parameters(30) = cls2R0
     parameters(31) = ccI01pp
     parameters(32) = ccP01pp
-    parameters(33) = ccI01np
-    parameters(34) = ccP01np
-    parameters(35) = cl2I01
-    parameters(36) = cl2P01
-    parameters(37) = ccI00
-    parameters(38) = ccP00
-    parameters(39) = cl2I00
-    parameters(40) = cl2P00
-    parameters(41) = ccP01nn - ccP01pp
-    parameters(42) = clsI1np - clsI1pp
-    parameters(43) = clsP1np - clsP1pp
-    parameters(44) = clsR1np - clsR1pp
-    parameters(45) = cc
-    parameters(46) = cr
-    parameters(47) = ca
+    parameters(33) = ccR01pp
+    parameters(34) = ccI01np
+    parameters(35) = ccP01np
+    parameters(36) = ccR01np
+    parameters(37) = cl2I01
+    parameters(38) = cl2P01
+    parameters(39) = cl2R01
+    parameters(40) = ccI00
+    parameters(41) = ccP00
+    parameters(42) = ccR00
+    parameters(43) = cl2I00
+    parameters(44) = cl2P00
+    parameters(45) = cl2R00
+    parameters(46) = ccI01nn - ccI01pp
+    parameters(47) = ccP01nn - ccP01pp
+    parameters(48) = ccR01nn - ccR01pp
+    parameters(49) = clsI1np - clsI1pp
+    parameters(50) = clsP1np - clsP1pp
+    parameters(51) = clsR1np - clsR1pp
+    parameters(52) = cc
+    parameters(53) = cr
+    parameters(54) = ca
     
     call verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01nn, &
                            ccI11pp, ccP11pp, ccR11pp, ccI11np, ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, &
