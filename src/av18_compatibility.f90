@@ -273,6 +273,13 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
+    if(abs(ccP01pp - ccP01nn) > delta) then
+        print*, 'CSB in ccP01!'
+        print*, 'P_01 c pp:', ccP01pp
+        print*, 'P_01 c nn:', ccP01nn
+        violation = .true.
+    endif
+
     if(abs(ccR01pp - ccR01nn) > delta) then
         print*, 'CSB in ccR01!'
         print*, 'R_01 c pp:', ccR01pp
@@ -280,33 +287,33 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
-    if(abs(ccI11pp - ccI11np) > delta) then
-        print*, 'CSB in ccI11!'
-        print*, 'I_11 c pp:', ccI11pp
-        print*, 'I_11 c np:', ccI11np
-        violation = .true.
-    endif
+    ! if(abs(ccI11pp - ccI11np) > delta) then
+    !     print*, 'CSB in ccI11!'
+    !     print*, 'I_11 c pp:', ccI11pp
+    !     print*, 'I_11 c np:', ccI11np
+    !     violation = .true.
+    ! endif
 
-    if(abs(ccI11pp - ccI11nn) > delta) then
-        print*, 'CSB in ccI11!'
-        print*, 'I_11 c pp:', ccI11pp
-        print*, 'I_11 c nn:', ccI11nn
-        violation = .true.
-    endif
+    ! if(abs(ccI11pp - ccI11nn) > delta) then
+    !     print*, 'CSB in ccI11!'
+    !     print*, 'I_11 c pp:', ccI11pp
+    !     print*, 'I_11 c nn:', ccI11nn
+    !     violation = .true.
+    ! endif
 
-    if(abs(ccR11pp - ccR11np) > delta) then
-        print*, 'CSB in ccR11!'
-        print*, 'R_11 c pp:', ccR11pp
-        print*, 'R_11 c np:', ccR11np
-        violation = .true.
-    endif
+    ! if(abs(ccR11pp - ccR11np) > delta) then
+    !     print*, 'CSB in ccR11!'
+    !     print*, 'R_11 c pp:', ccR11pp
+    !     print*, 'R_11 c np:', ccR11np
+    !     violation = .true.
+    ! endif
 
-    if(abs(ccR11pp - ccR11nn) > delta) then
-        print*, 'CSB in ccR11!'
-        print*, 'R_11 c pp:', ccR11pp
-        print*, 'R_11 c nn:', ccR11nn
-        violation = .true.
-    endif
+    ! if(abs(ccR11pp - ccR11nn) > delta) then
+    !     print*, 'CSB in ccR11!'
+    !     print*, 'R_11 c pp:', ccR11pp
+    !     print*, 'R_11 c nn:', ccR11nn
+    !     violation = .true.
+    ! endif
 
     if(abs(ctI1pp - ctI1np) > delta) then
         print*, 'CSB in ctI1!'
@@ -374,6 +381,13 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
+    if(abs(ccI01nn - ccI01pp - (ccI11nn - ccI11pp)) > delta) then
+        print*, 'CSB between I00 and I11'
+        print*, 'I_01_nn - I_01_pp:', ccI01nn - ccI01pp
+        print*, 'I_11_nn - I_11_pp:', ccI11nn - ccI11pp
+        violation = .true.        
+    endif
+
     if(abs(ccP01nn - ccP01pp - (ccP11nn - ccP11pp)) > delta) then
         print*, 'CSB between P00 and P11'
         print*, 'P_01_nn - P_01_pp:', ccP01nn - ccP01pp
@@ -381,10 +395,31 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.        
     endif
 
+    if(abs(ccR01nn - ccR01pp - (ccR11nn - ccR11pp)) > delta) then
+        print*, 'CSB between R00 and R11'
+        print*, 'R_01_nn - R_01_pp:', ccR01nn - ccR01pp
+        print*, 'R_11_nn - R_11_pp:', ccR11nn - ccR11pp
+        violation = .true.        
+    endif
+
+    if(abs(ccI11nn - ccI11pp - 2*(ccI11np - ccI11pp)) > delta) then
+        print*, 'CSB between I11_pp, I11_np and I11_nn'
+        print*, '  I_11_nn - I_11_pp :', ccI11nn - ccI11pp
+        print*, '2(I_11_np - I_11_pp):', 2*(ccI11np - ccI11pp)
+        violation = .true.        
+    endif
+
     if(abs(ccP11nn - ccP11pp - 2*(ccP11np - ccP11pp)) > delta) then
         print*, 'CSB between P11_pp, P11_np and P11_nn'
         print*, '  P_11_nn - P_11_pp :', ccP11nn - ccP11pp
         print*, '2(P_11_np - P_11_pp):', 2*(ccP11np - ccP11pp)
+        violation = .true.        
+    endif
+
+    if(abs(ccR11nn - ccR11pp - 2*(ccR11np - ccR11pp)) > delta) then
+        print*, 'CSB between R11_pp, R11_np and R11_nn'
+        print*, '  R_11_nn - R_11_pp :', ccR11nn - ccR11pp
+        print*, '2(R_11_np - R_11_pp):', 2*(ccR11np - ccR11pp)
         violation = .true.        
     endif
 
