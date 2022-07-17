@@ -10,7 +10,7 @@ module optimization
 use precisions, only: dp
 use exp_data, only: nn_experiment, read_database, init_ex_em_amplitudes
 use delta_shell, only: nn_model
-use av18, only: set_av18_potential
+use av18, only: set_av18_potential, default_av18_mask=>default_mask
 use chi_square, only: total_chi_square
 use read_write, only: write_potential_setup, setup_from_namelist
 implicit none
@@ -42,7 +42,7 @@ subroutine setup_optimization(model, parameters, mask, database, save_results, o
         output_name = 'results'
         call set_av18_potential(model, parameters)
         allocate(mask(1:size(parameters)))
-        mask = .true.
+        mask = default_av18_mask
     else if(n_arguments == 1) then
         call get_command_argument(1, namelist_file)
         call setup_from_namelist(namelist_file, model, parameters, mask, database_file, &

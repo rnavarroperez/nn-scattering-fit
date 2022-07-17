@@ -22,7 +22,8 @@ implicit none
 
 private 
 
-public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators, display_parameters, set_av18_potential
+public :: n_parameters, default_params, av18_all_partial_waves, av18_operator, n_operators, &
+          display_parameters, set_av18_potential, default_mask
 
 integer, parameter :: n_parameters = 54 !< Number of phenomenological parameters
 integer, parameter :: n_operators = 19   !< Number of operators in the AV18 basis
@@ -48,6 +49,27 @@ real(dp), parameter, dimension(1:n_parameters) :: default_params = &
         0.000000_dp,    -3.921000_dp,    0.000000_dp, & ! CD c term 
         0.000000_dp,     0.000000_dp,    0.000000_dp, & ! CD ls terms
         2.100000_dp,     0.500000_dp,    0.200000_dp  & ! c_pi, r_ws, a_ws
+    ] !< default parameters in the AV18 potential
+
+logical, parameter, dimension(1:n_parameters) :: default_mask = &
+    [    .true.,   .true.,  .true., & ! S=1, T=1 c
+         .true.,   .true.,  .true., & ! S=1, T=1 t
+         .true.,   .true.,  .true., & ! S=1, T=1 ls
+         .true.,   .true.,  .true., & ! S=1, T=1 l2
+         .true.,   .true.,  .true., & ! S=1, T=1 ls2
+         .true.,   .true.,  .true., & ! S=1, T=0 c
+         .true.,   .true.,  .true., & ! S=1, T=0 t
+         .true.,   .true.,  .true., & ! S=1, T=0 ls
+         .true.,   .true.,  .true., & ! S=1, T=0 l2
+         .true.,   .true.,  .true., & ! S=1, T=0 ls2
+         .true.,   .true., .false., & ! S=0, T=1 c pp
+         .true.,   .true., .false., & ! S=0, T=1 c np
+         .true.,   .true., .false., & ! S=0, T=1 l2
+         .true.,   .true., .false., & ! S=0, T=0 c
+         .true.,   .true., .false., & ! S=0, T=1 l2
+        .false.,   .true., .false., & ! CD c term 
+        .false.,  .false., .false., & ! CD ls terms
+        .false.,  .false., .false.  & ! c_pi, r_ws, a_ws
     ] !< default parameters in the AV18 potential
 contains
 
