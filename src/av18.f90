@@ -438,13 +438,13 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     d_tpi = (d_tpi0 + 2*d_tpic)/3
 
     p11pp  =  ap( 1)*tpi2 + ap( 2)*wsp + ap( 3)*wsx2 + ypi0p
-    p11np  =  ap( 1)*tpi2 + (ap( 2) + 0.5_dp*ap(47))*wsp + ap( 3)*wsx2 - ypi0p + 2*ypicp
-    p11nn  =  ap( 1)*tpi2 + (ap( 2) + ap(47))*wsp + ap( 3)*wsx2 + ypi0p
+    p11np  =  ap( 1)*tpi2 + ap( 2)*wsp + ap( 3)*wsx2 - ypi0p + 2*ypicp
+    p11nn  =  ap( 1)*tpi2 + ap( 2)*wsp + ap( 3)*wsx2 + ypi0p
     pt1pp  =  ap( 4)*tpi2 + ap( 5)*wsx + ap( 6)*wsx2 + tpi0
     pt1np  =  ap( 4)*tpi2 + ap( 5)*wsx + ap( 6)*wsx2 - tpi0  + 2*tpic
     pt1nn  =  ap( 4)*tpi2 + ap( 5)*wsx + ap( 6)*wsx2 + tpi0
     pls1pp =  ap( 7)*tpi2 + ap( 8)*wsp + ap( 9)*wsx2
-    pls1np =  (ap( 7) + ap(49))*tpi2 + (ap( 8) + ap(50))*wsp + (ap( 9) + ap(51))*wsx2
+    pls1np =  ap( 7)*tpi2 + ap( 8)*wsp + ap( 9)*wsx2
     pls1nn =  ap( 7)*tpi2 + ap( 8)*wsp + ap( 9)*wsx2
     pl211  =  ap(10)*tpi2 + ap(11)*wsp + ap(12)*wsx2
     pls21  =  ap(13)*tpi2 + ap(14)*wsp + ap(15)*wsx2
@@ -455,19 +455,25 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     pls20  =  ap(28)*tpi2 + ap(29)*wsp + ap(30)*wsx2
     p01pp  =  ap(31)*tpi2 + ap(32)*wsp + ap(33)*wsx2 - 3*ypi0p
     p01np  =  ap(34)*tpi2 + ap(35)*wsp + ap(36)*wsx2 - 3*(-ypi0p + 2*ypicp)
-    p01nn  =  ap(31)*tpi2 + (ap(32) + ap(47))*wsp + ap(33)*wsx2 - 3*ypi0p
+    p01nn  =  ap(31)*tpi2 + ap(32)*wsp + ap(33)*wsx2 - 3*ypi0p
     pl201  =  ap(37)*tpi2 + ap(38)*wsp + ap(39)*wsx2
     p00    =  ap(40)*tpi2 + ap(41)*wsp + ap(42)*wsx2 - 3*(-ypi0p - 2*ypicp)
     pl200  =  ap(43)*tpi2 + ap(44)*wsp + ap(45)*wsx2
 
+    ! Charge dependence
+    p11np  = p11np  + 0.5_dp*(ap(46)*tpi2 + ap(47)*wsp + ap(48)*wsx2)
+    p11nn  = p11nn  + ap(46)*tpi2 + ap(47)*wsp + ap(48)*wsx2
+    p01nn  = p01nn  + ap(46)*tpi2 + ap(47)*wsp + ap(48)*wsx2
+    pls1np = pls1np + ap(49)*tpi2 + ap(50)*wsp + ap(51)*wsx2
+
     d_p11pp  =  ap( 1)*d_tpi2 + ap( 2)*d_wsp + ap( 3)*d_wsx2 + d_ypi0p
-    d_p11np  =  ap( 1)*d_tpi2 + (ap( 2) + 0.5_dp*ap(47))*d_wsp + ap( 3)*d_wsx2 - d_ypi0p + 2*d_ypicp
-    d_p11nn  =  ap( 1)*d_tpi2 + (ap( 2) + ap(47))*d_wsp + ap( 3)*d_wsx2 + d_ypi0p
+    d_p11np  =  ap( 1)*d_tpi2 + ap( 2)*d_wsp + ap( 3)*d_wsx2 - d_ypi0p + 2*d_ypicp
+    d_p11nn  =  ap( 1)*d_tpi2 + ap( 2)*d_wsp + ap( 3)*d_wsx2 + d_ypi0p
     d_pt1pp  =  ap( 4)*d_tpi2 + ap( 5)*d_wsx + ap( 6)*d_wsx2 + d_tpi0
     d_pt1np  =  ap( 4)*d_tpi2 + ap( 5)*d_wsx + ap( 6)*d_wsx2 - d_tpi0  + 2*d_tpic
     d_pt1nn  =  ap( 4)*d_tpi2 + ap( 5)*d_wsx + ap( 6)*d_wsx2 + d_tpi0
     d_pls1pp =  ap( 7)*d_tpi2 + ap( 8)*d_wsp + ap( 9)*d_wsx2
-    d_pls1np =  (ap( 7) + ap(49))*d_tpi2 + (ap( 8) + ap(50))*d_wsp + (ap( 9) + ap(51))*d_wsx2
+    d_pls1np =  ap( 7)*d_tpi2 + ap( 8)*d_wsp + ap( 9)*d_wsx2
     d_pls1nn =  ap( 7)*d_tpi2 + ap( 8)*d_wsp + ap( 9)*d_wsx2
     d_pl211  =  ap(10)*d_tpi2 + ap(11)*d_wsp + ap(12)*d_wsx2
     d_pls21  =  ap(13)*d_tpi2 + ap(14)*d_wsp + ap(15)*d_wsx2
@@ -478,24 +484,35 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     d_pls20  =  ap(28)*d_tpi2 + ap(29)*d_wsp + ap(30)*d_wsx2
     d_p01pp  =  ap(31)*d_tpi2 + ap(32)*d_wsp + ap(33)*d_wsx2 - 3*d_ypi0p
     d_p01np  =  ap(34)*d_tpi2 + ap(35)*d_wsp + ap(36)*d_wsx2 - 3*(-d_ypi0p + 2*d_ypicp)
-    d_p01nn  =  ap(31)*d_tpi2 + (ap(32) + ap(47))*d_wsp + ap(33)*d_wsx2 - 3*d_ypi0p
+    d_p01nn  =  ap(31)*d_tpi2 + ap(32)*d_wsp + ap(33)*d_wsx2 - 3*d_ypi0p
     d_pl201  =  ap(37)*d_tpi2 + ap(38)*d_wsp + ap(39)*d_wsx2
     d_p00    =  ap(40)*d_tpi2 + ap(41)*d_wsp + ap(42)*d_wsx2 - 3*(-d_ypi0p - 2*d_ypicp)
     d_pl200  =  ap(43)*d_tpi2 + ap(44)*d_wsp + ap(45)*d_wsx2
+
+    ! Charge dependence
+    d_p11np  = d_p11np  + 0.5_dp*(ap(46)*d_tpi2 + ap(47)*d_wsp + ap(48)*d_wsx2)
+    d_p11nn  = d_p11nn  + ap(46)*d_tpi2 + ap(47)*d_wsp + ap(48)*d_wsx2
+    d_p01nn  = d_p01nn  + ap(46)*d_tpi2 + ap(47)*d_wsp + ap(48)*d_wsx2
+    d_pls1np = d_pls1np + ap(49)*d_tpi2 + ap(50)*d_wsp + ap(51)*d_wsx2
+
 
     d_p11pp(1) =  tpi2
     d_p11pp(2) =  wsp
     d_p11pp(3) =  wsx2
 
     d_p11np( 1) =  tpi2
+    d_p11np(46) =  0.5_dp*tpi2
     d_p11np( 2) =  wsp
     d_p11np(47) =  0.5_dp*wsp
     d_p11np( 3) =  wsx2
+    d_p11np(48) =  0.5_dp*wsx2
 
     d_p11nn( 1) =  tpi2
+    d_p11nn(46) =  tpi2
     d_p11nn( 2) =  wsp
     d_p11nn(47) =  wsp
     d_p11nn( 3) =  wsx2
+    d_p11nn(48) =  wsx2
 
     d_pt1pp(4) =  tpi2
     d_pt1pp(5) =  wsx
@@ -561,9 +578,11 @@ subroutine av18_operator(ap, r, v_nn, dv_nn)
     d_p01np(36) =  wsx2
 
     d_p01nn(31) =  tpi2
+    d_p01nn(46) =  tpi2
     d_p01nn(32) =  wsp
     d_p01nn(47) =  wsp
     d_p01nn(33) =  wsx2
+    d_p01nn(48) =  wsx2
 
     d_pl201(37) =  tpi2
     d_pl201(38) =  wsp
