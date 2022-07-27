@@ -32,12 +32,12 @@
                      -0.65570185         2.79961513        172.66884754 ! I_10_ls    P_10_ls        R_10_ls
                       0.15060618       195.71725133       -180.28355485 ! I_10_l2    P_10_l2        R_10_l2
                       0.51829885      -248.35605749         81.15672417 ! I_10_ls2   P_10_ls2       R_10_ls2
-                    -12.87919059      1912.55915022                     ! I_01 c pp  P_01 c pp
-                    -11.50173757      1660.95167422                     ! I_01 c np  P_01 c np
-                      0.14159636        12.21937209                     ! I_01_l2    P_01_l2
-                     -3.24809737       896.72730524                     ! I_00_c     P_00_c
-                     -0.12343197        85.43213456                     ! I_00_l2    P_00_l2
-                     -2.79834426                                        ! P_CD_c
+                    -12.87919059      1912.55915022          0.00000000 ! I_01 c pp  P_01 c pp
+                    -11.50173757      1660.95167422          0.00000000 ! I_01 c np  P_01 c np
+                      0.14159636        12.21937209          0.00000000 ! I_01_l2    P_01_l2
+                     -3.24809737       896.72730524          0.00000000 ! I_00_c     P_00_c
+                     -0.12343197        85.43213456          0.00000000 ! I_00_l2    P_00_l2
+                      0.00000000        -2.79834426          0.00000000 ! P_CD_c
                       0.00000000         0.00000000          0.00000000 ! I_CD_1_ls  P_CD_1_ls      R_CD_1_ls
                       1.70000000         0.55000000          0.22000000 ! c_pi       r_ws           a_ws
 /
@@ -54,12 +54,12 @@
             .true.      .true.      .true.  ! I_10_ls     P_10_ls     R_10_ls
             .true.      .true.      .true.  ! I_10_l2     P_10_l2     R_10_l2
             .true.      .true.      .true.  ! I_10_ls2    P_10_ls2    R_10_ls2
-            .true.      .true.              ! I_01 c pp   P_01 c pp
-            .true.      .true.              ! I_01 c np   P_01 c np
-            .true.      .true.              ! I_01_l2     P_01_l2
-            .true.      .true.              ! I_00_c      P_00_c
-            .true.      .true.              ! I_00_l2     P_00_l2
-            .true.                          ! P_CD_c
+            .true.      .true.      .false. ! I_01 c pp   P_01 c pp
+            .true.      .true.      .false. ! I_01 c np   P_01 c np
+            .true.      .true.      .false. ! I_01_l2     P_01_l2
+            .true.      .true.      .false. ! I_00_c      P_00_c
+            .true.      .true.      .false. ! I_00_l2     P_00_l2
+            .false.     .true.      .false. ! P_CD_c
             .false.     .false.     .false. ! I_CD_1_ls   P_CD_1_ls   R_CD_1_ls
             .false.     .false.     .false. ! c_pi        r_ww        a_ws
 /
