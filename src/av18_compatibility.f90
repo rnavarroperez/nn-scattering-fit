@@ -273,47 +273,12 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
         violation = .true.
     endif
 
-    if(abs(ccP01pp - ccP01nn) > delta) then
-        print*, 'CSB in ccP01!'
-        print*, 'P_01 c pp:', ccP01pp
-        print*, 'P_01 c nn:', ccP01nn
-        violation = .true.
-    endif
-
     if(abs(ccR01pp - ccR01nn) > delta) then
         print*, 'CSB in ccR01!'
         print*, 'R_01 c pp:', ccR01pp
         print*, 'R_01 c nn:', ccR01nn
         violation = .true.
     endif
-
-    ! if(abs(ccI11pp - ccI11np) > delta) then
-    !     print*, 'CSB in ccI11!'
-    !     print*, 'I_11 c pp:', ccI11pp
-    !     print*, 'I_11 c np:', ccI11np
-    !     violation = .true.
-    ! endif
-
-    ! if(abs(ccI11pp - ccI11nn) > delta) then
-    !     print*, 'CSB in ccI11!'
-    !     print*, 'I_11 c pp:', ccI11pp
-    !     print*, 'I_11 c nn:', ccI11nn
-    !     violation = .true.
-    ! endif
-
-    ! if(abs(ccR11pp - ccR11np) > delta) then
-    !     print*, 'CSB in ccR11!'
-    !     print*, 'R_11 c pp:', ccR11pp
-    !     print*, 'R_11 c np:', ccR11np
-    !     violation = .true.
-    ! endif
-
-    ! if(abs(ccR11pp - ccR11nn) > delta) then
-    !     print*, 'CSB in ccR11!'
-    !     print*, 'R_11 c pp:', ccR11pp
-    !     print*, 'R_11 c nn:', ccR11nn
-    !     violation = .true.
-    ! endif
 
     if(abs(ctI1pp - ctI1np) > delta) then
         print*, 'CSB in ctI1!'
@@ -424,8 +389,8 @@ subroutine verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01n
     endif
 
     if (violation) then
-        print*, 'stopping due to unexpected charge symmetry breaking in ', trim(filename)
-        stop
+        print*, 'Unexpected charge symmetry breaking in ', trim(filename)
+        print*, 'Check that those symmetry breaks are small enough for you'
     endif
 
 end subroutine verify_symmetries
