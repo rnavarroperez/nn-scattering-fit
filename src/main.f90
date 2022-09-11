@@ -24,8 +24,21 @@ program nn_fit
     logical :: save_results
     character(len=1024) :: output_name
     real(dp) :: chi2
-    integer :: n_points
-    
+    integer :: n_points!, n_parameters
+
+    ! call setup_optimization(model, parameters, mask, database, save_results, output_name)
+    !     n_parameters=size(mask)
+    !     allocate(covariance(1:n_parameters, 1:n_parameters))
+    !     covariance = 0
+    ! allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
+    ! ! call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
+    ! if (save_results) then
+    !     call write_optimization_results(model, initial_parameters, parameters, mask, chi2, n_points, &
+    !         covariance, output_name)
+    ! endif
+
+    ! end program nn_fit
+
     call setup_optimization(model, parameters, mask, database, save_results, output_name)
     allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
     call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
