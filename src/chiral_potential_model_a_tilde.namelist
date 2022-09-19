@@ -4,7 +4,7 @@
 
 &nn_potential
     name = 'N3LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N3LO'
-    t_lab_limit = 125.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
+    t_lab_limit = 200.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
 /
 
 &local_integration
@@ -24,31 +24,31 @@
 
 
 &potential_parameters !Potential parameters
-    parameters =     2.936041      ! C_s
-                   -0.4933897      ! C_T
-                   -0.1013462      ! C_1
-                   -0.1444844      ! C_2
+    parameters =   2.93604100      ! C_s
+                  -0.49338970      ! C_T
+                  -0.10134620      ! C_1
+                  -0.14448440      ! C_2
                   -0.03647634      ! C_3
                   -0.01630825      ! C_4
-                 -0.006658100      ! C_5
+                  -0.00665810      ! C_5
                   -0.06176835      ! C_6
-                   -0.9578191      ! C_7
+                  -0.95781910      ! C_7
                   -0.03102824      ! D_1
-                 -0.004438695      ! D_2
+                  -0.00443870      ! D_2
                   -0.01351171      ! D_3
-                -0.0007084459      ! D_4
+                  -0.00070845      ! D_4
                    0.01110108      ! D_5
-                 -0.008598857      ! D_6
+                  -0.00859886      ! D_6
                   -0.05367908      ! D_7
                    0.03119241      ! D_8
                    0.03281636      ! D_9
                   -0.08647128      ! D_10
                   -0.01167788      ! D_11
-                  0.009575695      ! C_0_IV
+                   0.00957570      ! C_0_IV
                    0.02194758      ! C_0_IT
-                 -0.001550501      ! C_1_IT
-                 -0.008354679      ! C_2_IT
-                 -0.006682746      ! C_3_IT
+                  -0.00155050      ! C_1_IT
+                  -0.00835468      ! C_2_IT
+                  -0.00668275      ! C_3_IT
                    0.01276971      ! C_4_IT
                           0.8      ! R_s
                           1.2      ! R_L
