@@ -1,5 +1,5 @@
 &data_base
-    database_file = 'database/phases_database.dat'
+    database_file = 'database/granada_database.dat'
 /
 
 &nn_potential
@@ -19,7 +19,7 @@
 
 &output
     save_results = .true.
-    output_name = 'model_a'
+    output_name = 'model_a_data'
 /
 
 
