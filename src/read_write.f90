@@ -24,7 +24,8 @@ private
 
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
-    write_optimization_results, plot_potential_components, plot_potential_partial_waves
+    write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
+    write_observables
 
 contains
 
@@ -220,6 +221,64 @@ subroutine print_observables(parameters, model, channel)
     close(unit1)
     close(unit2)
 end subroutine print_observables
+
+subroutine write_observables(potential, parameters, prefix, channel, covariance)
+    implicit none
+    type(nn_model), intent(in) :: potential !< nn scattering model
+    real(dp), intent(in), dimension(:) :: parameters !< potential parameters
+    character(len=*), intent(in) :: prefix
+    character(len=*), intent(in) :: channel
+    real(dp), intent(in), optional, dimension(:, :) :: covariance !< Covariance matrix
+    integer, parameter :: n_observables = 26
+    character(len=4), dimension(1:n_observables), parameter :: &
+           obs_types = ['dsg ','dt  ','ayy ','d   ','p   ','azz ','r   '&
+             ,'rt  ','rpt ','at  ','d0sk','nskn','nssn','nnkk','a   '&
+             ,'axx ','ckp ','rp  ','mssn','mskn','azx ','ap  ','dtrt'&
+             ,'sgt ','sgtt','sgtl']
+    integer, parameter :: n_energies = 11
+    real(dp), parameter, dimension(1:n_energies) :: energies = [1._dp, 5._dp, 10._dp, 25._dp, &
+        50._dp, 100._dp, 150._dp, 200._dp, 250._dp, 300._dp, 350._dp]
+    !---------------------------------------------------------------------------
+    integer, parameter :: n_angles = 179
+    character(len=31), parameter :: format1 = '(2f11.4,52e19.8e3)'
+    character(len=31), parameter :: format2 = '(2f11.4,26e19.8e3)'
+    type(kinematics) :: kinematic
+    real(dp) :: all_observables(1:n_observables), observable_error(1:n_observables)
+    real(dp), allocatable :: d_obs(:)
+    integer :: i,j,k, unit
+    character(len=3) :: t_lab_string
+
+    kinematic%channel = trim(channel)
+    do i = 1, n_energies
+        kinematic%t_lab = energies(i)
+        write(t_lab_string, '(i3.3)') int(kinematic%t_lab)
+        open(newunit=unit,file=trim(prefix)//'_all_'//trim(channel)//'_observables_tlab_'//t_lab_string//'.dat')
+        if (present(covariance)) then
+            write(unit,'(2a11,56a19)') 'T_lab', 'Theta_cm', (trim(obs_types(j)), trim(obs_types(j))//'_err', &
+                j=1,n_observables)
+        else
+            write(unit,'(2a11,26a19)') 'T_lab', 'Theta_cm', (trim(obs_types(j)), j=1,n_observables)    
+        endif
+            do j= 1, n_angles
+                kinematic%angle = real(j, kind=dp)
+                kinematic%em_amplitude = em_amplitudes(kinematic%t_lab, kinematic%angle, kinematic%channel)
+                do k = 1, n_observables
+                    kinematic%type = obs_types(k)
+                    call observable(kinematic, parameters, potential, all_observables(k), d_obs)
+                    if(present(covariance)) then
+                        observable_error(k) = propagated_error_bar(d_obs, covariance)
+                    endif
+                enddo
+                if (present(covariance)) then
+                    write(unit,format1) kinematic%t_lab, kinematic%angle, (all_observables(k), observable_error(k), &
+                        k=1,n_observables)
+                else
+                    write(unit,format2) kinematic%t_lab, kinematic%angle, (all_observables(k), k=1,n_observables)
+                endif
+                enddo
+        close(unit)
+    end do
+end subroutine write_observables
 
 !!
 !> @brief      Saves list of phases to a file

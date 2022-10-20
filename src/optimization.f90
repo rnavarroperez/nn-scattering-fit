@@ -39,7 +39,7 @@ subroutine setup_optimization(model, parameters, mask, database, save_results, o
         print*, 'No namelist file was given as an argument, using default setup'
         print*, ''
         save_results = .true.
-        output_name = 'results'
+        output_name = 'av18'
         call set_av18_potential(model, parameters)
         allocate(mask(1:size(parameters)))
         mask = .true.
