@@ -1,5 +1,5 @@
 &data_base
-    database_file = 'database/phases_database.dat'
+    database_file = 'database/granada_database.dat'
 /
 
 &nn_potential
