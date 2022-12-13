@@ -22,24 +22,16 @@ real(dp), allocatable, dimension(:) :: parameters
 real(dp), allocatable, dimension(:) :: initial_parameters
 logical, allocatable, dimension(:) :: mask
 real(dp), parameter, dimension(1:3) :: target_shape = [1.9_dp, 0.525_dp, 0.21_dp]
-real(dp), dimension(1:3) :: delta_p
-integer, parameter :: n_steps = 256
 logical :: save_results
 character(len=1024) :: output_name
 real(dp) :: chi2
-integer :: n_points, i, unit
+integer :: n_points
 
 call setup_optimization(model, parameters, mask, database, save_results, output_name)
-delta_p = (target_shape - parameters(52:54))/n_steps
-allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
-open(newunit=unit, file='adiabatic_fits_17_19.dat')
-do i = 1, n_steps
-    parameters(52:54) = parameters(52:54) + delta_p
-    call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
-    write(unit, *) parameters(52:54), chi2, n_points, chi2/n_points
-enddo
-close(unit)
-output_name = 'av19_cutoff19'
+
+
+call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
+
 if (save_results) then
     call write_optimization_results(model, initial_parameters, parameters, mask, chi2, n_points, &
         covariance, output_name)
