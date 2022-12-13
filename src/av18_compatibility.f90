@@ -19,9 +19,9 @@ subroutine write_marias_format(filename, parameters)
     open(newunit=unit, file=trim(filename))
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsq0'
     write(unit, '(1l3,1E24.9,1x,a)') .false., 0.075_dp, 'cfsqc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(55), 'cc'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(56), 'cr'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(57), 'ca'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(58), 'cc'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(59), 'cr'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(60), 'ca'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 1), 'ccI01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 2), 'ccP01pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters( 3), 'ccR01pp'
@@ -43,9 +43,9 @@ subroutine write_marias_format(filename, parameters)
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(13), 'ccI11pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(14), 'ccP11pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(15), 'ccR11pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(13) + parameters(46)/2._dp, 'ccI11np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(14) + parameters(47)/2._dp, 'ccP11np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(15) + parameters(48)/2._dp, 'ccR11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(13) + parameters(46)/2._dp + parameters(49), 'ccI11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(14) + parameters(47)/2._dp + parameters(50), 'ccP11np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(15) + parameters(48)/2._dp + parameters(51), 'ccR11np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(13) + parameters(46), 'ccI11nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(14) + parameters(47), 'ccP11nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(15) + parameters(48), 'ccR11nn'
@@ -55,18 +55,18 @@ subroutine write_marias_format(filename, parameters)
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(19), 'ctI1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(20), 'ctQ1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(21), 'ctR1pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(19) + parameters(49), 'ctI1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(20) + parameters(50), 'ctQ1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(21) + parameters(51), 'ctR1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(19) + parameters(52), 'ctI1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(20) + parameters(53), 'ctQ1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(21) + parameters(54), 'ctR1np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(19), 'ctI1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(20), 'ctQ1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(21), 'ctR1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(22), 'clsI1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(23), 'clsP1pp'
     write(unit, '(1l3,1E24.9,1x,a)') .true.,  parameters(24), 'clsR1pp'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(22) + parameters(52), 'clsI1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(23) + parameters(53), 'clsP1np'
-    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(24) + parameters(54), 'clsR1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(22) + parameters(55), 'clsI1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(23) + parameters(55), 'clsP1np'
+    write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(24) + parameters(56), 'clsR1np'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(22), 'clsI1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(23), 'clsP1nn'
     write(unit, '(1l3,1E24.9,1x,a)') .false., parameters(24), 'clsR1nn'
@@ -109,9 +109,9 @@ subroutine read_marias_format(filename, parameters)
         do i=1,2
             read(unit, *)
         enddo
-        read(unit, *) drop, parameters(55)
-        read(unit, *) drop, parameters(56)
-        read(unit, *) drop, parameters(57)
+        read(unit, *) drop, parameters(58)
+        read(unit, *) drop, parameters(59)
+        read(unit, *) drop, parameters(60)
         read(unit, *) drop, parameters( 1)
         read(unit, *) drop, parameters( 2)
         read(unit, *) drop, parameters( 3)
@@ -184,18 +184,21 @@ subroutine read_marias_format(filename, parameters)
         stop
     endif
 
-    parameters(43) = parameters( 1) - ccI01np
-    parameters(44) = parameters( 2) - ccP01np
-    parameters(45) = parameters( 3) - ccR01np
-    parameters(46) = parameters( 1) - ccI01nn
-    parameters(47) = parameters( 2) - ccP01nn
-    parameters(48) = parameters( 3) - ccR01nn
-    parameters(49) = parameters(19) - ctI1np
-    parameters(50) = parameters(20) - ctQ1np
-    parameters(51) = parameters(21) - ctR1np
-    parameters(52) = parameters(22) - clsI1np
-    parameters(53) = parameters(23) - clsP1np
-    parameters(54) = parameters(24) - clsR1np
+    parameters(43) = ccI01np - parameters( 1)
+    parameters(44) = ccP01np - parameters( 2)
+    parameters(45) = ccR01np - parameters( 3)
+    parameters(46) = ccI01nn - parameters( 1)
+    parameters(47) = ccP01nn - parameters( 2)
+    parameters(48) = ccR01nn - parameters( 3)
+    parameters(49) = ccI11np - parameters(13) - parameters(46)/2._dp
+    parameters(50) = ccP11np - parameters(14) - parameters(47)/2._dp
+    parameters(51) = ccR11np - parameters(15) - parameters(48)/2._dp
+    parameters(52) = ctI1np  - parameters(19)
+    parameters(53) = ctQ1np  - parameters(20)
+    parameters(54) = ctR1np  - parameters(21)
+    parameters(55) = clsI1np - parameters(22)
+    parameters(56) = clsP1np - parameters(23)
+    parameters(57) = clsR1np - parameters(24)
     
     ! call verify_symmetries(ccI01pp, ccP01pp, ccR01pp, ccI01nn, ccP01nn, ccR01nn, &
     !                        ccI11pp, ccP11pp, ccR11pp, ccI11np, ccP11np, ccR11np, ccI11nn, ccP11nn, ccR11nn, &
