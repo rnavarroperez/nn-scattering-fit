@@ -30,27 +30,6 @@ integer, parameter :: n_operators = 19   !< Number of operators in the AV18 basi
 real(dp), parameter :: r_max = 12.5_dp !< Maximum integration radius for phase-shifts. In units of fm
 real(dp), parameter :: delta_r = 1/128._dp !< Integration step for phases and the dueteron. In units of fm
 
-! real(dp), parameter, dimension(1:n_parameters) :: default_params = &
-!     [  -7.627010_dp,  1815.492000_dp, 1847.805900_dp, & ! S=1, T=1 c
-!         1.079850_dp,  -190.094900_dp, -811.204000_dp, & ! S=1, T=1 t
-!        -0.626970_dp,  -570.557100_dp,  819.122200_dp, & ! S=1, T=1 ls
-!         0.067090_dp,   342.066900_dp, -615.233900_dp, & ! S=1, T=1 l2
-!         0.741290_dp,     9.341800_dp, -376.438400_dp, & ! S=1, T=1 ls2
-!        -8.627700_dp,  2605.268200_dp,  441.973300_dp, & ! S=1, T=0 c
-!         1.485601_dp, -1126.835900_dp,  370.132400_dp, & ! S=1, T=0 t
-!         0.101800_dp,    86.065800_dp, -356.517500_dp, & ! S=1, T=0 ls
-!        -0.132010_dp,   253.435000_dp,   -1.007600_dp, & ! S=1, T=0 l2
-!         0.073570_dp,  -217.579100_dp,   18.393500_dp, & ! S=1, T=0 ls2
-!       -11.270280_dp,  3346.687400_dp,    0.000000_dp, & ! S=0, T=1 c pp
-!       -10.667880_dp,  3126.554200_dp,    0.000000_dp, & ! S=0, T=1 c np
-!         0.124720_dp,    16.778000_dp,    0.000000_dp, & ! S=0, T=1 l2
-!        -2.099710_dp,  1204.430100_dp,    0.000000_dp, & ! S=0, T=0 c
-!        -0.314520_dp,   217.455900_dp,    0.000000_dp, & ! S=0, T=1 l2
-!         0.000000_dp,    -3.921000_dp,    0.000000_dp, & ! CD c term 
-!         0.000000_dp,     0.000000_dp,    0.000000_dp, & ! CD ls terms
-!         2.100000_dp,     0.500000_dp,    0.200000_dp  & ! c_pi, r_ws, a_ws
-!     ] !< default parameters in the AV18 potential
-
 real(dp), parameter, dimension(1:n_parameters) :: default_params = &
     [ -11.270280_dp,  3346.687400_dp,    0.000000_dp, & ! S=0, T=1 c
         0.124720_dp,    16.778000_dp,    0.000000_dp, & ! S=0, T=1 l2
@@ -92,8 +71,8 @@ logical, parameter, dimension(1:n_parameters) :: default_mask = &
          .true.,   .true.,  .true., & ! S=1, T=0 ls2
          .true.,   .true., .false., & ! S=0, T=1 c np CD
         .false.,   .true., .false., & ! c nn CD 
-         .true.,   .true.,  .true., & ! S=1, T=1 c np CD
-         .true.,   .true.,  .true., & ! t CD
+        .false.,  .false., .false., & ! S=1, T=1 c np CD
+        .false.,  .false., .false., & ! t CD
         .false.,  .false., .false., & ! ls CS
         .false.,  .false., .false.  & ! c_pi, r_ws, a_ws
     ] !< default parameters in the AV18 potential
