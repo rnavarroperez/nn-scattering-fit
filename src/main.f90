@@ -28,7 +28,7 @@ real(dp) :: chi2
 integer :: n_points
 
 call setup_optimization(model, parameters, mask, database, save_results, output_name)
-
+allocate(initial_parameters, source=parameters)
 call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
 
 if (save_results) then
