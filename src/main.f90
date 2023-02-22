@@ -12,7 +12,7 @@ use delta_shell, only : nn_model
 use exp_data, only : nn_experiment!, read_database, init_ex_em_amplitudes
 use optimization, only: lavenberg_marquardt, setup_optimization
 use string_functions, only : mask_to_string
-use read_write, only : write_optimization_results, write_observables
+use read_write, only : write_optimization_results
 implicit none
 
 type(nn_model) :: model
