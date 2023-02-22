@@ -16,8 +16,13 @@ use delta_shell, only: nn_model
 use constants, only: pi
 use utilities, only : double_2darray_allocation, trim_2d_array
 use av18, only : set_av18_potential
+use chiral_potential, only : set_chiral_potential
 use delta_shell, only : set_ds_potential
 use av18_compatibility, only : write_marias_format
+use long_range_chiral_potentials, only : vf_integral, vf_1, vf_2, vf_3, vf_4, vf_5, vf_6, vf_7, vf_8, vf_9, &
+                            calculate_chiral_potentials
+use short_range_chiral_potentials, only : short_range_potentials
+
 implicit none
 
 private
@@ -25,7 +30,7 @@ private
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
     write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
-    write_observables
+    write_chiral_kernels, write_chiral_integrals, write_long_range_chiral_potentials, write_short_range_chiral_potentials
 
 contains
 
@@ -386,7 +391,7 @@ subroutine plot_phases(potential, parameters, covariance, output_name)
 
     integer, parameter :: jmax = 4
     real(dp), parameter :: tlab_step = 1._dp
-    real(dp), parameter :: tlab_max = 1000._dp
+    real(dp), parameter :: tlab_max = 350._dp
     real(dp), dimension(1:5, 1:jmax) :: phases, phases_errors
     real(dp), allocatable, dimension(:, :, :) :: d_phases
 
@@ -512,8 +517,9 @@ subroutine write_potential_setup(potential, parameters, mask, unit)
     logical, intent(in), dimension(:) :: mask
     integer, intent(in) :: unit !< Unit where the output is sent to. Either and already opened file or output_unit from iso_fortran_env
 
-    write(unit, *) 'Characteristics of the potential'
-    write(unit, *) 'Name:', potential%name
+    write(unit, *) 'Characteristics of the optimization run'
+    write(unit, *) 'Potential Name: ', potential%name
+    write(unit, *) 'Max T lab of data in the chi square:', potential%t_lab_limit
     write(unit, *) 'Maximum integration radius:', potential%r_max
     select case(trim(potential%potential_type))
     case ('local')
@@ -525,6 +531,11 @@ subroutine write_potential_setup(potential, parameters, mask, unit)
     case default
         stop 'Unrecognized potential type in write_potential_setup'
     end select
+    if (potential%fit_deuteron) then
+        write(unit, *) 'The deuteron is included in the total chi square'
+    else
+        write(unit, *) 'The deuteron is NOT included in the total chi square'
+    endif
     if (potential%relativistic_deuteron) then
         write(unit, *) 'The deuteron is calculated with RELATIVISITC kinematics'
     else
@@ -553,18 +564,18 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     character(len=*), intent(out) :: output_name
 
     character(len=1024) :: name
-    real(dp) :: r_max, delta_r, dr_core, dr_tail
+    real(dp) :: t_lab_limit, r_max, delta_r, dr_core, dr_tail
     integer :: n_lambdas
-    logical :: relativistic
+    logical :: fit_deuteron, relativistic
 
     logical :: file_exists
     integer :: unit, ierror
 
     namelist /data_base/ database_file
-    namelist /nn_potential/ name
+    namelist /nn_potential/ name, t_lab_limit
     namelist /local_integration/ r_max, delta_r
     namelist /delta_shell_integration/ r_max, n_lambdas, dr_core, dr_tail
-    namelist /deuteron/ relativistic
+    namelist /deuteron/ fit_deuteron, relativistic
     namelist /potential_parameters/ parameters
     namelist /adjust_parameter/ mask
     namelist /output/ save_results, output_name
@@ -572,6 +583,8 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
 
     database_file = 'database/granada_database.dat'
     name = 'AV18'
+    fit_deuteron = .true.
+    t_lab_limit = 350._dp
     save_results = .true.
     output_name = 'results'
 
@@ -605,6 +618,14 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
             ! those are later replaced by whatever is read in the namelist file
         case ('AV18')
             call set_av18_potential(potential, parameters)
+            r_max = 12.5_dp
+            delta_r = 1/128._dp
+            relativistic = .false.
+            n_lambdas = 0
+            dr_core = 0.0_dp
+            dr_tail = 0.0_dp
+        case ('N3LO')
+            call set_chiral_potential(potential, parameters)
             r_max = 12.5_dp
             delta_r = 1/128._dp
             relativistic = .false.
@@ -684,6 +705,8 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     endif
 
     ! Updating values if those where present in the namelist file
+    potential%t_lab_limit = t_lab_limit
+
     potential%r_max = r_max
     potential%dr = delta_r
 
@@ -691,6 +714,7 @@ subroutine setup_from_namelist(namelist_file, potential, parameters, mask, datab
     potential%dr_core = dr_core
     potential%dr_tail = dr_tail
 
+    potential%fit_deuteron = fit_deuteron
     potential%relativistic_deuteron = relativistic
   
 end subroutine setup_from_namelist
@@ -740,6 +764,182 @@ subroutine write_optimization_results(model, initial_parameters, parameters, mas
     close(unit)
 
 end subroutine write_optimization_results
+
+!!
+!> @brief       Writes chiral kernels to a file
+!!
+!! Subroutine for writing chiral kernels to a file. Written to be called in a do loop in main.f90,
+!! so that the chiral kernels could be compared to ones written in Python to see if the values agree.
+!!
+!! @author      Ky Putnam
+!!
+
+subroutine write_chiral_kernels(r, file_name)
+    implicit none
+    real(dp), intent(in) :: r
+    character(len=*), intent(in) :: file_name
+
+    real(dp) :: u, u_max
+    integer :: unit
+
+    character(len=31), parameter :: format = '(f15.8,9e19.8e3)'
+
+    u = 0.1_dp
+    u_max = 20.0_dp
+
+    open(newunit=unit, file=trim(file_name))
+    write(unit, *) 'mu', 'vf_1', 'vf_2', 'vf_3', 'vf_4', 'vf_5', 'vf_6', 'vf_7', 'vf_8', 'vf_9'
+
+    do
+        if (u > u_max) exit
+        write(unit, format) u, vf_1(u, r), vf_2(u, r), vf_3(u, r), vf_4(u, r), vf_5(u, r), &
+            vf_6(u, r), vf_7(u, r), vf_8(u, r), vf_9(u, r)
+        u = u + 0.1_dp
+    end do
+    close(unit)
+
+end subroutine write_chiral_kernels
+
+!!
+!> @brief       Writes chiral integrals to a file
+!!
+!! Writes chiral integrals to a file using the function vf_integral in chiral_potential.f90. The purpose of
+!! this is to determine what n_points and mu_max on vf_integral will have the calculated integrals agree with the
+!! same integrals evaluated in Python, to an acceptable degree of precision (5 or 6 decimal places).
+!!
+!! @author      Ky Putnam
+!!
+
+subroutine write_chiral_integrals(r, file_name)
+    implicit none
+    character(len=*), intent(in) :: file_name
+
+    real(dp) :: r_max, r
+    integer :: unit
+    
+
+    character(len=31), parameter :: format = '(f11.1,9es20.9)'
+
+    r_max = 12.1_dp
+
+    open(newunit=unit, file=trim(file_name))
+    ! write(file_name, *) 'chiral_integrals.dat'
+
+    write(unit,'(10a20)') 'r', 'vf1_integral', 'vf2_integral', 'vf3_integral', 'vf4_integral', 'vf5_integral', &
+        'vf6_integral', 'vf7_integral', 'vf8_integral', 'vf9_integral'
+
+    do
+        if (r > r_max) exit
+
+        write(unit, format) r, vf_integral(vf_1, r), vf_integral(vf_2, r), vf_integral(vf_3, r), &
+            vf_integral(vf_4, r), vf_integral(vf_5, r), vf_integral(vf_6, r), &
+            vf_integral(vf_7, r), vf_integral(vf_8, r), vf_integral(vf_9, r)
+
+        r = r + 2.0_dp
+    end do    
+
+end subroutine write_chiral_integrals
+
+!!
+!> @brief       Calculates and records chiral long-range potentials
+!!
+!! Long range potentials are calculated for different values of r (using the calculate_chiral_potentials 
+!! subroutine in long_range_chiral_potentials.f90). The results are written to files.
+!!
+!! @author      Ky Putnam
+!!
+
+subroutine write_long_range_chiral_potentials()
+    implicit none
+    real(dp) :: r, r_max, R_L, a_L
+    integer :: unit1, unit2, unit3, unit4, unit5, unit6, unit7
+    real(dp), dimension(1:4) :: v_lo
+    real(dp), dimension(1:3) :: v_nlo_deltaless
+    real(dp), dimension(1:6) :: v_nlo_1delta
+    real(dp), dimension(1:6) :: v_nlo_2delta
+    real(dp), dimension(1:3) :: v_n2lo_deltaless
+    real(dp), dimension(1:6) :: v_n2lo_1delta
+    real(dp), dimension(1:6) :: v_n2lo_2delta
+
+    !opens data files
+    open(newunit = unit1, file = "lo.dat", status = 'unknown')
+    open(newunit = unit2, file = "nlo.dat", status = 'unknown')
+    open(newunit = unit3, file = "nlo_d.dat", status = 'unknown')
+    open(newunit = unit4, file = "nlo_2d.dat", status = 'unknown')
+    open(newunit = unit5, file = "n2lo.dat", status = 'unknown')
+    open(newunit = unit6, file = "n2lo_d.dat", status = 'unknown')
+    open(newunit = unit7, file = "n2lo_2d.dat", status = 'unknown')
+
+    r = 0.1_dp
+    r_max = 12._dp
+    R_L = 0.8_dp
+    a_L = R_L/2.0_dp
+    do
+        if (r > r_max) exit
+        call calculate_chiral_potentials(r, R_L, a_L, v_lo, v_nlo_deltaless, v_nlo_1delta, v_nlo_2delta, v_n2lo_deltaless, &
+            v_n2lo_1delta, v_n2lo_2delta)
+
+        !write data files
+        write(unit1,*) r, v_lo
+        write(unit2,*) r, v_nlo_deltaless
+        write(unit3,*) r, v_nlo_1delta
+        write(unit4,*) r, v_nlo_2delta
+        write(unit5,*) r, v_n2lo_deltaless
+        write(unit6,*) r, v_n2lo_1delta
+        write(unit7,*) r, v_n2lo_2delta
+
+        r = r + 0.1_dp
+    end do
+
+    !closes data files
+    close(unit1)
+    close(unit2)
+    close(unit3)
+    close(unit4)
+    close(unit5)
+    close(unit6)
+    close(unit7)
+
+end subroutine write_long_range_chiral_potentials
+
+!!
+!> @brief       Calculates and records chiral short-range potentials
+!!
+!! Short range potentials are calculated for different values of r (using the short_range_potentials
+!! subroutine in short_range_chiral_potentials.f90). The results are written to a file.
+!!
+!! @author      Ky Putnam
+!!
+
+subroutine write_short_range_chiral_potentials(short_lecs)
+    implicit none
+    real(dp), intent(in), dimension(:) :: short_lecs
+    real(dp) :: r, r_max
+    integer :: unit1
+    real(dp), dimension(:), allocatable :: v_short
+    real(dp), dimension(:,:), allocatable :: d_v_short
+    
+
+    !opens data files
+    open(newunit = unit1, file = "short_range_chiral.dat", status = 'unknown')
+
+    r = 0.1_dp
+    r_max = 12._dp
+
+    do
+        if (r > r_max) exit
+        call short_range_potentials(r, short_lecs, v_short, d_v_short)
+
+        !write data files
+        write(unit1,*) r, v_short
+
+        r = r + 0.1_dp
+    end do
+
+    !closes data files
+    close(unit1)
+
+end subroutine write_short_range_chiral_potentials
 
 subroutine plot_potential_components(potential, parameters, covariance, r_min, r_max, r_step, file_name)
     implicit none

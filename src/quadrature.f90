@@ -21,7 +21,7 @@ contains
 !! calculate the integral of the evaluated function.
 !!
 !! Given the number of points necessary for the Booles rule, the 
-!! size of the array has to be a multiple of 4 minus 1
+!! size of the array has to be a multiple of 4 plus 1
 !!
 !! @return     Integral of a function
 !!

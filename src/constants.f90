@@ -39,11 +39,24 @@ real(dp), parameter :: alpha = 1/137.035999084_dp!< fine structure constant, dim
 ! P.A. Zyla et al. (Particle Data Group), Prog. Theor. Exp. Phys. 2020, 083C01 (2020)
 real(dp), parameter :: pion_c_mass =  139.57039_dp!< charged pion_mass in units of MeV
 real(dp), parameter :: pion_0_mass =  134.9768_dp!< neutral pion_mass in units of MeV
-real(dp), parameter :: pion_mass = (2*pion_c_mass + pion_0_mass)/3  !< average pion mass in units of MeV
+real(dp), parameter :: pion_mass = (2*pion_c_mass + pion_0_mass)/3.0_dp  !< average pion mass in units of MeV
 
 ! Historic, charge independent, recommended value.
 real(dp), parameter :: f_pi_n_2 = 0.075_dp !< pion nucleon coupling constant \f$ f^2 \f$. Dimensionless
 
+! Values from "Minimally nonlocal nucleon-nucleon potentials with chiral two-pion exchange including delta resonances".
+! https://journals.aps.org/prc/abstract/10.1103/PhysRevC.91.024003
+! ! Low Energy Constants
+real(dp), parameter :: gA = 1.29_dp !< nucleon axial coupling constant, adimensional
+real(dp), parameter :: hA = 3*gA/sqrt(2.0_dp)!2.74_dp !< N-to-delta axial coupling constant, adimensional
+real(dp), parameter :: pion_decay_amplitude = 184.80_dp !< pion decay amplitude ("Fpi") in units of MeV
+real(dp), parameter :: c1 = -0.57/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
+real(dp), parameter :: c2 = -0.25/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
+real(dp), parameter :: c3 = -0.79/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
+real(dp), parameter :: c4 = 1.33/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
+real(dp), parameter :: b3_b8 = 1.40/1000_dp !< necessary for "subleading N2LO terms", in units of MeV^-1
+! !
+real(dp), parameter :: delta_nucleon_mass_difference = 293.1_dp !< delta nucleon mass difference, in units of MeV
 
 ! ! Original AV18 values
 ! real(dp), parameter :: hbar_c    = 197.327053_dp!< \f$\hbar c\f$ in units of MeV fm

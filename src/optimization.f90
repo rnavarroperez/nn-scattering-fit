@@ -108,7 +108,7 @@ subroutine lavenberg_marquardt(experiments, mask, model, parameters, n_points, c
     allocate(alpha_prime, mold=alpha)
     prev_chi_ratio = chi2/n_points
     do
-        if(limit == 5) exit
+        if(limit == 5 .or. lambda > 1.e+12_dp) exit
         alpha_prime = set_alpha_prime(prev_alpha, lambda)
         parameters = get_new_parameters(alpha_prime, prev_beta, prev_parameters, mask)
         call total_chi_square(experiments, parameters, mask, model, n_points, chi2, alpha, beta)
