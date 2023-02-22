@@ -10,13 +10,13 @@ module optimization
 use precisions, only: dp
 use exp_data, only: nn_experiment, read_database, init_ex_em_amplitudes
 use delta_shell, only: nn_model
-use av18, only: set_av18_potential
+use av18, only: set_av18_potential, default_av18_mask=>default_mask
 use chi_square, only: total_chi_square
 use read_write, only: write_potential_setup, setup_from_namelist
 implicit none
 
 private
-public :: lavenberg_marquardt, invert_alpha, setup_optimization, covariance_matrix
+public :: lavenberg_marquardt, invert_alpha, setup_optimization, covariance_matrix, adiabatic_fit
 contains
 
 subroutine setup_optimization(model, parameters, mask, database, save_results, output_name)
@@ -42,7 +42,7 @@ subroutine setup_optimization(model, parameters, mask, database, save_results, o
         output_name = 'av18'
         call set_av18_potential(model, parameters)
         allocate(mask(1:size(parameters)))
-        mask = .true.
+        mask = default_av18_mask
     else if(n_arguments == 1) then
         call get_command_argument(1, namelist_file)
         call setup_from_namelist(namelist_file, model, parameters, mask, database_file, &
@@ -263,5 +263,37 @@ function invert_alpha(alpha) result(alpha_inv)
         end do
     end do
 end function invert_alpha
+
+
+subroutine adiabatic_fit(parameters, target_shape, n_steps, database, mask, model, &
+    log_filename, initial_parameters, chi2, n_points, covariance)
+    implicit none
+    real(dp), intent(inout), dimension(:) :: parameters
+    real(dp), intent(in), dimension(1:3) :: target_shape
+    integer, intent(in) :: n_steps
+    type(nn_experiment), intent(in), dimension(:) :: database
+    logical, intent(in), dimension(:) :: mask
+    type(nn_model), intent(in) :: model
+    character(len=*), intent(in) :: log_filename
+    real(dp), intent(out), allocatable, dimension(:) :: initial_parameters
+    real(dp), intent(out) :: chi2
+    integer, intent(out) :: n_points
+    real(dp), intent(out), allocatable, dimension(:, :) :: covariance
+
+    real(dp), dimension(1:3) :: delta_p
+    integer :: unit, i
+    
+
+    delta_p = (target_shape - parameters(58:60))/n_steps
+    allocate(initial_parameters, source=parameters) !make a copy of the initial parameters to later save them
+    open(newunit=unit, file=log_filename)
+    do i = 1, n_steps
+        parameters(58:60) = parameters(58:60) + delta_p
+        call lavenberg_marquardt(database, mask, model, parameters, n_points, chi2, covariance)
+        write(unit, '(4f15.8,i8,f15.8)') parameters(58:60), chi2, n_points, chi2/n_points
+    enddo
+    close(unit)
+
+end subroutine adiabatic_fit
 
 end module optimization

@@ -22,44 +22,48 @@
 
 &potential_parameters !Potential parameters
     parameters =
-                     -0.62940510       360.35014198     -614.72373411 ! I_11_c     P_11_c         R_11_c
-                      4.90429825      -500.60926553     -323.46256978 ! I_11_t     Q_11_t         R_11_t
-                     -3.29789867      -231.18782012      632.21230619 ! I_11_ls    P_11_ls        R_11_ls
-                      0.81690200        -2.86436026     -131.66491901 ! I_11_l2    P_11_l2        R_11_l2
-                     -0.37448478        55.74954760       32.30855283 ! I_11_ls2   P_11_ls2       R_11_ls2
-                    -19.09771561      1182.16864069      822.47698035 ! I_10_c     P_10_c         R_10_c
-                     -1.84987277       -77.39328997      376.00671897 ! I_10_t     Q_10_t         R_10_t
-                      1.27690097       -81.11773911     -110.38998333 ! I_10_ls    P_10_ls        R_10_ls
-                      1.57865532        60.72327458     -232.45325599 ! I_10_l2    P_10_l2        R_10_l2
-                     -0.70327809       -89.13377940      155.39876582 ! I_10_ls2   P_10_ls2       R_10_ls2
-                    -13.33678600       863.67037438                   ! I_01 c pp  P_01 c pp
-                    -12.35126790       774.96582126                   ! I_01 c np  P_01 c np
-                      0.08411544        21.79963904                   ! I_01_l2    P_01_l2
-                     -4.29981593       623.56038853                   ! I_00_c     P_00_c
-                     -0.24193823        63.30137216                   ! I_00_l2    P_00_l2
-                     -1.80644685                                      ! P_CD_c
-                      0.00000000         0.00000000        0.00000000 ! I_CD_1_ls  P_CD_1_ls      R_CD_1_ls
-                      1.30000000         0.60000000        0.24000000 ! c_pi       r_ws           a_ws
+        -13.33678600       863.67037438        0.00000000  !  I_01     c   P_01     c   R_01     c 
+          0.08411544        21.79963904        0.00000000  !  I_01    l2   P_01    l2   R_01    l2 
+         -4.29981593       623.56038853        0.00000000  !  I_00     c   P_00     c   R_00     c 
+         -0.24193823        63.30137216        0.00000000  !  I_00    l2   P_00    l2   R_00    l2 
+         -0.62940510       360.35014198     -614.72373411  !  I_11     c   P_11     c   R_11     c 
+          0.81690200        -2.86436026     -131.66491901  !  I_11    l2   P_11    l2   R_11    l2 
+          4.90429825      -500.60926553     -323.46256978  !  I_11     t   Q_11     t   R_11     t 
+         -3.29789867      -231.18782012      632.21230619  !  I_11    ls   P_11    ls   R_11    ls 
+         -0.37448478        55.74954760       32.30855283  !  I_11   ls2   P_11   ls2   R_11   ls2 
+        -19.09771561      1182.16864069      822.47698035  !  I_10     c   P_10     c   R_10     c 
+          1.57865532        60.72327458     -232.45325599  !  I_10    l2   P_10    l2   R_10    l2 
+         -1.84987277       -77.39328997      376.00671897  !  I_10     t   Q_10     t   R_10     t 
+          1.27690097       -81.11773911     -110.38998333  !  I_10    ls   P_10    ls   R_10    ls 
+         -0.70327809       -89.13377940      155.39876582  !  I_10   ls2   P_10   ls2   R_10   ls2 
+          0.98551810       -88.70455312        0.00000000  !  I_01 np CD   P_01 np CD   R_01 np CD 
+          0.00000000        -1.80644685        0.00000000  !  I    nn CD   P     n CD   R     n CD 
+          0.00000000         0.00000000        0.00000000  !  I_11 np CD   P_11 np CD   R_11 np CD 
+          0.00000000         0.00000000        0.00000000  !  I     t CD   P     t CD   R     t CD 
+          0.00000000         0.00000000        0.00000000  !  I    ls CD   P    ls CD   R    ls CD 
+          1.30000000         0.60000000        0.24000000  !  c_pi         r_ws         a_ws       
 /
 
 &adjust_parameter ! Parameters with .false. are kept fixed during the optimization
                   ! If left empty only non-zero parameters will be adjusted.
-    mask =  .true.      .true.      .true.  ! I_11_c      P_11_c      R_11_c
-            .true.      .true.      .true.  ! I_11_t      Q_11_t      R_11_t
-            .true.      .true.      .true.  ! I_11_ls2    P_11_ls     R_11_ls
-            .true.      .true.      .true.  ! I_11_l2     P_11_l2     R_11_l2
-            .true.      .true.      .true.  ! I_11_ls2    P_11_ls2    R_11_ls2
-            .true.      .true.      .true.  ! I_10_c      P_10_c      R_10_c
-            .true.      .true.      .true.  ! I_10_t      Q_10_t      R_10_t
-            .true.      .true.      .true.  ! I_10_ls     P_10_ls     R_10_ls
-            .true.      .true.      .true.  ! I_10_l2     P_10_l2     R_10_l2
-            .true.      .true.      .true.  ! I_10_ls2    P_10_ls2    R_10_ls2
-            .true.      .true.              ! I_01 c pp   P_01 c pp
-            .true.      .true.              ! I_01 c np   P_01 c np
-            .true.      .true.              ! I_01_l2     P_01_l2
-            .true.      .true.              ! I_00_c      P_00_c
-            .true.      .true.              ! I_00_l2     P_00_l2
-            .true.                          ! P_CD_c
-            .false.     .false.     .false. ! I_CD_1_ls   P_CD_1_ls   R_CD_1_ls
-            .false.     .false.     .false. ! c_pi        r_ww        a_ws
+    mask =  .true.      .true.      .false.  !  I_01     c   P_01     c   R_01     c 
+            .true.      .true.      .false.  !  I_01    l2   P_01    l2   R_01    l2 
+            .true.      .true.      .false.  !  I_00     c   P_00     c   R_00     c 
+            .true.      .true.      .false.  !  I_00    l2   P_00    l2   R_00    l2 
+            .true.      .true.      .true.   !  I_11     c   P_11     c   R_11     c 
+            .true.      .true.      .true.   !  I_11    l2   P_11    l2   R_11    l2 
+            .true.      .true.      .true.   !  I_11     t   Q_11     t   R_11     t 
+            .true.      .true.      .true.   !  I_11    ls   P_11    ls   R_11    ls 
+            .true.      .true.      .true.   !  I_11   ls2   P_11   ls2   R_11   ls2 
+            .true.      .true.      .true.   !  I_10     c   P_10     c   R_10     c 
+            .true.      .true.      .true.   !  I_10    l2   P_10    l2   R_10    l2 
+            .true.      .true.      .true.   !  I_10     t   Q_10     t   R_10     t 
+            .true.      .true.      .true.   !  I_10    ls   P_10    ls   R_10    ls 
+            .true.      .true.      .true.   !  I_10   ls2   P_10   ls2   R_10   ls2 
+            .true.      .true.      .false.  !  I_01 np CD   P_01 np CD   R_01 np CD 
+            .false.     .true.      .false.  !  I    nn CD   P     n CD   R     n CD 
+            .false.     .false.     .false.  !  I_11 np CD   P_11 np CD   R_11 np CD 
+            .false.     .false.     .false.  !  I     t CD   P     t CD   R     t CD 
+            .false.     .false.     .false.  !  I    ls CD   P    ls CD   R    ls CD 
+            .false.     .false.     .false.  !  c_pi         r_ws         a_ws       
 /
