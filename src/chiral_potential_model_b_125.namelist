@@ -19,7 +19,7 @@
 
 &output
     save_results = .true.
-    output_name = 'model_b_data'
+    output_name = 'model_b_125'
 /
 
 

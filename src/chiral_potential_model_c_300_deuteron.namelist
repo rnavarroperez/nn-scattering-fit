@@ -4,7 +4,7 @@
 
 &nn_potential
     name = 'N3LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N3LO'
-    t_lab_limit = 125.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
+    t_lab_limit = 300.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
 /
 
 &local_integration
@@ -13,45 +13,45 @@
 /
 
 &deuteron
-    fit_deuteron = .false.
+    fit_deuteron = .true.
     relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
 /
 
 &output
     save_results = .true.
-    output_name = 'model_a_data'
+    output_name = 'model_c_300_deuteron'
 /
 
 
 &potential_parameters !Potential parameters
-    parameters =  2.726141000      ! C_s
-                 -0.522844800      ! C_T
-                 -0.069928380      ! C_1
-                 -0.149601300      ! C_2
-                 -0.025024010      ! C_3
-                 -0.027283960      ! C_4
-                 -0.006530008      ! C_5
-                 -0.075549240      ! C_6
-                 -1.017206000      ! C_7
-                 -0.042511990      ! D_1
-                 -0.005567938      ! D_2
-                 -0.016666070      ! D_3
-                  0.001054347      ! D_4
-                  0.005383828      ! D_5
-                 -0.008012050      ! D_6
-                 -0.023093920      ! D_7
-                  0.013831360      ! D_8
-                  0.047970120      ! D_9
-                 -0.115687600      ! D_10
-                 -0.014532950      ! D_11
-                  0.009325477      ! C_0_IV
-                  0.015782400      ! C_0_IT
-                 -0.002179452      ! C_1_IT
-                 -0.006288540      ! C_2_IT
-                 -0.005799803      ! C_3_IT
-                  0.022501670      ! C_4_IT
-                          0.8      ! R_s
-                          1.2      ! R_L
+    parameters =  18.58536088      ! C_s
+                  -5.28719128      ! C_T
+                  -0.55733903      ! C_1
+                  -0.31396439      ! C_2
+                  -0.18374247      ! C_3
+                   0.04659864      ! C_4
+                  -0.04528200      ! C_5
+                  -0.07597075      ! C_6
+                  -1.09338257      ! C_7
+                  -0.01406051      ! D_1
+                   0.00116926      ! D_2
+                  -0.01042122      ! D_3
+                   0.00189761      ! D_4
+                   0.00486432      ! D_5
+                  -0.00383875      ! D_6
+                   0.02670266      ! D_7
+                   0.02476091      ! D_8
+                   0.02157365      ! D_9
+                  -0.06864597      ! D_10
+                  -0.01189522      ! D_11
+                   0.00997975      ! C_0_IV
+                   0.00985431      ! C_0_IT
+                  -0.00957657      ! C_1_IT
+                  -0.00309655      ! C_2_IT
+                  -0.00120832      ! C_3_IT
+                  -0.00726355      ! C_4_IT
+                          0.6      ! R_s
+                          0.8      ! R_L
 /
 &adjust_parameter ! Parameters with .false. are kept fixed during the optimization.
                   ! If left empty only non-zero parameters will be adjusted.

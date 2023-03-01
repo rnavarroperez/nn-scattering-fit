@@ -1,0 +1,76 @@
+&data_base
+    database_file = 'database/granada_database.dat'
+/
+
+&nn_potential
+    name = 'N3LO'  ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff', 'N3LO'
+    t_lab_limit = 300.0 !< Only data with T_lab less or equal than t_lab_limit (in units of MeV) will be included in the chi square
+/
+
+&local_integration
+    r_max = 12.5,  ! Maximum integration radius
+    delta_r = 0.0078125 ! Integration step
+/
+
+&deuteron
+    fit_deuteron = .false.
+    relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
+/
+
+&output
+    save_results = .true.
+    output_name = 'model_c_300'
+/
+
+
+&potential_parameters !Potential parameters
+    parameters =  18.60330690      ! C_s
+                  -5.28217364      ! C_T
+                  -0.56208595      ! C_1
+                  -0.31231385      ! C_2
+                  -0.18603628      ! C_3
+                   0.04699180      ! C_4
+                  -0.03966803      ! C_5
+                  -0.07568494      ! C_6
+                  -1.11520151      ! C_7
+                  -0.01433083      ! D_1
+                   0.00141098      ! D_2
+                  -0.01040529      ! D_3
+                   0.00191860      ! D_4
+                   0.00505847      ! D_5
+                  -0.00372976      ! D_6
+                   0.02462376      ! D_7
+                   0.02711652      ! D_8
+                   0.02862282      ! D_9
+                  -0.07197300      ! D_10
+                  -0.01247739      ! D_11
+                   0.00994616      ! C_0_IV
+                   0.00615110      ! C_0_IT
+                  -0.00963017      ! C_1_IT
+                  -0.00296326      ! C_2_IT
+                  -0.00205182      ! C_3_IT
+                  -0.00559720      ! C_4_IT
+                          0.6      ! R_s
+                          0.8      ! R_L
+/
+&adjust_parameter ! Parameters with .false. are kept fixed during the optimization.
+                  ! If left empty only non-zero parameters will be adjusted.
+    mask =  .true.    .true.      ! C_s     ! D_10
+            .true.    .true.      ! C_T     ! D_11
+            .true.    .true.      ! C_1     ! C_0_IV
+            .true.    .true.      ! C_2     ! C_0_IT
+            .true.    .true.      ! C_3     ! C_1_IT
+            .true.    .true.      ! C_4     ! C_2_IT
+            .true.    .true.      ! C_5     ! C_3_IT
+            .true.    .true.      ! C_6     ! C_4_IT
+            .true.    .true.      ! C_7     ! D_8
+            .true.    .true.      ! D_1     ! D_9
+            .true.                ! D_2
+            .true.                ! D_3
+            .true.                ! D_4
+            .true.                ! D_5
+            .true.                ! D_6
+            .true.                ! D_7
+            .false.               ! R_s 
+            .false.               ! R_L                  
+/
