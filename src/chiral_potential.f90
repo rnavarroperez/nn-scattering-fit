@@ -1,3 +1,10 @@
+!!
+!> @brief       chiral potential
+!!
+!! Main chiral potential module. Calculates nn-interaction potential described in Phys. Rev. C 91, 024003(2015).
+!!
+!! @author      Ky Putnam, Rodrigo Navarro Pérez
+!!
 module chiral_potential
 
 use precisions, only : dp
@@ -14,11 +21,16 @@ private
 
 public :: set_chiral_potential, default_parameters, n_parameters
 
-integer, parameter :: n_parameters = 28 !< Number of phenomenological parameters
-integer, parameter :: n_operators = 19   !< Number of operators in the chiral potential
-real(dp), parameter :: r_max = 12.5_dp !< Maximum integration radius for phase-shifts. In units of fm
-real(dp), parameter :: delta_r = 1/128._dp !< Integration step for phases and the dueteron. In units of fm
+integer, parameter :: n_parameters = 28     !< Number of phenomenological parameters
+integer, parameter :: n_operators = 19      !< Number of operators in the chiral potential
+real(dp), parameter :: r_max = 12.5_dp      !< Maximum integration radius for phase-shifts. In units of fm
+real(dp), parameter :: delta_r = 1/128._dp  !< Integration step for phases and the dueteron. In units of fm
 
+!!
+!> @brief      low energy constants
+!!
+!! @author     Ky Putnam
+!!
 real(dp), parameter, dimension(1:n_parameters) :: default_parameters = &
     [   2.936041_dp,     & !C_s
        -0.4933897_dp,    & !C_T
@@ -52,7 +64,14 @@ real(dp), parameter, dimension(1:n_parameters) :: default_parameters = &
 
 contains
 
-
+!!
+!> @brief      Sets the chiral potential.
+!!
+!! Given the name of a chiral potential, returns an object 
+!! of type nn_model with the corresponding values set.
+!!
+!! @author     Rodrigo Navarro Pérez
+!!
 subroutine set_chiral_potential(potential, parameters)
     implicit none
     type(nn_model), intent(out) :: potential
@@ -78,13 +97,26 @@ subroutine set_chiral_potential(potential, parameters)
     potential%dr_tail = 0._dp
 end subroutine set_chiral_potential
 
+!!
+!> @brief      chiral potential in all partial waves
+!!
+!! Given a set of parameters and a radius (in units of fm) returns the nuclear part of the 
+!! chiral potential (in units of MeV) in all partial waves and the derivative of each potential with
+!! respect of the given parameters.
+!! 
+!! The role of every parameter and the derivation of the potential can be found in
+!!
+!! Phys. Rev. C 91, 024003(2015)
+!!
+!! @author     Rodrigo Navarro Pérez
+!!
 subroutine chiral_potential_all_partial_waves(parameters, r, reaction, v_pw, dv_pw)
     implicit none
-    real(dp), intent(in) :: parameters(:) !< Phenomenological parameters
-    real(dp), intent(in) :: r !< radius in units of fm
-    character(len=2), intent(in) :: reaction !< reaction channel: np, pp, or nn
-    real(dp), intent(out) :: v_pw(:, :) !< AV18 potential in all partial waves, units of MeV
-    real(dp), allocatable, intent(out) :: dv_pw(:, :, :) !< derivatives of v_nn with respect to the parameters in parameters
+    real(dp), intent(in) :: parameters(:)                   !< Phenomenological parameters
+    real(dp), intent(in) :: r                               !< radius in units of fm
+    character(len=2), intent(in) :: reaction                !< reaction channel: np, pp, or nn
+    real(dp), intent(out) :: v_pw(:, :)                     !< chiral potential in all partial waves, units of MeV
+    real(dp), allocatable, intent(out) :: dv_pw(:, :, :)    !< derivatives of v_nn with respect to the parameters in parameters
 
     real(dp) :: v_nn(1:n_operators)
     real(dp), allocatable :: dv_nn(:, :)
@@ -97,13 +129,26 @@ subroutine chiral_potential_all_partial_waves(parameters, r, reaction, v_pw, dv_
 
 end subroutine chiral_potential_all_partial_waves
 
+!!
+!> @brief      chiral potential in operator basis
+!!
+!! Given a set of parameters and a radius (in units of fm) returns the nuclear part of the 
+!! chiral potential (in units of MeV) in operator basis and the derivative of each potential with
+!! respect of the given parameters.
+!!
+!! @author     Rodrigo Navarro Pérez
+!! 
+!! The role of every parameter and the derivation of the potential can be found in
+!!
+!! Phys. Rev. C 91, 024003(2015)
+!!
 subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
     implicit none
-    real(dp), intent(in)  :: parameters(:) !< Phenomenological parameters
-    real(dp), intent(in)  :: r !< radius in units of fm
-    real(dp), intent(out) :: v_nn(:) !< AV18 potential in operator basis, units of MeV
-    real(dp), allocatable, intent(out) :: dv_nn(:, :) !< derivatives of v_nn with respect to the parameters in parameters
-    real(dp), allocatable :: d_v_short(:,:) ! arrays containing short-range potentials and their derivatives
+    real(dp), intent(in)  :: parameters(:)              !< Phenomenological parameters
+    real(dp), intent(in)  :: r                          !< radius in units of fm
+    real(dp), intent(out) :: v_nn(:)                    !< AV18 potential in operator basis, units of MeV
+    real(dp), allocatable, intent(out) :: dv_nn(:, :)   !< derivatives of v_nn with respect to the parameters in parameters
+    real(dp), allocatable :: d_v_short(:,:)             ! arrays containing short-range potentials and their derivatives
     real(dp), allocatable :: v_long(:), v_short(:)
     real(dp) :: R_L, a_L
 
@@ -122,6 +167,19 @@ subroutine chiral_potential_operator(parameters, r, v_nn, dv_nn)
 
 end subroutine chiral_potential_operator
 
+!!
+!> @brief      Display the chiral parameters
+!!
+!! Given a set of parameters for the chiral potential with
+!! the corresponding mask to indicate fixed parameters, displays
+!! the parameters to screen.
+!!
+!! When the optional argument for the covariance matrix is given, 
+!! the uncertainty for each parameter is display right below the 
+!! parameter.
+!!
+!! @author     Rodrigo Navarro Pérez, Ky Putnam
+!!
 subroutine display_parameters(parameters, mask, unit, cv)
     implicit none
     real(dp), intent(in), dimension(:) :: parameters !< parameters for the AV18 potential
