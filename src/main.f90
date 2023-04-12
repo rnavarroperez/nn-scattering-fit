@@ -21,7 +21,6 @@ real(dp), allocatable :: covariance(:,:)
 real(dp), allocatable, dimension(:) :: parameters
 real(dp), allocatable, dimension(:) :: initial_parameters
 logical, allocatable, dimension(:) :: mask
-real(dp), parameter, dimension(1:3) :: target_shape = [1.9_dp, 0.525_dp, 0.21_dp]
 logical :: save_results
 character(len=1024) :: output_name
 real(dp) :: chi2

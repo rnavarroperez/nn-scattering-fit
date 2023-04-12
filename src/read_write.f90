@@ -30,7 +30,8 @@ private
 public :: print_em_amplitudes, print_observables, write_phases, read_montecarlo_parameters, &
     write_montecarlo_phases, print_phases, write_potential_setup, setup_from_namelist, &
     write_optimization_results, plot_potential_components, plot_potential_partial_waves, &
-    write_chiral_kernels, write_chiral_integrals, write_long_range_chiral_potentials, write_short_range_chiral_potentials
+    write_chiral_kernels, write_chiral_integrals, write_long_range_chiral_potentials, &
+    write_short_range_chiral_potentials, write_observables
 
 contains
 
