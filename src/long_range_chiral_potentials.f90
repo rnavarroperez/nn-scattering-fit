@@ -232,7 +232,7 @@ end subroutine
 !!
 !! Subroutine that calculates next-to-leading order potential functions with one delta intermediate state and stores them in an array.
 !!
-!! @author      Ky Putnam
+!! @author      Ky Putnam, Rodrigo Navarro Pérez
 !!
 subroutine nlo_potentials_1delta(r, R_L, a_L, mu_integrals, v_nlo_1delta)
     implicit none
@@ -289,7 +289,7 @@ end subroutine
 !!
 !! Subroutine that calculates next-to-leading order potential functions with 2 \f$ \Delta \f$ intermediate states, and stores them in an array.
 !!
-!! @author      Ky Putnam
+!! @author      Ky Putnam, Rodrigo Navarro Pérez
 !!
 subroutine nlo_potentials_2delta(r, R_L, a_L, mu_integrals, v_nlo_2delta)
     implicit none
@@ -380,7 +380,7 @@ end subroutine
 !!
 !! Subroutine that calculates next-to-next-to-leading order potential functions with 1 \f$ \Delta \f$ intermediate state, and stores them in an array.
 !!
-!! @author      Ky Putnam
+!! @author      Ky Putnam, Rodrigo Navarro Pérez
 !!
 subroutine n2lo_potentials_1delta(r, R_L, a_L, mu_integrals, v_n2lo_1delta)
     implicit none
@@ -437,7 +437,7 @@ end subroutine
 !!
 !! Subroutine that calculates next-to-next-to-leading order potential functions with 2 \f$ \Delta \f$ intermediate states, and stores them in an array.
 !!
-!! @author      Ky Putnam
+!! @author      Ky Putnam, Rodrigo Navarro Pérez
 !!
 subroutine n2lo_potentials_2delta(r, R_L, a_L, mu_integrals, v_n2lo_2delta)
     implicit none
@@ -592,9 +592,9 @@ end function delta_nucleon_mass_difference_r
 !!
 !< @brief  input for leading order (OPE) function (MeV), \f$ v^{LO}_{\sigma \tau} (r)\f$
 !!
-!! \f[     Y_{\alpha}(r) = \frac{g_{A}^{2}}{12\pi} \frac{m^{3}_{\pi_{\alpha}}}{F^{2}_{\pi}} \frac{e^{-x_{\alpha}}}{x_{\alpha}} \f]
-!!
 !! Corresponds to (A3) in the appendix
+!!
+!! \f[     Y_{\alpha}(r) = \frac{g_{A}^{2}}{12\pi} \frac{m^{3}_{\pi_{\alpha}}}{F^{2}_{\pi}} \frac{e^{-x_{\alpha}}}{x_{\alpha}} \f]
 !!
 !! @author      Ky Putnam
 !!
@@ -613,10 +613,10 @@ end function Y_pion
 !!
 !< @brief  inputs for leading order (OPE) function, \f$ v^{LO}_{\sigma \tau} (r)\f$, modified to deal with small r
 !!
+!! Corresponds to (A3) in the appendix
+!!
 !! \f[         Y_{\alpha}(r) = \frac{g^{2}_{A} m^{2}_{\pi_{\alpha}} e^{-x_{\alpha}}}
 !!    {12\pi F^{2}_{\pi} } e^{-R_{L}/a^{6}_{L}}(1 + \frac{r}{a_{L}} + \frac{(r/a_{L})^{2}}{2} + \frac{(r/a_{L})^{3}}{6}) r^{5} \f]
-!!
-!! Corresponds to (A3) in the appendix
 !!
 !! @author      Rodrigo Navarro Pérez
 !!
@@ -638,9 +638,9 @@ end function Y_pion_small_r
 !!
 !< @brief       inputs for leading order (OPE) function (MeV), \f$ v^{LO}_{t \tau} (r)\f$
 !!
-!! \f[ T_{\alpha}(r) = Y_{\alpha}\big(1+\frac{3}{x_{\alpha}} + \frac{3}{x^{3}_{\alpha}}\big) \f]
-!!
 !! Corresponds to (A4) in the appendix
+!!
+!! \f[ T_{\alpha}(r) = Y_{\alpha}\big(1+\frac{3}{x_{\alpha}} + \frac{3}{x^{3}_{\alpha}}\big) \f]
 !!
 !! @author      Ky Putnam
 !!
@@ -660,10 +660,10 @@ end function T_pion
 !!
 !< @brief       inputs for leading order (OPE) function, \f$ v^{LO}_{t \tau} (r)\f$, modified to deal with small r
 !!
+!! Corresponds to (A4) in the appendix
+!!
 !! \f[     T_{\alpha}(r) = \frac{g^{2}_{A} e^{-x_{\alpha}}}
 !!    {12\pi F^{2}_{\pi} } (x^{2}_{\alpha} + 3x + 3) e^{-R_{L}/a^{6}_{L}}(1 + \frac{r}{a_{L}} + \frac{(r/a_{L})^{2}}{2} + \frac{(r/a_{L})^{3}}{6}) r^{3} \f]
-!!
-!! Corresponds to (A4) in the appendix
 !!
 !! @author      Rodrigo Navarro Pérez
 !!
@@ -688,9 +688,9 @@ end function T_pion_small_r
 !> @brief       OPE at LO, \f$ v^{LO}_{\sigma \tau} (r) \f$
 !!
 !! One pion exchange potential contribution (1) at leading order
-!! \f[ v^{LO}_{\sigma \tau} (r) = \frac{Y_{0}(r) + 2Y_{+}(r)}{3}\f]
-!!
 !! Corresponds to (A1) in the appendix
+!!
+!! \f[ v^{LO}_{\sigma \tau} (r) = \frac{Y_{0}(r) + 2Y_{+}(r)}{3}\f]
 !!
 !! @author      Ky Putnam
 !!
@@ -711,11 +711,11 @@ end function v_lo_sigmatau
 !> @brief       OPE at LO, \f$ v^{LO}_{\sigma \tau} (r) \f$, modified to deal with small r
 !!
 !! One pion exchange potential contribution (1) at leading order
-!! \f[ v^{LO}_{\sigma \tau} (r) = \frac{Y_{0}(r, R_{L}, a_{L}) + 2Y_{+}(r, R_{L}, a_{L})}{3}\f]
-!!
 !! Corresponds to (A1) in the appendix
 !!
-!! @author      Rodrigo Navarro Pérez
+!! \f[ v^{LO}_{\sigma \tau} (r) = \frac{Y_{0}(r, R_{L}, a_{L}) + 2Y_{+}(r, R_{L}, a_{L})}{3}\f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
 !!
 real(dp) function v_lo_sigmatau_small_r(r, R_L, a_L) result(vlstau)
     implicit none
@@ -736,9 +736,9 @@ end function v_lo_sigmatau_small_r
 !> @brief       OPE at LO, \f$ v^{LO}_{t \tau} (r) \f$
 !!
 !! One pion exchange potential contribution (2) at leading order
-!! \f[ v^{LO}_{t \tau} (r) = \frac{T_{0}(r, R_{L}, a_{L}) + 2T_{+}(r, R_{L}, a_{L})}{3}\f]
-!!
 !! Corresponds to (A2) in the appendix
+!!
+!! \f[ v^{LO}_{t \tau} (r) = \frac{T_{0}(r, R_{L}, a_{L}) + 2T_{+}(r, R_{L}, a_{L})}{3}\f]
 !!
 !! @author      Ky Putnam
 !!
@@ -759,12 +759,12 @@ end function v_lo_ttau
 !!
 !> @brief       OPE at LO, \f$ v^{LO}_{t \tau} (r) \f$, modified to deal with small r
 !!
+!! Corresponds to (A2) in the appendix
+!!
 !! One pion exchange potential contribution (2) at leading order
 !! \f[ v^{LO}_{t \tau} (r) = \frac{T_{0}(r, R_{L}, a_{L}) + 2T_{+}(r, R_{L}, a_{L})}{3} \f]
 !!
-!! Corresponds to (A2) in the appendix
-!!
-!! @author      Rodrigo Navarro Pérez
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
 !!
 real(dp) function v_lo_ttau_small_r(r, R_L, a_L) result(vlttau)
     implicit none
@@ -784,9 +784,9 @@ end function v_lo_ttau_small_r
 !!
 !> @brief       charge-dependent term of long-range potential, \f$ v^{\sigma T}_{L} (r) \f$
 !!
-!! \f[ v^{\sigma T}_{L} (r) = \frac{Y_{0}(r) - 2Y_{+}(r)}{3}\f]
-!!
 !! Corresponds to (A41) in the appendix
+!!
+!! \f[ v^{\sigma T}_{L} (r) = \frac{Y_{0}(r) - 2Y_{+}(r)}{3}\f]
 !!
 !! @author      Ky Putnam
 !!
@@ -806,11 +806,11 @@ end function v_lo_sigmaT
 !!
 !> @brief       charge-dependent term of long-range potential, \f$ v^{\sigma T}_{L} (r) \f$, modified to deal with small r
 !!
-!! \f[ v^{\sigma T}_{L} (r) = \frac{Y_{0}(r, R_{L}, a_{L}) - 2Y_{+}(r, R_{L}, a_{L})}{3}\f]
-!!
 !! Corresponds to (A41) in the appendix
 !!
-!! @author      Rodrigo Navarro Pérez
+!! \f[ v_{\sigma T}^{LO} (r) = \frac{Y_{0}(r, R_{L}, a_{L}) - Y_{+}(r, R_{L}, a_{L})}{3} \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
 !!
 real(dp) function v_lo_sigmaT_small_r(r, R_L, a_L) result(vlstau)
     implicit none
@@ -830,9 +830,9 @@ end function v_lo_sigmaT_small_r
 !!
 !> @brief       charge-dependent term of long-range potential, \f$ v^{t T}_{L} (r) \f$, modified to deal with small r
 !!
-!! \f[ v^{t T}_{L} (r) = \frac{T_{0}(r, R_{L}, a_{L}) - 2T_{+}(r, R_{L}, a_{L})}{3}\f]
-!!
 !! Corresponds to (A42) in the appendix
+!!
+!! \f[ v^{t T}_{LO} (r) = \frac{T_{0}(r, R_{L}, a_{L}) - 2T_{+}(r, R_{L}, a_{L})}{3}\f]
 !!
 !! @author      Ky Putnam
 !!
@@ -852,11 +852,11 @@ end function v_lo_tT
 !!
 !> @brief       charge-dependent term of long-range potential, \f$ v^{t T}_{L} (r) \f$, modified to deal with small r
 !!
-!! \f[ v^{t T}_{L} (r) = \frac{Y_{0}(r, R_{L}, a_{L}) - 2Y_{+}(r, R_{L}, a_{L})}{3}\f]
-!!
 !! Corresponds to (A42) in the appendix
 !!
-!! @author      Rodrigo Navarro Pérez
+!! \f[ v_{t T}^{LO} (r) = \frac{T_{0}(r, R_{L}, a_{L}) - T_{+}(r, R_{L}, a_{L})}{3} \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
 !!
 real(dp) function v_lo_tT_small_r(r, R_L, a_L) result(vlttau)
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -897,16 +897,15 @@ real(dp) function v_nlo_tau(r) result(vntau)
 end function v_nlo_tau
 
 !!
-!> @brief       TPE at NLO
+!> @brief       TPE at NLO: \f$ v_{\tau \mathrm{small r}}^{\mathrm{NLO}}(r) \f$
 !!
 !! Two pion exchange potential contribution (1) at next leading order
-!!
-!! [\f v^{\mathrm{NLO}}_{\tau}= \frac{1}{8\pi^{3} r^{4}} \frac{m_{\pi}}{F^{4}_{\pi}} (x (1 + g^{2}_{A} - g^{4}_{A} (23 + 4x^{2})K_{0}(2x) + (1 + 2g^{2}_{A}(5 + 2x^{2}) - g^{4}_{A}(23 + 12x^{2}))K_{1}(2x)) \\
-!!    & e^{-R_{L}/a^{6}_{L}}(1 + \frac{r}{a_{L}} + \frac{(r/a_{L})^{2}}{2} + \frac{(r/a_{L})^{3}}{6}) r^{2} \f]
-!!
 !! Corresponds to (A5) in the appendix
 !!
-!! @author      Rodrigo Navarro Pérez
+!! [\f v^{\mathrm{NLO}}_{\tau} = \frac{m_{\pi} x }{8 \pi^3 F^{4}_{\pi} R_{L}^6} (1 + g^{2}_{A} - g^{4}_{A} (23 + 4x^{2})K_{0}(2x) + (1 + 2g^{2}_{A}(5 + 2x^{2}) - g^{4}_{A}(23 + 12x^{2}))K_{1}(2x))
+!!    e^{-R_{L}/a_{L}}(1 + \frac{r}{a_{L}} + \frac{(r/a_{L})^{2}}{2} + \frac{(r/a_{L})^{3}}{6}) r^{2} \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
 !!
 real(dp) function v_nlo_tau_small_r(r, R_L, a_L) result(v)
     implicit none
@@ -944,6 +943,18 @@ real(dp) function v_nlo_sigma(r) result(vns)
 
 end function v_nlo_sigma
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\sigma \mathrm{small r}}^{\mathrm{NLO}}(r) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A6) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\sigma} = \frac{g_A^4 m_\pi}{2\pi^3 F_\pi^4} (3xK_0(2x)+(3+2x^2)K_1(2x))
+!!  \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 +
+!!  \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) r^2 \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_sigma_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -979,6 +990,19 @@ real(dp) function v_nlo_t(r) result(vnt)
 
 end function v_nlo_t
 
+
+!!
+!> @brief       TPE at NLO: \f$ v_{t \mathrm{small r}}^{\mathrm{NLO}}(r) \f$
+!!
+!! Two pion exchange potential contribution (1) at next leading order
+!! Corresponds to (A7) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{t} = -\frac{g_A^4 m_\pi}{8\pi^3 F_\pi^4} \left(12xK_0(2x) + (15+4x^2)K_1(2x)\right) 
+!!  \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!  \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) r^2 \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_t_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1016,6 +1040,18 @@ real(dp) function v_nlo_c_d(r) result(vncd)
 
 end function v_nlo_c_d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{c \mathrm{small r}}^{\mathrm{NLO}}(r) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A8) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{c} = -\frac{e^{-\frac{R_L}{a_L}}}{R_L^6}\left(1+\frac{r}{a_L}+
+!!  \frac{\left(\frac{r}{a_L}\right)^2}{2}+\frac{\left(\frac{r}{a_L}\right)^3}{6}\right)
+!!  \frac{g_A^2 h_A^2 e^{-2x}(6+12x+10x^2+4x^3+x^4)}{6\pi^2\Delta M F_\pi^4} \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_c_d_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1035,14 +1071,10 @@ end function v_nlo_c_d_small_r
 !! Two pion exchange potential contribution at next leading order, with 1 \$[ \Delta \$] intermediate state.
 !! Corresponds to (A9) in the appendix
 !!
-!! \f[ v_{\tau}^{\mathrm{NLO}}(r;\Delta) = &
-!!    -\frac{1}{216\pi^{3}r^{5}} \frac{h_{A}^{2}}{F_{\pi}^{4}}
-!!    \big[
-!!    \left(5-11g_{A}^{2}\right)\mathrm{vf1} \\
-!!    & +  \left(x^{2}\left(12-24g_{A}^{2}\right) + y^{2}\left(12-12g_{A}^{2}\right)\right) \mathrm{vf2}\\
-!!    & + \big(-12y\left(2x^{2}+2y^{2}\right) + \frac{6}{y}g_{A}^{2}\left(4x^{2} + 4y^{2} + 8x^{2}y^{2}\right) \big) \mathrm{vf5} \\
-!!    & + \big(-12y + \frac{6}{y}g_{A}^{2}\left(4x{2} + 4y^{2}\right)\big) \mathrm{vf6} + \big(\frac{6}{y}g_{A}^{2}\big)\mathrm{vf7}
-!!    \big] \f]
+!! \f[ v_{\tau}^{\mathrm{NLO}}(r;\Delta) =  -\frac{1}{216\pi^{3}r^{5}} \frac{h_{A}^{2}}{F_{\pi}^{4}}
+!!    \big[ \left(5-11g_{A}^{2}\right)\mathrm{vf1} +  \left(x^{2}\left(12-24g_{A}^{2}\right) + y^{2}\left(12-12g_{A}^{2}\right)\right) \mathrm{vf2}   \\
+!!    + \big(-12y\left(2x^{2}+2y^{2}\right) + \frac{6}{y}g_{A}^{2}\left(4x^{2} + 4y^{2} + 8x^{2}y^{2}\right) \big) \mathrm{vf5} + \big(-12y + \frac{6}{y}g_{A}^{2}\left(4x{2} + 4y^{2}\right)\big) \mathrm{vf6} \\
+!!    + \big(\frac{6}{y}g_{A}^{2}\big)\mathrm{vf7} \big] \f]
 !!
 !! @author      Ky Putnam
 !!
@@ -1066,6 +1098,18 @@ real(dp) function v_nlo_tau_d(r, vf1, vf2, vf5, vf6, vf7) result(vntaud)
         / (216 * pi**3 * r**5 * Fpi**4)
 end function v_nlo_tau_d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\tau \small r}^{\mathrm{NLO}}(r;\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A9) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\tau} = -\frac{h_A^2}{216\pi^3r^5F_\pi^4}\left((5-11g_A^2)y\mathrm{vf1}+(12x^2+12y^2-g_A^2(24x^2+12y^2))y\mathrm{vf2}+ \\
+!!    (-12y(2x^2+2y^2)+6g_A^2(4x^4+4y^4+8x^2y^2)/y)\mathrm{vf5}+(-12y+6g_A^2(4x^2+4y^2))\mathrm{vf6}+6g_A^2\mathrm{vf7}\right)
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_tau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1121,6 +1165,17 @@ real(dp) function v_nlo_sigma_d(r, vf1, vf2, vf5, vf6, vf7) result(vnsd)
         / (72 * pi**3 * r**5 * Fpi**4)
 end function v_nlo_sigma_d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\sigma \mathrm{small r}}^{\mathrm{NLO}}(r;\Delta) \f$
+!!
+!! Two pion exchange potential contribution (1) at next leading order
+!! Corresponds to (A10) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\sigma} = -\frac{g_A^2 h_A^2}{72\pi^3 F_\pi^4 \Delta M}(2y\mathrm{vf1} + 8yx^2\mathrm{vf2}  -16x^2y^2\mathrm{vf5} - (4x^2 + 4y^2)\mathrm{vf6} - \mathrm{vf7})
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_sigma_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1165,6 +1220,18 @@ real(dp) function v_nlo_sigmatau_d(r) result(vnstaud)
 
 end function v_nlo_sigmatau_d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\sigma \tau \mathrm{small r}}^{\mathrm{N2LO}}(r) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A11) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\sigma \tau} = \frac{g_A^2 h_A^2}{54\pi^2 F_\pi^4 \Delta M} e^{-2x} (1 + x) (3 + 3x + x^2)
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 +
+!!    \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_sigmatau_d_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1218,6 +1285,19 @@ real(dp) function v_nlo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(vn
 
 end function v_nlo_t_d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{t \mathrm{small r}}^{\mathrm{NLO}}(r;\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A12) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{t} = \frac{g_A^2 h_A^2}{144\pi^3 F_\pi^4 \Delta M}(2y\mathrm{vf1} + 2(3+4x^2)y\mathrm{vf2} + 
+!!    6y\mathrm{vf3} - (12y^2 + 16y^2x^2)\mathrm{vf5} - (4y^2 +4x^2 +3)\mathrm{vf6} -\mathrm{vf7} -3\mathrm{vf8} - 
+!!    12y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!    \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1244,7 +1324,7 @@ real(dp) function v_nlo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, v
 
 end function v_nlo_t_d_small_r
 
-!> @brief       TPE at NLO: \f$ v_{t \tau}^{\mathrm{N2LO}}(r) \f$
+!> @brief       TPE at NLO: \f$ v_{t \tau}^{\mathrm{NLO}}(r) \f$
 !!
 !! Two pion exchange potential contribution at next leading order, with 1 \$[ \Delta \$] intermediate state.
 !! Corresponds to (A13) in the appendix
@@ -1267,6 +1347,18 @@ real(dp) function v_nlo_ttau_d(r) result(vnttaud)
 
 end function v_nlo_ttau_d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{t \tau \mathrm{small r}}^{\mathrm{NLO}}(r;\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A13) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{t \tau} = -\frac{g_A^2 h_A^2}{54\pi^2 F_\pi^4 \Delta M} e^{-2x} (1 + x) (3 + 3x + x^2)
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 +
+!!    \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_ttau_d_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1284,7 +1376,7 @@ end function v_nlo_ttau_d_small_r
 
 !> @brief       NLO loop correction: \f$ v_{c}^{\mathrm{NLO}}(r;2\Delta) \f$
 !!
-!! Two pion exchange potential contribution at next leading order.
+!! Two pion exchange potential contribution at next leading order
 !! Corresponds to (A14) in the appendix
 !!
 !! \f[ v_{c}^{\mathrm{NLO}}(r;2\Delta) = &
@@ -1315,6 +1407,19 @@ real(dp) function v_nlo_c_2d(r, vf2, vf4, vf5, vf6, vf7) result(vnc2d)
 
 end function v_nlo_c_2d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{c \mathrm{small r}}^{\mathrm{NLO}}(r;2\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A14) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{c} = -\frac{h_A^2}{108\pi^3 F_\pi^4 \Delta M}(4y^3\mathrm{vf2} + 2y\mathrm{vf4} + 
+!!    (4x^4 - 8x^2y^2 -12y^4)\mathrm{vf5} + (4x^2 - 4y^2)\mathrm{vf6} + \mathrm{vf7})
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!    \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_c_2d_small_r(r, R_L, a_L, vf2, vf4, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1372,6 +1477,19 @@ real(dp) function v_nlo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vntau2d)
 
 end function v_nlo_tau_2d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\tau \mathrm{small r}}^{\mathrm{NLO}}(r;2\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A15) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\tau} = -\frac{h_A^2}{1944\pi^3 F_\pi^4 \Delta M}(11y\mathrm{vf1} + 
+!!    y(24x^2 + 24y^2)\mathrm{vf2} + 6y\mathrm{vf4} - 3(24x^4y^2 + 4x^4 + 20y^4)\mathrm{vf5} - 
+!!    3(4x^2 + 12y^2)\mathrm{vf6} - 3\mathrm{vf7}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + 
+!!    \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1389,7 +1507,7 @@ real(dp) function v_nlo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7
     x = pion_mass_r(r)
     y = delta_nucleon_mass_difference_r(r)
 
-    v = -hA**4*hbar_c**6*(11*y*vf1 + y*(24*x**2 + 24*y**2)*vf2 + 6*y*vf4 - 3*(24*x**2*y**2 + 4*x**4 +20*y**4)*vf5 &
+    v = -hA**4*hbar_c**6*(11*y*vf1 + y*(24*x**2 + 24*y**2)*vf2 + 6*y*vf4 - 3*(24*x**2*y**2 + 4*x**4 + 20*y**4)*vf5 &
         - 3*(4*x**2 + 12*y**2)*vf6 - 3*vf7)/(1944*pi**3*delta_nucleon_mass_difference*Fpi**4) &
         *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
 
@@ -1402,8 +1520,7 @@ end function v_nlo_tau_2d_small_r
 !!
 !! \f[ v_{\sigma}^{\mathrm{NLO}}(r;2\Delta) = &
 !!    -\frac{1}{1296\pi^{3}r^{5}} \frac{h_{A}^{4}}{F_{\pi}^{4}}
-!!    \big[
-!!    -6\mathrm{vf1} -24x^{2} \cdot \mathrm{vf2} + 48x^{2}y\cdot\mathrm{vf5}\\
+!!    \big[ -6\mathrm{vf1} -24x^{2} \cdot \mathrm{vf2} + 48x^{2}y\cdot\mathrm{vf5}\\
 !!    & + \frac{1}{y}(4x^{2} + 12y^{2})\mathrm{vf6} + \frac{1}{y}\mathrm{vf7}
 !!    \big]  \f]
 !!
@@ -1428,6 +1545,18 @@ real(dp) function v_nlo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7) result(vnsigma2d)
 
 end function v_nlo_sigma_2d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\sigma \mathrm{small r}}^{\mathrm{NLO}}(r;2\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A16) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\sigma} = -\frac{h_A^2}{1296 \pi^3 F_\pi^4 \Delta M}(-6y\mathrm{vf1} - 24x^2y\mathrm{vf2} + 
+!!  48y^2x^2\mathrm{vf5} + (4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7}) \frac{e^{-R_L/a_L}}{R_L^6}
+!!  \left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_sigma_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1484,6 +1613,18 @@ real(dp) function v_nlo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7) result(vnstau2d)
 
 end function v_nlo_sigmatau_2d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{\sigma \tau \mathrm{small r}}^{\mathrm{NLO}}(r;2\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A17) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{\sigma \tau} = -\frac{h_A^4}{7776 \pi^3 F_\pi^4 \Delta M}(-2y\mathrm{vf1} - 8x^2y\mathrm{vf2} + 
+!!  16y^2x^2\mathrm{vf5} + (4y^2 - 4x^2)\mathrm{vf6} - \mathrm{vf7}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + 
+!!  \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_sigmatau_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1547,6 +1688,19 @@ real(dp) function v_nlo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v
 
 end function v_nlo_t_2d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{t \mathrm{small r}}^{\mathrm{NLO}}(r;2\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A18) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{t} = \frac{h_A^4}{2592 \pi^3 F_\pi^4 \Delta M} (-6y\mathrm{vf1} - 6y(3 + 4x^2)\mathrm{vf2} - 
+!!  18y\mathrm{vf3} + (36y^2 + 48x^2y^2)\mathrm{vf5} + (3 + 4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7} + 3\mathrm{vf8} + 
+!!  36y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!  \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1613,6 +1767,19 @@ real(dp) function v_nlo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resul
 
 end function v_nlo_ttau_2d
 
+!!
+!> @brief       TPE at NLO: \f$ v_{t \tau \mathrm{small r}}^{\mathrm{NLO}}(r;2\Delta) \f$
+!!
+!! Two pion exchange potential contribution at next leading order
+!! Corresponds to (A19) in the appendix
+!!
+!! [\f v^{\mathrm{NLO}}_{t \tau} = \frac{h_A^4}{15552 \pi^3 F_\pi^4 \Delta M} (-2y\mathrm{vf1} - 2y(3 + 4x^2)\mathrm{vf2} - 
+!!  6y\mathrm{vf3} + (12y^2 + 16x^2y^2)\mathrm{vf5} + (4y^2 - 4x^2 - 3)\mathrm{vf6} - \mathrm{vf7} - 3\mathrm{vf8} + 
+!!  12y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!  \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_nlo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1634,7 +1801,7 @@ real(dp) function v_nlo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf
     y = delta_nucleon_mass_difference_r(r)
 
     v = hA**4*hbar_c**6*(-2*y*vf1 - 2*y*(3 + 4*x**2)*vf2 - 6*y*vf3 + (12*y**2 + 16*x**2*y**2)*vf5 &
-        + (4*y**2 - 4*x**2 - 3)*vf6 - vf7 -3*vf8 + 12*y**2*vf9) &
+        + (4*y**2 - 4*x**2 - 3)*vf6 - vf7 - 3*vf8 + 12*y**2*vf9) &
         / (15552*pi**3*delta_nucleon_mass_difference*Fpi**4) &
         *(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
 
@@ -1662,6 +1829,16 @@ real(dp) function v_n2lo_c(r) result(vn2c)
         / (2*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_c
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{c \mathrm{small r}}^{\mathrm{N2LO}}(r) \f$
+!!
+!! Corresponds to (A20) in the appendix
+!!
+!! [\f v_c^{\mathrm{N2LO}}(r) = \frac{3g_A^2}{2\pi^2 F_\pi^4} e^{-2x} \left(2c_1x^2(1 + x)^2 + c_3(6 + 12x + 10x^2 + 4x^3 + x^4)\right)
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_c_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1695,6 +1872,17 @@ real(dp) function v_n2lo_sigmatau(r) result(vn2stau)
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_sigmatau
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{\sigma \tau \mathrm{small r}}^{\mathrm{N2LO}}(r) \f$
+!!
+!! Corresponds to (A21) in the appendix
+!!
+!! [\f v_{\sigma \tau}^{\mathrm{N2LO}}(r) = \frac{g_A^2}{3 \pi^2 F_\pi^4} c_4 e^{-2x} (1 + x)(3 + 3x + 2x^2)
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!    \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_sigmatau_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1728,6 +1916,17 @@ real(dp) function v_n2lo_ttau(r) result(vn2ttau)
         / (3*pi**2 * r**6 * Fpi**4)
 end function v_n2lo_ttau
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{t \tau \mathrm{small r}}^{\mathrm{N2LO}}(r) \f$
+!!
+!! Corresponds to (A22) in the appendix
+!!
+!! [\f v_{\sigma \tau}^{\mathrm{N2LO}}(r) = \frac{- g_A^2}{3 \pi^2 F_\pi^4} c_4 e^{-2x} (1 + x)(3 + 3x + x^2)
+!!    \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!    \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_ttau_small_r(r, R_L, a_L) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1779,6 +1978,18 @@ real(dp) function v_n2lo_c_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2cd)
 
 end function v_n2lo_c_d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{c \mathrm{small r}}^{\mathrm{N2LO}}(r) \f$
+!!
+!! Corresponds to (A23) in the appendix
+!!
+!! [\f v^{\mathrm{N2LO}}_{c} = \frac{h_A^2}{18 \pi^3 F_\pi^4} (y(5c_2 - 6c_3)\mathrm{vf1} + y((-24c_1 + 12c_2 -12c_3)x^2y^2 + 
+!!      (12c_2 y^2))\mathrm{vf2} +  6\left(((8c_1 + 4c_3)x^4 + (8c_1 - 4c_2 + 4c_3)x^2y^2 - 4c_2y^4)\mathrm{vf5} + 
+!!      ((4c_1 + 4c_3)x^2 + (-2c_2 + 2c_3)y^2)\mathrm{vf6} + c_3\mathrm{vf7}\right)) \frac{e^{-R_L/a_L}}{R_L^6}
+!!      \left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_c_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1802,7 +2013,6 @@ real(dp) function v_n2lo_c_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) resul
         /(18*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
 
 end function v_n2lo_c_d_small_r
-
 
 !!
 !> @brief       N2LO loop correction: \f$ v_{\tau}^{\mathrm{N2LO}}(r;\Delta) \f$
@@ -1843,6 +2053,18 @@ real(dp) function v_n2lo_tau_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2taud)
 
 end function v_n2lo_tau_d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{c \mathrm{small r}}^{\mathrm{N2LO}}(r) \f$
+!!
+!! Corresponds to (A24) in the appendix
+!!
+!! [\f v^{\mathrm{N2LO}}_{c} = \frac{-b_{38}h_A}{54 \pi^3 F_\pi^4} (y(5 - 11g_A^2)\mathrm{vf1} + 
+!!      y(12x^2 + 12y^2 - g_A^2(24x^2 + 12y^2))\mathrm{vf2} + (-12y^2(2x^2 + 2y^2) + 6g_A^2(4x^4 + 8x^2y^2 + 4y^2))\mathrm{vf5} + 
+!!      (-12y^2 + 6g_A^2(4x^2 + 12y^2))\mathrm{vf6} + 6g_A^2\mathrm{vf7}) \frac{e^{-R_L/a_L}}{R_L^6}
+!!      +\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_tau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1902,6 +2124,17 @@ real(dp) function v_n2lo_sigma_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2sigmad)
 
 end function v_n2lo_sigma_d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{\sigma \mathrm{small r}}^{\mathrm{N2LO}}(r;\Delta) \f$
+!!
+!! Corresponds to (A25) in the appendix
+!!
+!! [\f     v^{\mathrm{N2LO}}_{\sigma} = \frac{-b_{38} h_A g_A}{18 \pi^3 F_\pi^4} (2y\mathrm{vf1} 8x^2y\mathrm{vf2} - 
+!!  16x^2y^2\mathrm{vf5} - 4(x^2 + y^2)\mathrm{vf6} - \mathrm{vf7}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + 
+!!  \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_sigma_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -1957,6 +2190,17 @@ real(dp) function v_n2lo_sigmatau_d(r, vf1, vf2, vf5, vf6, vf7) result(vn2staud)
 
 end function v_n2lo_sigmatau_d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{\sigma \tau \mathrm{small r}}^{\mathrm{N2LO}}(r;\Delta) \f$
+!!
+!! Corresponds to (A26) in the appendix
+!!
+!! [\f     v^{\mathrm{N2LO}}_{\sigma \tau} = \frac{-c_4 h_A}{108 \pi^3 F_\pi^4} (2y\mathrm{vf1} + 8x^2y\mathrm{vf2} - 
+!!      16x^2y^2\mathrm{vf5} - 4(x^2 + y^2)\mathrm{vf6} - \mathrm{vf7}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + 
+!!      \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_sigmatau_d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2018,6 +2262,17 @@ real(dp) function v_n2lo_t_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v
 
 end function v_n2lo_t_d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{t \mathrm{small r}}^{\mathrm{N2LO}}(r;\Delta) \f$
+!!
+!! Corresponds to (A27) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{t} = \frac{b_{38} h_A g_A^2}{36 \pi^3 F_\pi^4} (2y\mathrm{vf1} + y(6 + 8x^2)\mathrm{vf2} + 6y\mathrm{vf3} - 
+!!      (12y^2 + 16x^2y^2)mathrm{vf5} -(3 + 4x^2 + 4y^2)\mathrm{vf6} - \mathrm{vf7} -3\mathrm{vf8} -12y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}
+!!      \left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2038,7 +2293,7 @@ real(dp) function v_n2lo_t_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, 
     y = delta_nucleon_mass_difference_r(r)
 
 
-    v = b38*hA*gA**2*hbar_c**6*(2*y*vf1 + y*(6+8*x**2)*vf2 + 6*y*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5 &
+    v = b38*hA*gA**2*hbar_c**6*(2*y*vf1 + y*(6 + 8*x**2)*vf2 + 6*y*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5 &
         - (3 + 4*x**2 + 4*y**2)*vf6 - vf7 - 3*vf8 - 12*y**2*vf9) &
         /(36*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
 
@@ -2083,6 +2338,18 @@ real(dp) function v_n2lo_ttau_d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resul
 
 end function v_n2lo_ttau_d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{t \tau \mathrm{small r}}^{\mathrm{N2LO}}(r;\Delta) \f$
+!!
+!! Corresponds to (A28) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{t \tau} = \frac{c_4 h_A^2}{216 \pi^3 F_\pi^4} (2y\mathrm{vf1} + (6 + 8x^2)y\mathrm{vf2} + 
+!!      6y\mathrm{vf3} - (12y^2 + 16x^2y^2)mathrm{vf5} - (3 + 4x^2 + 4y^2)\mathrm{vf6} - \mathrm{vf7} - 3\mathrm{vf8} - 
+!!      12y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!      \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_ttau_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2102,7 +2369,7 @@ real(dp) function v_n2lo_ttau_d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf
     x = pion_mass_r(r)
     y = delta_nucleon_mass_difference_r(r)
 
-    v = c4*hA**2*hbar_c**6*(2*y*vf1 + (6+8*x**2)*y*vf2 + 6*y*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5 &
+    v = c4*hA**2*hbar_c**6*(2*y*vf1 + (6 + 8*x**2)*y*vf2 + 6*y*vf3 - (12*y**2 + 16*x**2 * y**2)*vf5 &
         - (3 + 4*x**2 + 4*y**2)*vf6 - vf7 - 3*vf8 - 12*y**2*vf9) &
         /(216*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
 
@@ -2145,6 +2412,18 @@ real(dp) function v_n2lo_c_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2c2d)
 
 end function v_n2lo_c_2d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{c \mathrm{small r}}^{\mathrm{N2LO}}(r;2\Delta) \f$
+!!
+!! Corresponds to (A29) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{t \tau} = \frac{-2 b_{38} h_A^3}{81 \pi^3 F_\pi^4} (11y\mathrm{vf1} + 
+!!      (24x^2 + 12y^2)y\mathrm{vf2} + 6y\mathrm{vf4} - 3((4x^4 + 24x^2y^2 + 20y^4)mathrm{vf5} + 
+!!      (4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7})) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + 
+!!      \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_c_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2206,6 +2485,17 @@ real(dp) function v_n2lo_tau_2d(r, vf1, vf2, vf4, vf5, vf6, vf7) result(vn2tau2d
 
 end function v_n2lo_tau_2d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{\tau \mathrm{small r}}^{\mathrm{N2LO}}(r;2\Delta) \f$
+!!
+!! Corresponds to (A30) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{\tau} = \frac{-b_{38} h_A^3}{243 \pi^3 F_\pi^4} (11y\mathrm{vf1} + (24x^2 + 12y^2)y\mathrm{vf2} + 
+!!      6y\mathrm{vf4} - 3((4x^4 + 24x^2y^2 + 20y^4)mathrm{vf5} + (4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7})) \frac{e^{-R_L/a_L}}{R_L^6}
+!!      \left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_tau_2d_small_r(r, R_L, a_L, vf1, vf2, vf4, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2264,6 +2554,17 @@ real(dp) function v_n2lo_sigma_2d(r, vf1, vf2, vf5, vf6, vf7) result(vn2sigma2d)
 
 end function v_n2lo_sigma_2d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{\sigma \mathrm{small r}}^{\mathrm{N2LO}}(r;2\Delta) \f$
+!!
+!! Corresponds to (A31) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{\sigma} = \frac{-b_{38} h_A^3}{162 \pi^3 F_\pi^4} (-6y\mathrm{vf1} - 24x^2y\mathrm{vf2} + 48x^2y^2mathrm{vf5} + 
+!!      (4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7})) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!      \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_sigma_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2320,6 +2621,17 @@ real(dp) function v_n2lo_sigmatau_2d(r, vf1, vf2, vf5, vf6, vf7) result(vn2stau2
 
 end function v_n2lo_sigmatau_2d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{\sigma \tau \mathrm{small r}}^{\mathrm{N2LO}}(r;2\Delta) \f$
+!!
+!! Corresponds to (A32) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{\sigma \tau} = \frac{-b_{38} h_A^3}{972 \pi^3 F_\pi^4} (-6y\mathrm{vf1} - 24x^2y\mathrm{vf2} + 48x^2y^2mathrm{vf5} + 
+!!      (4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7})) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!      \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_sigmatau_2d_small_r(r, R_L, a_L, vf1, vf2, vf5, vf6, vf7) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2381,6 +2693,18 @@ real(dp) function v_n2lo_t_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(
 
 end function v_n2lo_t_2d
 
+!!
+!> @brief       N2LO loop correction: \f$ v_{t \mathrm{small r}}^{\mathrm{N2LO}}(r;2\Delta) \f$
+!!
+!! Corresponds to (A33) in the appendix
+!!
+!! [\f  v^{\mathrm{N2LO}}_{t} = \frac{b_{38} h_A^3}{324 \pi^3 F_\pi^4} (-6y\mathrm{vf1} - 6(3 + 4x^2)y\mathrm{vf2} - 
+!!      18y\mathrm{vf3} + (36y^2 + 48x^2y^2)\mathrm{vf5} + (3 + 4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7} + 3\mathrm{vf8} + 
+!!      36y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!      \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
+!!
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
@@ -2406,7 +2730,6 @@ real(dp) function v_n2lo_t_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7,
         /(324*pi**3*Fpi**4)*(exp(-R_L/a_L)/R_L**6)*(1 + r/a_L + (r/a_L)**2/2 + (r/a_L)**3/6)
 
 end function v_n2lo_t_2d_small_r
-
 
 !!
 !> @brief       N2LO loop correction: \f$ v_{t\tau}^{\mathrm{N2LO}}(r;2\Delta) \f$
@@ -2448,13 +2771,17 @@ real(dp) function v_n2lo_ttau_2d(r, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) resu
 end function v_n2lo_ttau_2d
 
 !!
-!> @brief       N2LO for small r: \f$ v_{t\tau}^{\mathrm{N2LO}}(r;2\Delta) \f$
+!> @brief       N2LO loop correction: \f$ v_{t \tau \mathrm{small r}}^{\mathrm{N2LO}}(r;2\Delta) \f$
 !!
-!! Corresponds to (A34) in appendix
+!! Corresponds to (A34) in the appendix
 !!
-!! @author      Ky Putnam
+!! [\f  v^{\mathrm{N2LO}}_{t \tau} = \frac{b_{38} h_A^3}{1944 \pi^3 F_\pi^4} (-6y\mathrm{vf1} - 6(3 + 4x^2)y\mathrm{vf2} - 
+!!      18y\mathrm{vf3} + (36y^2 + 48x^2y^2)\mathrm{vf5} + (3 + 4x^2 + 12y^2)\mathrm{vf6} + \mathrm{vf7} + 3\mathrm{vf8} + 
+!!      36y^2\mathrm{vf9}) \frac{e^{-R_L/a_L}}{R_L^6}\left(1 + \frac{r}{a_L} + \frac{1}{2}\left(\frac{r}{a_L}\right)^2 + 
+!!      \frac{1}{6}\left(\frac{r}{a_L}\right)^3\right) \f]
 !!
-
+!! @author      Rodrigo Navarro Pérez, Ky Putnam
+!!
 real(dp) function v_n2lo_ttau_2d_small_r(r, R_L, a_L, vf1, vf2, vf3, vf5, vf6, vf7, vf8, vf9) result(v)
     implicit none
     real(dp), intent(in) :: r       !< point at which potential will be evaluated (in fm)
