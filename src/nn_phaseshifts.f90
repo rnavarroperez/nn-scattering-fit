@@ -19,7 +19,7 @@ implicit none
 
 private
 
-public :: all_phaseshifts, eta_prime, momentum_cm
+public :: all_phaseshifts, eta_prime, momentum_cm, lab_energy
 
 interface
 
@@ -353,6 +353,36 @@ real(dp) function momentum_cm(t_lab, reaction) result(k)
         stop 'incorrect reaction channel in momentum_cm'
     end select
 end function momentum_cm
+
+!!
+!> @brief      laboratory energy
+!!
+!! Given the center of mass momentum and the type of reaction, calculates the energy in the LAB frame
+!! in units of MeV. Except for units, it is the inverse of momentum_cm
+!!
+!! @returns    Laboratory energy in MeV
+!!
+!! @author     Rodrigo Navarro Perez
+!!
+real(dp) function lab_energy(k_cm, reaction) result(t_lab)
+    implicit none
+    real(dp), intent(in) :: k_cm !< center of mass momentum in MeV
+    character(len=2), intent(in) :: reaction !< Type of reaction. (pp, np or nn)
+    real(dp) :: a, b, c
+    select case (reaction)
+    case ('pp')
+        t_lab = 2*k_cm**2/m_p
+    case ('np')
+        a = m_p**2
+        b = 2*m_p*(m_p*m_n-k_cm**2)
+        c = -k_cm**2*(m_p+m_n)**2
+        t_lab = (-b + sqrt(b**2 - 4*a*c))/(2*a)
+    case ('nn')
+        t_lab = 2*k_cm**2/m_n
+    case default
+        stop 'incorrect reaction channel in lab_energy'
+    end select
+end function lab_energy
 
 !!
 !> @brief      find alfa parameters in coupled channels
