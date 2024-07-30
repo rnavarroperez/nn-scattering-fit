@@ -78,12 +78,12 @@ end subroutine write_montecarlo_phases
 !> @brief      reads a set of samples of fitted parameters
 !!
 !! Given the name of a file containing a sample of fitted parameters
-!! (generated with a legace code), reads and stores the parameters
+!! (generated with a legacy code), reads and stores the parameters
 !! in an rank 2 array.
 !!
-!! Paramters that were set (and fixed) to zero in the orginal fitting
-!! in the legacy code were not sabed in the files to be read. In order
-!! to knew where to put the parameters that are fixed to zero a mask
+!! Parameters that were set (and fixed) to zero in the orginal fitting
+!! in the legacy code were not saved in the files to be read. In order
+!! to know where to put the parameters that are fixed to zero, a mask
 !! (array of logicals) needs to be given. The positions where the
 !! paramter is meant to be zero are indicated by a .false. value in the
 !! mask.
