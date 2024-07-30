@@ -1,0 +1,69 @@
+&data_base
+    database_file = 'database/granada_database.dat'
+/
+
+&nn_potential
+    name = 'AV18' ! Available names: 'AV18', 'ds_ope30', 'ds_ope30_fff'
+/
+
+&local_integration
+    r_max = 12.5  ! Maximum integration radius
+    delta_r = 0.0078125 ! Integration step
+/
+
+&deuteron
+    relativistic = .false. ! Whether to use relativistic kinematics for the deuteron or not
+/
+
+&output
+    save_results = .true.
+    output_name = 'av18_ct_CD'
+/
+
+&potential_parameters !Potential parameters
+    parameters =
+       -11.25389612    3340.44936058       0.00000000  !  I_01     c   P_01     c   R_01     c 
+         0.15627423       3.56725269       0.00000000  !  I_01    l2   P_01    l2   R_01    l2 
+        -0.86058900     590.51788232       0.00000000  !  I_00     c   P_00     c   R_00     c 
+        -0.41351691     303.21477602       0.00000000  !  I_00    l2   P_00    l2   R_00    l2 
+        -7.14988739    1992.74623223    1204.20239809  !  I_11     c   P_11     c   R_11     c 
+         0.92773014     232.73204877   -1104.60612268  !  I_11    l2   P_11    l2   R_11    l2 
+         0.99271613     -57.39549502    -897.61557170  !  I_11     t   Q_11     t   R_11     t 
+        -1.08179691    -653.63755998    1298.89469148  !  I_11    ls   P_11    ls   R_11    ls 
+        -0.57897715      83.66812764     495.34746294  !  I_11   ls2   P_11   ls2   R_11   ls2 
+        -8.63593411    2603.59768986     427.63598244  !  I_10     c   P_10     c   R_10     c 
+        -0.12711907     256.62636151      -7.03083797  !  I_10    l2   P_10    l2   R_10    l2 
+         1.48233402   -1128.93743307     364.36664584  !  I_10     t   Q_10     t   R_10     t 
+         0.09296771      83.46732632    -368.37028880  !  I_10    ls   P_10    ls   R_10    ls 
+         0.08402938    -215.74514482      31.39970881  !  I_10   ls2   P_10   ls2   R_10   ls2 
+         0.80793674    -290.98654928       0.00000000  !  I_01 np CD   P_01 np CD   R_01 np CD 
+         0.00000000      -4.47040659       0.00000000  !  I    nn CD   P     n CD   R     n CD 
+         0.00000000       0.00000000       0.00000000  !  I_11 np CD   P_11 np CD   R_11 np CD 
+         0.00000000       0.00000000       0.00000000  !  I     t CD   P     t CD   R     t CD 
+         0.00000000       0.00000000       0.00000000  !  I    ls CD   P    ls CD   R    ls CD 
+         2.10000000       0.50000000       0.20000000  !  c_pi         r_ws         a_ws       
+/
+
+&adjust_parameter ! Parameters with .false. are kept fixed during the optimization
+                  ! If left empty only non-zero parameters will be adjusted.
+    mask =  .true.      .true.      .false.  !  I_01     c   P_01     c   R_01     c 
+            .true.      .true.      .false.  !  I_01    l2   P_01    l2   R_01    l2 
+            .true.      .true.      .false.  !  I_00     c   P_00     c   R_00     c 
+            .true.      .true.      .false.  !  I_00    l2   P_00    l2   R_00    l2 
+            .true.      .true.      .true.   !  I_11     c   P_11     c   R_11     c 
+            .true.      .true.      .true.   !  I_11    l2   P_11    l2   R_11    l2 
+            .true.      .true.      .true.   !  I_11     t   Q_11     t   R_11     t 
+            .true.      .true.      .true.   !  I_11    ls   P_11    ls   R_11    ls 
+            .true.      .true.      .true.   !  I_11   ls2   P_11   ls2   R_11   ls2 
+            .true.      .true.      .true.   !  I_10     c   P_10     c   R_10     c 
+            .true.      .true.      .true.   !  I_10    l2   P_10    l2   R_10    l2 
+            .true.      .true.      .true.   !  I_10     t   Q_10     t   R_10     t 
+            .true.      .true.      .true.   !  I_10    ls   P_10    ls   R_10    ls 
+            .true.      .true.      .true.   !  I_10   ls2   P_10   ls2   R_10   ls2 
+            .true.      .true.      .false.  !  I_01 np CD   P_01 np CD   R_01 np CD 
+            .false.     .true.      .false.  !  I    nn CD   P     n CD   R     n CD 
+            .true.      .true.      .true.   !  I_11 np CD   P_11 np CD   R_11 np CD 
+            .true.      .true.      .true.   !  I     t CD   P     t CD   R     t CD 
+            .false.     .false.     .false.  !  I    ls CD   P    ls CD   R    ls CD 
+            .false.     .false.     .false.  !  c_pi         r_ws         a_ws       
+/
